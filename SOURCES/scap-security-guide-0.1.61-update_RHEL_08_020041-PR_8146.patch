@@ -1,0 +1,300 @@
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/bash/shared.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/bash/shared.sh
+index 737d725872d..08b62057bde 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/bash/shared.sh
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/bash/shared.sh
+@@ -1,7 +1,11 @@
+ # platform = multi_platform_all
++# reboot = true
++# strategy = enable
++# complexity = low
++# disruption = low
+ 
+ if ! grep -x '  case "$name" in sshd|login) exec tmux ;; esac' /etc/bashrc; then
+-    cat >> /etc/bashrc <<'EOF'
++    cat >> /etc/profile.d/tmux.sh <<'EOF'
+ if [ "$PS1" ]; then
+   parent=$(ps -o ppid= -p $$)
+   name=$(ps -o comm= -p $parent)
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/oval/shared.xml b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/oval/shared.xml
+index 00ac349e292..4cb2f9e0e04 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/oval/shared.xml
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/oval/shared.xml
+@@ -4,21 +4,27 @@
+     <criteria comment="Check exec tmux configured at the end of bashrc" operator="AND">
+       <criterion comment="check tmux is configured to exec on the last line of /etc/bashrc"
+         test_ref="test_configure_bashrc_exec_tmux" />
++      <criterion comment="check tmux is running" test_ref="test_tmux_running"/>
+     </criteria>
+   </definition>
+-  <ind:textfilecontent54_test check="only one" check_existence="only_one_exists"
++  <ind:textfilecontent54_test check="all" check_existence="all_exist"
+     comment="check tmux is configured to exec on the last line of /etc/bashrc"
+     id="test_configure_bashrc_exec_tmux" version="1">
+     <ind:object object_ref="obj_configure_bashrc_exec_tmux" />
+-    <ind:state state_ref="state_configure_bashrc_exec_tmux" />
+   </ind:textfilecontent54_test>
+   <ind:textfilecontent54_object id="obj_configure_bashrc_exec_tmux" version="1">
+     <ind:behaviors singleline="true" multiline="false" />
+-    <ind:filepath>/etc/bashrc</ind:filepath>
+-    <ind:pattern operation="pattern match">^(.*)$</ind:pattern>
+-    <ind:instance datatype="int">1</ind:instance>
++    <ind:filepath operation="pattern match">^/etc/bashrc$|^/etc/profile\.d/.*$</ind:filepath>
++    <ind:pattern operation="pattern match">if \[ "\$PS1" \]; then\n\s+parent=\$\(ps -o ppid= -p \$\$\)\n\s+name=\$\(ps -o comm= -p \$parent\)\n\s+case "\$name" in sshd\|login\) exec tmux ;; esac\nfi</ind:pattern>
++    <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+   </ind:textfilecontent54_object>
+-  <ind:textfilecontent54_state id="state_configure_bashrc_exec_tmux" version="1">
+-    <ind:subexpression datatype="string" operation="pattern match">if \[ "\$PS1" \]; then\n\s+parent=\$\(ps -o ppid= -p \$\$\)\n\s+name=\$\(ps -o comm= -p \$parent\)\n\s+case "\$name" in sshd\|login\) exec tmux ;; esac\nfi</ind:subexpression>
+-  </ind:textfilecontent54_state>
++
++  <unix:process58_test check="all" id="test_tmux_running" comment="is tmux running" version="1">
++      <unix:object object_ref="obj_tmux_running"/>
++  </unix:process58_test>
++
++  <unix:process58_object id="obj_tmux_running" version="1">
++      <unix:command_line operation="pattern match">^tmux(?:|[\s]+.*)$</unix:command_line>
++      <unix:pid datatype="int" operation="greater than">0</unix:pid>
++  </unix:process58_object>
+ </def-group>
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/rule.yml b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/rule.yml
+index 3ba0f4a2d8f..7afc5fc5e6b 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/rule.yml
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/rule.yml
+@@ -7,12 +7,20 @@ title: 'Support session locking with tmux'
+ description: |-
+     The <tt>tmux</tt> terminal multiplexer is used to implement
+     automatic session locking. It should be started from
+-    <tt>/etc/bashrc</tt>.
++    <tt>/etc/bashrc</tt> or drop-in files within <tt>/etc/profile.d/</tt>.
++    Additionally it must be ensured that the <tt>tmux</tt> process is running
++    and it can be verified with the following command:
++    <pre>ps all | grep tmux | grep -v grep</pre>
+ 
+ rationale: |-
+     Unlike <tt>bash</tt> itself, the <tt>tmux</tt> terminal multiplexer
+     provides a mechanism to lock sessions after period of inactivity.
+ 
++warnings:
++  - general: |-
++        The remediation does not start the tmux process, so it must be
++        manually started or have the system rebooted after applying the fix.
++
+ severity: medium
+ 
+ identifiers:
+@@ -26,17 +34,21 @@ references:
+     stigid@ol8: OL08-00-020041
+     stigid@rhel8: RHEL-08-020041
+ 
+-ocil_clause: 'exec tmux is not present at the end of bashrc'
++ocil_clause: 'exec tmux is not present at the end of bashrc or tmux process is not running'
+ 
+ ocil: |-
+     To verify that tmux is configured to execute,
+     run the following command:
+-    <pre>$ grep -A1 -B3 "case ..name. in sshd|login) exec tmux ;; esac" /etc/bashrc</pre>
++    <pre>$ grep -A1 -B3 "case ..name. in sshd|login) exec tmux ;; esac" /etc/bashrc /etc/profile.d/*</pre>
+     The output should return the following:
+     <pre>if [ "$PS1" ]; then
+       parent=$(ps -o ppid= -p $$)
+       name=$(ps -o comm= -p $parent)
+       case "$name" in sshd|login) exec tmux ;; esac
+     fi</pre>
++    To verify that the tmux process is running,
++    run the following command:
++    <pre>ps all | grep tmux | grep -v grep</pre>
++    If the command does not produce output, this is a finding.
+ 
+ platform: machine
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value.pass.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value.pass.sh
+new file mode 100644
+index 00000000000..221c18665ef
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value.pass.sh
+@@ -0,0 +1,12 @@
++#!/bin/bash
++# packages = tmux
++
++cat >> /etc/bashrc <<'EOF'
++if [ "$PS1" ]; then
++  parent=$(ps -o ppid= -p $$)
++  name=$(ps -o comm= -p $parent)
++  case "$name" in sshd|login) exec tmux ;; esac
++fi
++EOF
++
++tmux new-session -s root -d
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value_d_directory.pass.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value_d_directory.pass.sh
+new file mode 100644
+index 00000000000..1702bb17e79
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value_d_directory.pass.sh
+@@ -0,0 +1,13 @@
++#!/bin/bash
++# packages = tmux
++
++
++cat >> /etc/profile.d/00-complianceascode.conf <<'EOF'
++if [ "$PS1" ]; then
++  parent=$(ps -o ppid= -p $$)
++  name=$(ps -o comm= -p $parent)
++  case "$name" in sshd|login) exec tmux ;; esac
++fi
++EOF
++
++tmux new-session -s root -d
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/duplicate_value_multiple_files.pass.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/duplicate_value_multiple_files.pass.sh
+new file mode 100644
+index 00000000000..16d4acfcb5a
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/duplicate_value_multiple_files.pass.sh
+@@ -0,0 +1,20 @@
++#!/bin/bash
++# packages = tmux
++
++cat >> /etc/profile.d/00-complianceascode.conf <<'EOF'
++if [ "$PS1" ]; then
++  parent=$(ps -o ppid= -p $$)
++  name=$(ps -o comm= -p $parent)
++  case "$name" in sshd|login) exec tmux ;; esac
++fi
++EOF
++
++cat >> /etc/bashrc <<'EOF'
++if [ "$PS1" ]; then
++  parent=$(ps -o ppid= -p $$)
++  name=$(ps -o comm= -p $parent)
++  case "$name" in sshd|login) exec tmux ;; esac
++fi
++EOF
++
++tmux new-session -s root -d
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/tmux_not_running.fail.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/tmux_not_running.fail.sh
+new file mode 100644
+index 00000000000..6cb9d83efc5
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/tmux_not_running.fail.sh
+@@ -0,0 +1,13 @@
++#!/bin/bash
++# packages = tmux
++# remediation = none
++
++cat >> /etc/bashrc <<'EOF'
++if [ "$PS1" ]; then
++  parent=$(ps -o ppid= -p $$)
++  name=$(ps -o comm= -p $parent)
++  case "$name" in sshd|login) exec tmux ;; esac
++fi
++EOF
++
++killall tmux || true
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/wrong_value.fail.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/wrong_value.fail.sh
+new file mode 100644
+index 00000000000..f13a8b038e4
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/wrong_value.fail.sh
+@@ -0,0 +1,105 @@
++#!/bin/bash
++# packages = tmux
++
++cat > /etc/bashrc <<'EOF'
++# /etc/bashrc
++
++# System wide functions and aliases
++# Environment stuff goes in /etc/profile
++
++# It's NOT a good idea to change this file unless you know what you
++# are doing. It's much better to create a custom.sh shell script in
++# /etc/profile.d/ to make custom changes to your environment, as this
++# will prevent the need for merging in future updates.
++
++# Prevent doublesourcing
++if [ -z "$BASHRCSOURCED" ]; then
++  BASHRCSOURCED="Y"
++
++  # are we an interactive shell?
++  if [ "$PS1" ]; then
++    if [ -z "$PROMPT_COMMAND" ]; then
++      case $TERM in
++      xterm*|vte*)
++        if [ -e /etc/sysconfig/bash-prompt-xterm ]; then
++            PROMPT_COMMAND=/etc/sysconfig/bash-prompt-xterm
++        elif [ "${VTE_VERSION:-0}" -ge 3405 ]; then
++            PROMPT_COMMAND="__vte_prompt_command"
++        else
++            PROMPT_COMMAND='printf "\033]0;%s@%s:%s\007" "${USER}" "${HOSTNAME%%.*}" "${PWD/#$HOME/\~}"'
++        fi
++        ;;
++      screen*)
++        if [ -e /etc/sysconfig/bash-prompt-screen ]; then
++            PROMPT_COMMAND=/etc/sysconfig/bash-prompt-screen
++        else
++            PROMPT_COMMAND='printf "\033k%s@%s:%s\033\\" "${USER}" "${HOSTNAME%%.*}" "${PWD/#$HOME/\~}"'
++        fi
++        ;;
++      *)
++        [ -e /etc/sysconfig/bash-prompt-default ] && PROMPT_COMMAND=/etc/sysconfig/bash-prompt-default
++        ;;
++      esac
++    fi
++    # Turn on parallel history
++    shopt -s histappend
++    history -a
++    # Turn on checkwinsize
++    shopt -s checkwinsize
++    [ "$PS1" = "\\s-\\v\\\$ " ] && PS1="[\u@\h \W]\\$ "
++    # You might want to have e.g. tty in prompt (e.g. more virtual machines)
++    # and console windows
++    # If you want to do so, just add e.g.
++    # if [ "$PS1" ]; then
++    #   PS1="[\u@\h:\l \W]\\$ "
++    # fi
++    # to your custom modification shell script in /etc/profile.d/ directory
++  fi
++
++  if ! shopt -q login_shell ; then # We're not a login shell
++    # Need to redefine pathmunge, it gets undefined at the end of /etc/profile
++    pathmunge () {
++        case ":${PATH}:" in
++            *:"$1":*)
++                ;;
++            *)
++                if [ "$2" = "after" ] ; then
++                    PATH=$PATH:$1
++                else
++                    PATH=$1:$PATH
++                fi
++        esac
++    }
++
++    # By default, we want umask to get set. This sets it for non-login shell.
++    # Current threshold for system reserved uid/gids is 200
++    # You could check uidgid reservation validity in
++    # /usr/share/doc/setup-*/uidgid file
++    if [ $UID -gt 199 ] && [ "`/usr/bin/id -gn`" = "`/usr/bin/id -un`" ]; then
++       umask 002
++    else
++       umask 022
++    fi
++
++    SHELL=/bin/bash
++    # Only display echos from profile.d scripts if we are no login shell
++    # and interactive - otherwise just process them to set envvars
++    for i in /etc/profile.d/*.sh; do
++        if [ -r "$i" ]; then
++            if [ "$PS1" ]; then
++                . "$i"
++            else
++                . "$i" >/dev/null
++            fi
++        fi
++    done
++
++    unset i
++    unset -f pathmunge
++  fi
++
++fi
++# vim:ts=4:sw=4
++EOF
++
++tmux new-session -s root -d

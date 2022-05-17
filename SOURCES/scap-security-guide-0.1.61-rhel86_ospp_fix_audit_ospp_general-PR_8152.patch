@@ -1,0 +1,285 @@
+diff --git a/linux_os/guide/system/auditing/policy_rules/audit_access_failed/rule.yml b/linux_os/guide/system/auditing/policy_rules/audit_access_failed/rule.yml
+index 09dc1566bbf..26c7eea79d1 100644
+--- a/linux_os/guide/system/auditing/policy_rules/audit_access_failed/rule.yml
++++ b/linux_os/guide/system/auditing/policy_rules/audit_access_failed/rule.yml
+@@ -6,10 +6,10 @@ title: 'Configure auditing of unsuccessful file accesses'
+ 
+ {{% set file_contents_audit_access_failed =
+ "## Unsuccessful file access (any other opens) This has to go last.
+--a always,exit -F arch=b32 -S open,openat,open_by_handle_at -F exit=-EACCES -F auid&gt;=1000 -F auid!=unset -F key=unsuccessful-access
+--a always,exit -F arch=b64 -S open,openat,open_by_handle_at -F exit=-EACCES -F auid&gt;=1000 -F auid!=unset -F key=unsuccessful-access
+--a always,exit -F arch=b32 -S open,openat,open_by_handle_at -F exit=-EPERM -F auid&gt;=1000 -F auid!=unset -F key=unsuccessful-access
+--a always,exit -F arch=b64 -S open,openat,open_by_handle_at -F exit=-EPERM -F auid&gt;=1000 -F auid!=unset -F key=unsuccessful-access" %}}
++-a always,exit -F arch=b32 -S open,openat,openat2,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
++-a always,exit -F arch=b64 -S open,openat,openat2,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
++-a always,exit -F arch=b32 -S open,openat,openat2,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
++-a always,exit -F arch=b64 -S open,openat,openat2,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -F key=unsuccessful-access" %}}
+ 
+ description: |-
+     Ensure that unsuccessful attempts to access a file are audited.
+diff --git a/linux_os/guide/system/auditing/policy_rules/audit_access_success/rule.yml b/linux_os/guide/system/auditing/policy_rules/audit_access_success/rule.yml
+index 5ce9fe6799c..262cf290ec0 100644
+--- a/linux_os/guide/system/auditing/policy_rules/audit_access_success/rule.yml
++++ b/linux_os/guide/system/auditing/policy_rules/audit_access_success/rule.yml
+@@ -7,8 +7,8 @@ title: 'Configure auditing of successful file accesses'
+ {{% set file_contents_audit_access_success =
+ "## Successful file access (any other opens) This has to go last.
+ ## These next two are likely to result in a whole lot of events
+--a always,exit -F arch=b32 -S open,openat,open_by_handle_at -F success=1 -F auid&gt;=1000 -F auid!=unset -F key=successful-access
+--a always,exit -F arch=b64 -S open,openat,open_by_handle_at -F success=1 -F auid&gt;=1000 -F auid!=unset -F key=successful-access" %}}
++-a always,exit -F arch=b32 -S open,openat,openat2,open_by_handle_at -F success=1 -F auid>=1000 -F auid!=unset -F key=successful-access
++-a always,exit -F arch=b64 -S open,openat,openat2,open_by_handle_at -F success=1 -F auid>=1000 -F auid!=unset -F key=successful-access" %}}
+ 
+ description: |-
+     Ensure that successful attempts to access a file are audited.
+diff --git a/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/rule.yml b/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/rule.yml
+index e37291c68a1..bdc59faa5f7 100644
+--- a/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/rule.yml
++++ b/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/rule.yml
+@@ -4,7 +4,7 @@ prodtype: ol8,rhcos4,rhel8,rhel9
+ 
+ title: 'Perform general configuration of Audit for OSPP'
+ 
+-{{% if product == "rhel9" %}}
++
+ {{% set file_contents_audit_ospp_general =
+ "## The purpose of these rules is to meet the requirements for Operating
+ ## System Protection Profile (OSPP)v4.2. These rules depends on having
+@@ -90,89 +90,7 @@ title: 'Perform general configuration of Audit for OSPP'
+ ## state results from that policy. This would be handled entirely by
+ ## that daemon.
+ " %}}
+-{{% else %}}
+-{{% set file_contents_audit_ospp_general =
+-"## The purpose of these rules is to meet the requirements for Operating
+-## System Protection Profile (OSPP)v4.2. These rules depends on having
+-## the following rule files copied to /etc/audit/rules.d:
+-##
+-## 10-base-config.rules, 11-loginuid.rules,
+-## 30-ospp-v42-1-create-failed.rules, 30-ospp-v42-1-create-success.rules,
+-## 30-ospp-v42-2-modify-failed.rules, 30-ospp-v42-2-modify-success.rules,
+-## 30-ospp-v42-3-access-failed.rules, 30-ospp-v42-3-access-success.rules,
+-## 30-ospp-v42-4-delete-failed.rules, 30-ospp-v42-4-delete-success.rules,
+-## 30-ospp-v42-5-perm-change-failed.rules,
+-## 30-ospp-v42-5-perm-change-success.rules,
+-## 30-ospp-v42-6-owner-change-failed.rules,
+-## 30-ospp-v42-6-owner-change-success.rules
+-##
+-## original copies may be found in /usr/share/audit/sample-rules/
+-
+-
+-## User add delete modify. This is covered by pam. However, someone could
+-## open a file and directly create or modify a user, so we'll watch passwd and
+-## shadow for writes
+--a always,exit -F arch=b32 -S openat,open_by_handle_at -F a2&amp;03 -F path=/etc/passwd -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b64 -S openat,open_by_handle_at -F a2&amp;03 -F path=/etc/passwd -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b32 -S open -F a1&amp;03 -F path=/etc/passwd -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b64 -S open -F a1&amp;03 -F path=/etc/passwd -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b32 -S openat,open_by_handle_at -F a2&amp;03 -F path=/etc/shadow -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b64 -S openat,open_by_handle_at -F a2&amp;03 -F path=/etc/shadow -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b32 -S open -F a1&amp;03 -F path=/etc/shadow -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b64 -S open -F a1&amp;03 -F path=/etc/shadow -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+-
+-## User enable and disable. This is entirely handled by pam.
+-
+-## Group add delete modify. This is covered by pam. However, someone could
+-## open a file and directly create or modify a user, so we'll watch group and
+-## gshadow for writes
+--a always,exit -F path=/etc/passwd -F perm=wa -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F path=/etc/shadow -F perm=wa -F auid&gt;=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F path=/etc/group -F perm=wa -F auid&gt;=1000 -F auid!=unset -F key=group-modify
+--a always,exit -F path=/etc/gshadow -F perm=wa -F auid&gt;=1000 -F auid!=unset -F key=group-modify
+-
+ 
+-## Use of special rights for config changes. This would be use of setuid
+-## programs that relate to user accts. This is not all setuid apps because
+-## requirements are only for ones that affect system configuration.
+--a always,exit -F path=/usr/sbin/unix_chkpwd -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/sbin/usernetctl -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/sbin/userhelper -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/sbin/seunshare -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/mount -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/newuidmap -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/gpasswd -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/newgidmap -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/umount -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/passwd -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/crontab -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/at -F perm=x -F auid&gt;=1000 -F auid!=unset -F key=special-config-changes
+-
+-## Privilege escalation via su or sudo. This is entirely handled by pam.
+-
+-## Audit log access
+--a always,exit -F dir=/var/log/audit/ -F perm=r -F auid&gt;=1000 -F auid!=unset -F key=access-audit-trail
+-## Attempts to Alter Process and Session Initiation Information
+--a always,exit -F path=/var/run/utmp -F perm=wa -F auid&gt;=1000 -F auid!=unset -F key=session
+--a always,exit -F path=/var/log/btmp -F perm=wa -F auid&gt;=1000 -F auid!=unset -F key=session
+--a always,exit -F path=/var/log/wtmp -F perm=wa -F auid&gt;=1000 -F auid!=unset -F key=session
+-
+-## Attempts to modify MAC controls
+--a always,exit -F dir=/etc/selinux/ -F perm=wa -F auid&gt;=1000 -F auid!=unset -F key=MAC-policy
+-
+-## Software updates. This is entirely handled by rpm.
+-
+-## System start and shutdown. This is entirely handled by systemd
+-
+-## Kernel Module loading. This is handled in 43-module-load.rules
+-
+-## Application invocation. The requirements list an optional requirement
+-## FPT_SRP_EXT.1 Software Restriction Policies. This event is intended to
+-## state results from that policy. This would be handled entirely by
+-## that daemon.
+-" %}}
+-{{% endif %}}
+ 
+ description: |-
+     Configure some basic <tt>Audit</tt> parameters specific for OSPP profile. 
+diff --git a/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/tests/correct_rules.pass.sh b/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/tests/correct_rules.pass.sh
+index ffe2344db56..c59e7e5e1f2 100644
+--- a/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/tests/correct_rules.pass.sh
++++ b/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/tests/correct_rules.pass.sh
+@@ -1,3 +1,3 @@
+-# platform = Red Hat Enterprise Linux 8
++# platform = Red Hat Enterprise Linux 8,Red Hat Enterprise Linux 9
+ 
+ cp $SHARED/audit/30-ospp-v42.rules /etc/audit/rules.d/
+diff --git a/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/tests/correct_rules_rhel9.pass.sh b/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/tests/correct_rules_rhel9.pass.sh
+deleted file mode 100644
+index 96ef5ae0a23..00000000000
+--- a/linux_os/guide/system/auditing/policy_rules/audit_ospp_general/tests/correct_rules_rhel9.pass.sh
++++ /dev/null
+@@ -1,3 +0,0 @@
+-# platform = Red Hat Enterprise Linux 9
+-
+-cp $SHARED/audit/30-ospp-v42_rhel9.rules /etc/audit/rules.d/30-ospp-v42.rules
+diff --git a/tests/shared/audit/30-ospp-v42-3-access-failed.rules b/tests/shared/audit/30-ospp-v42-3-access-failed.rules
+index a5aad3a95ce..39ac7a883ca 100644
+--- a/tests/shared/audit/30-ospp-v42-3-access-failed.rules
++++ b/tests/shared/audit/30-ospp-v42-3-access-failed.rules
+@@ -1,5 +1,5 @@
+ ## Unsuccessful file access (any other opens) This has to go last.
+--a always,exit -F arch=b32 -S open,openat,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
+--a always,exit -F arch=b64 -S open,openat,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
+--a always,exit -F arch=b32 -S open,openat,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
+--a always,exit -F arch=b64 -S open,openat,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
++-a always,exit -F arch=b32 -S open,openat,openat2,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
++-a always,exit -F arch=b64 -S open,openat,openat2,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
++-a always,exit -F arch=b32 -S open,openat,openat2,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
++-a always,exit -F arch=b64 -S open,openat,openat2,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -F key=unsuccessful-access
+diff --git a/tests/shared/audit/30-ospp-v42-3-access-success.rules b/tests/shared/audit/30-ospp-v42-3-access-success.rules
+index 0c8a6b65760..79004ce0c21 100644
+--- a/tests/shared/audit/30-ospp-v42-3-access-success.rules
++++ b/tests/shared/audit/30-ospp-v42-3-access-success.rules
+@@ -1,4 +1,4 @@
+ ## Successful file access (any other opens) This has to go last.
+ ## These next two are likely to result in a whole lot of events
+--a always,exit -F arch=b32 -S open,openat,open_by_handle_at -F success=1 -F auid>=1000 -F auid!=unset -F key=successful-access
+--a always,exit -F arch=b64 -S open,openat,open_by_handle_at -F success=1 -F auid>=1000 -F auid!=unset -F key=successful-access
++-a always,exit -F arch=b32 -S open,openat,openat2,open_by_handle_at -F success=1 -F auid>=1000 -F auid!=unset -F key=successful-access
++-a always,exit -F arch=b64 -S open,openat,openat2,open_by_handle_at -F success=1 -F auid>=1000 -F auid!=unset -F key=successful-access
+diff --git a/tests/shared/audit/30-ospp-v42.rules b/tests/shared/audit/30-ospp-v42.rules
+index 3dced17255c..2d3c48265b6 100644
+--- a/tests/shared/audit/30-ospp-v42.rules
++++ b/tests/shared/audit/30-ospp-v42.rules
+@@ -57,6 +57,10 @@
+ 
+ ## Privilege escalation via su or sudo. This is entirely handled by pam.
+ 
++## Watch for configuration changes to privilege escalation.
++-a always,exit -F path=/etc/sudoers -F perm=wa -F key=special-config-changes
++-a always,exit -F dir=/etc/sudoers.d/ -F perm=wa -F key=special-config-changes
++
+ ## Audit log access
+ -a always,exit -F dir=/var/log/audit/ -F perm=r -F auid>=1000 -F auid!=unset -F key=access-audit-trail
+ ## Attempts to Alter Process and Session Initiation Information
+diff --git a/tests/shared/audit/30-ospp-v42_rhel9.rules b/tests/shared/audit/30-ospp-v42_rhel9.rules
+deleted file mode 100644
+index 2d3c48265b6..00000000000
+--- a/tests/shared/audit/30-ospp-v42_rhel9.rules
++++ /dev/null
+@@ -1,84 +0,0 @@
+-## The purpose of these rules is to meet the requirements for Operating
+-## System Protection Profile (OSPP)v4.2. These rules depends on having
+-## the following rule files copied to /etc/audit/rules.d:
+-##
+-## 10-base-config.rules, 11-loginuid.rules,
+-## 30-ospp-v42-1-create-failed.rules, 30-ospp-v42-1-create-success.rules,
+-## 30-ospp-v42-2-modify-failed.rules, 30-ospp-v42-2-modify-success.rules,
+-## 30-ospp-v42-3-access-failed.rules, 30-ospp-v42-3-access-success.rules,
+-## 30-ospp-v42-4-delete-failed.rules, 30-ospp-v42-4-delete-success.rules,
+-## 30-ospp-v42-5-perm-change-failed.rules,
+-## 30-ospp-v42-5-perm-change-success.rules,
+-## 30-ospp-v42-6-owner-change-failed.rules,
+-## 30-ospp-v42-6-owner-change-success.rules
+-##
+-## original copies may be found in /usr/share/audit/sample-rules/
+-
+-
+-## User add delete modify. This is covered by pam. However, someone could
+-## open a file and directly create or modify a user, so we'll watch passwd and
+-## shadow for writes
+--a always,exit -F arch=b32 -S openat,open_by_handle_at -F a2&03 -F path=/etc/passwd -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b64 -S openat,open_by_handle_at -F a2&03 -F path=/etc/passwd -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b32 -S open -F a1&03 -F path=/etc/passwd -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b64 -S open -F a1&03 -F path=/etc/passwd -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b32 -S openat,open_by_handle_at -F a2&03 -F path=/etc/shadow -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b64 -S openat,open_by_handle_at -F a2&03 -F path=/etc/shadow -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b32 -S open -F a1&03 -F path=/etc/shadow -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F arch=b64 -S open -F a1&03 -F path=/etc/shadow -F auid>=1000 -F auid!=unset -F key=user-modify
+-
+-## User enable and disable. This is entirely handled by pam.
+-
+-## Group add delete modify. This is covered by pam. However, someone could
+-## open a file and directly create or modify a user, so we'll watch group and
+-## gshadow for writes
+--a always,exit -F path=/etc/passwd -F perm=wa -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F path=/etc/shadow -F perm=wa -F auid>=1000 -F auid!=unset -F key=user-modify
+--a always,exit -F path=/etc/group -F perm=wa -F auid>=1000 -F auid!=unset -F key=group-modify
+--a always,exit -F path=/etc/gshadow -F perm=wa -F auid>=1000 -F auid!=unset -F key=group-modify
+-
+-
+-## Use of special rights for config changes. This would be use of setuid
+-## programs that relate to user accts. This is not all setuid apps because
+-## requirements are only for ones that affect system configuration.
+--a always,exit -F path=/usr/sbin/unix_chkpwd -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/sbin/usernetctl -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/sbin/userhelper -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/sbin/seunshare -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/mount -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/newuidmap -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/gpasswd -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/newgidmap -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/umount -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/passwd -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/crontab -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+--a always,exit -F path=/usr/bin/at -F perm=x -F auid>=1000 -F auid!=unset -F key=special-config-changes
+-
+-## Privilege escalation via su or sudo. This is entirely handled by pam.
+-
+-## Watch for configuration changes to privilege escalation.
+--a always,exit -F path=/etc/sudoers -F perm=wa -F key=special-config-changes
+--a always,exit -F dir=/etc/sudoers.d/ -F perm=wa -F key=special-config-changes
+-
+-## Audit log access
+--a always,exit -F dir=/var/log/audit/ -F perm=r -F auid>=1000 -F auid!=unset -F key=access-audit-trail
+-## Attempts to Alter Process and Session Initiation Information
+--a always,exit -F path=/var/run/utmp -F perm=wa -F auid>=1000 -F auid!=unset -F key=session
+--a always,exit -F path=/var/log/btmp -F perm=wa -F auid>=1000 -F auid!=unset -F key=session
+--a always,exit -F path=/var/log/wtmp -F perm=wa -F auid>=1000 -F auid!=unset -F key=session
+-
+-## Attempts to modify MAC controls
+--a always,exit -F dir=/etc/selinux/ -F perm=wa -F auid>=1000 -F auid!=unset -F key=MAC-policy
+-
+-## Software updates. This is entirely handled by rpm.
+-
+-## System start and shutdown. This is entirely handled by systemd
+-
+-## Kernel Module loading. This is handled in 43-module-load.rules
+-
+-## Application invocation. The requirements list an optional requirement
+-## FPT_SRP_EXT.1 Software Restriction Policies. This event is intended to
+-## state results from that policy. This would be handled entirely by
+-## that daemon.
+-

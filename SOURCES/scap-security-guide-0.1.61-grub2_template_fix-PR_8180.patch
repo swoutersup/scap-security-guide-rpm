@@ -1,0 +1,842 @@
+From 1bd88bbdc7ce8b6e2265f323cd3a777ef2240e6b Mon Sep 17 00:00:00 2001
+From: Matej Tyc <matyc@redhat.com>
+Date: Fri, 28 Jan 2022 17:11:56 +0100
+Subject: [PATCH 1/5] Change the grub2 bootloader argument template
+
+- Introduce the concept of product-specific bootloader config
+  properties that determine the check/remediation form.
+- Expand the RHEL8 remediation with a check for update of
+  /etc/default/grub contents.
+- Add a RHEL8 check that looks for kernelopts references in loader entries.
+- Update tests.
+---
+ .../grub2_entries_reference_kernelopts.xml    | 25 +++++
+ .../ansible.template                          | 35 ++++++-
+ .../grub2_bootloader_argument/bash.template   | 48 +++++++--
+ .../grub2_bootloader_argument/oval.template   | 97 +++++++++++++------
+ .../arg_not_there_etcdefaultgrub.fail.sh      |  2 +-
+ ....fail.sh => arg_not_there_grubenv.fail.sh} |  0
+ 6 files changed, 164 insertions(+), 43 deletions(-)
+ create mode 100644 shared/checks/oval/grub2_entries_reference_kernelopts.xml
+ rename shared/templates/grub2_bootloader_argument/tests/{arg_not_there.fail.sh => arg_not_there_grubenv.fail.sh} (100%)
+
+diff --git a/shared/checks/oval/grub2_entries_reference_kernelopts.xml b/shared/checks/oval/grub2_entries_reference_kernelopts.xml
+new file mode 100644
+index 00000000000..1aec9fe64d2
+--- /dev/null
++++ b/shared/checks/oval/grub2_entries_reference_kernelopts.xml
+@@ -0,0 +1,25 @@
++<def-group>
++  <definition class="compliance" id="grub2_entries_reference_kernelopts" version="2">
++  {{{ oval_metadata(
++	  "Ensure that grubenv-defined kernel options are referenced in individual boot loader entries",
++	  title="Use $kernelopts in /boot/loader/entries/*.conf",
++	  affected_platforms=["multi_platform_all"]) }}}
++    <criteria operator="AND">
++        <criterion test_ref="test_grub2_entries_reference_kernelopts"
++        comment="check kernel command line parameters for referenced boot entries reference the $kernelopts variable." />
++    </criteria>
++  </definition>
++
++    <ind:textfilecontent54_test id="test_grub2_entries_reference_kernelopts"
++                                comment="check kernel command line parameters for referenced boot entries reference the $kernelopts variable."
++                                check="all" check_existence="all_exist" version="1">
++      <ind:object object_ref="object_grub2_entries_reference_kernelopts" />
++    </ind:textfilecontent54_test>
++
++  <ind:textfilecontent54_object id="object_grub2_entries_reference_kernelopts" version="1">
++    <ind:path>/boot/loader/entries/</ind:path>
++    <ind:filename operation="pattern match">^.*\.conf$</ind:filename>
++    <ind:pattern operation="pattern match">^options .*\b\$kernelopts\b.*$</ind:pattern>
++    <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>                                                                             
++  </ind:textfilecontent54_object>
++</def-group>
+diff --git a/shared/templates/grub2_bootloader_argument/ansible.template b/shared/templates/grub2_bootloader_argument/ansible.template
+index 58d4fab69fa..de970879c8f 100644
+--- a/shared/templates/grub2_bootloader_argument/ansible.template
++++ b/shared/templates/grub2_bootloader_argument/ansible.template
+@@ -4,7 +4,34 @@
+ # complexity = medium
+ # disruption = low
+ 
+-{{% if product in ["rhel7", "ol7", "rhel9"] or 'ubuntu' in product %}}
++{{#
++   See the OVAL template for more comments.
++   Product-specific categorization should be synced across all template content types
++-#}}
++{{% set system_with_expanded_kernel_options_in_loader_entries = false -%}}
++{{% set system_with_referenced_kernel_options_in_loader_entries = false -%}}
++{{% set system_with_kernel_options_in_grubenv = false -%}}
++{{% set system_with_kernel_options_in_etc_default_grub = false -%}}
++{{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
++
++{{% if product in ["rhel9"] %}}
++{{% set system_with_expanded_kernel_options_in_loader_entries = true %}}
++{{% endif -%}}
++
++{{% if product in ["rhel8"] %}}
++{{% set system_with_referenced_kernel_options_in_loader_entries = true %}}
++{{% set system_with_kernel_options_in_grubenv = true %}}
++{{% endif -%}}
++
++{{% if product in ["rhel7", "ol7"] or 'ubuntu' in product %}}
++{{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
++{{% endif -%}}
++
++{{% if product in ["rhel7", "ol7", "rhel8", "ol8", "rhel9"] or 'ubuntu' in product %}}
++{{% set system_with_kernel_options_in_etc_default_grub = true %}}
++{{% endif -%}}
++
++{{% if system_with_kernel_options_in_etc_default_grub -%}}
+ - name: Check {{{ ARG_NAME }}} argument exists
+   command: grep 'GRUB_CMDLINE_LINUX.*{{{ ARG_NAME }}}=' /etc/default/grub
+   failed_when: False
+@@ -27,7 +54,9 @@
+ - name: Update bootloader menu
+   command: /sbin/grubby --update-kernel=ALL --args="{{{ ARG_NAME_VALUE }}}"
+ 
+-{{% else %}}
++{{%- endif %}}
++
++{{% if system_with_kernel_options_in_grubenv -%}}
+ 
+ - name: Get current kernel parameters
+   ansible.builtin.shell:
+@@ -50,4 +79,4 @@
+   when:
+     - kernelopts.rc != 0
+ 
+-{{% endif %}}
++{{%- endif %}}
+diff --git a/shared/templates/grub2_bootloader_argument/bash.template b/shared/templates/grub2_bootloader_argument/bash.template
+index 631e686897e..817fd1fde23 100644
+--- a/shared/templates/grub2_bootloader_argument/bash.template
++++ b/shared/templates/grub2_bootloader_argument/bash.template
+@@ -1,6 +1,41 @@
+ # platform = multi_platform_rhel,multi_platform_fedora,multi_platform_ol,multi_platform_rhv,multi_platform_ubuntu,multi_platform_sle
++{{#
++   See the OVAL template for more comments.
++   Product-specific categorization should be synced across all template content types
++-#}}
+ 
+-{{% if product in ["rhel7", "ol7", "rhel9"] or 'ubuntu' in product %}}
++{{% set system_with_expanded_kernel_options_in_loader_entries = false -%}}
++{{% set system_with_referenced_kernel_options_in_loader_entries = false -%}}
++{{% set system_with_kernel_options_in_grubenv = false -%}}
++{{% set system_with_kernel_options_in_etc_default_grub = false -%}}
++{{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
++
++{{% if product in ["rhel9"] %}}
++{{% set system_with_expanded_kernel_options_in_loader_entries = true %}}
++{{% endif -%}}
++
++{{% if product in ["rhel8"] %}}
++{{% set system_with_referenced_kernel_options_in_loader_entries = true %}}
++{{% set system_with_kernel_options_in_grubenv = true %}}
++{{% endif -%}}
++
++{{% if product in ["rhel7", "ol7"] or 'ubuntu' in product %}}
++{{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
++{{% endif -%}}
++
++{{% if product in ["rhel7", "ol7", "rhel8", "ol8", "rhel9"] or 'ubuntu' in product %}}
++{{% set system_with_kernel_options_in_etc_default_grub = true %}}
++{{% endif -%}}
++
++{{% macro update_etc_default_grub(arg_name_value) %}}
++{{% if 'ubuntu' in product %}}
++update-grub
++{{% else %}}
++grubby --update-kernel=ALL --args="{{{ arg_name_value }}}"
++{{% endif %}}
++{{% endmacro -%}}
++
++{{% if system_with_kernel_options_in_etc_default_grub %}}
+ {{% if '/' in ARG_NAME %}}
+ {{{ raise("ARG_NAME (" + ARG_NAME + ") uses sed path separator (/) in " + rule_id) }}}
+ {{% elif '/' in ARG_NAME_VALUE %}}
+@@ -14,14 +49,11 @@ else
+ 	# no {{{ ARG_NAME }}}=arg is present, append it
+ 	sed -i 's/\(^GRUB_CMDLINE_LINUX=".*\)"/\1 {{{ ARG_NAME_VALUE }}}"/'  '/etc/default/grub'
+ fi
+-
+-{{% if 'ubuntu' in product %}}
+-update-grub
+-{{% else %}}
+-# Correct the form of kernel command line for each installed kernel in the bootloader
+-grubby --update-kernel=ALL --args="{{{ ARG_NAME_VALUE }}}"
+ {{% endif %}}
+-{{% else %}}
++
++{{{ update_etc_default_grub(ARG_NAME_VALUE) }}}
++
++{{% if system_with_kernel_options_in_grubenv -%}}
+ # Correct grub2 kernelopts value using grub2-editenv
+ existing_kernelopts="$(grub2-editenv - list | grep kernelopts)"
+ if ! printf '%s' "$existing_kernelopts" | grep -qE '^kernelopts=(.*\s)?{{{ ARG_NAME_VALUE }}}(\s.*)?$'; then
+diff --git a/shared/templates/grub2_bootloader_argument/oval.template b/shared/templates/grub2_bootloader_argument/oval.template
+index 3ea8acb2910..24258a3bcbd 100644
+--- a/shared/templates/grub2_bootloader_argument/oval.template
++++ b/shared/templates/grub2_bootloader_argument/oval.template
+@@ -1,15 +1,53 @@
++{{#-
++  We set defaults to "off", and products should enable relevant ones depending on how the product configures grub.
++   - /boot/loader/entries/* may not exist don't exist
++   - If they exist, they can reference variables defined in grubenv, or they can contain literal args
++   - The grub cfg may either use those loader entries, or it can contain literal values as well
++   - Kernel opts can be stored in /etc/default/grub so they are persistent between kernel upgrades
++-#}}
++{{% set system_with_expanded_kernel_options_in_loader_entries = false -%}}
++{{% set system_with_referenced_kernel_options_in_loader_entries = false -%}}
++{{% set system_with_kernel_options_in_grubenv = false -%}}
++{{% set system_with_kernel_options_in_etc_default_grub = false -%}}
++{{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
++
++{{% if product in ["rhel9"] -%}}
++{{% set system_with_expanded_kernel_options_in_loader_entries = true %}}
++{{%- endif -%}}
++
++{{% if product in ["rhel8"] -%}}
++{{% set system_with_referenced_kernel_options_in_loader_entries = true %}}
++{{% set system_with_kernel_options_in_grubenv = true %}}
++{{%- endif -%}}
++
++{{% if product in ["rhel7", "ol7"] or 'ubuntu' in product -%}}
++{{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
++{{%- endif -%}}
++
++{{%- if product in ["rhel7", "ol7", "rhel8", "ol8", "rhel9"] or 'ubuntu' in product %}}
++{{% set system_with_kernel_options_in_etc_default_grub = true %}}
++{{%- endif -%}}
++
+ <def-group>
+   <definition class="compliance" id="{{{ _RULE_ID }}}" version="2">
+     {{{ oval_metadata("Ensure " + ARG_NAME_VALUE + " is configured in the kernel line in /etc/default/grub.") }}}
+     <criteria operator="AND">
+-      {{% if product in ["rhel7", "ol7", "rhel9"] or 'ubuntu' in product %}}
+-        {{% if product in ['rhel9'] %}}
++      {{% if system_with_kernel_options_in_grubenv -%}}
++        <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
++        comment="Check if {{{ ARG_NAME_VALUE }}} is present in the GRUB2 environment variable block in {{{ grub2_boot_path }}}/grubenv" />
++      {{%- endif %}}
++      {{% if system_with_referenced_kernel_options_in_loader_entries -%}}
++        <extend_definition comment="check kernel command line parameters for referenced boot entries reference the $kernelopts variable" definition_ref="grub2_entries_reference_kernelopts" />
++      {{%- endif %}}
++      {{% if system_with_expanded_kernel_options_in_loader_entries -%}}
+           <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_entries"
+                      comment="Check if {{{ ARG_NAME_VALUE }}} is present in the boot parameters in the /boot/loader/entries/*.conf" />
+-        {{% else %}}
++      {{%- endif %}}
++      {{% if system_with_expanded_kernel_options_in_grub_cfg -%}}
+           <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_cfg"
+           comment="Check if {{{ ARG_NAME_VALUE }}} is present in the boot parameters in the {{{ grub2_boot_path }}}/grub.cfg for all kernels" />
+-        {{% endif %}}
++      {{%- endif %}}
++      {{% if system_with_kernel_options_in_etc_default_grub -%}}
+         <criteria operator="OR">
+           <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument"
+           comment="check for {{{ ARG_NAME_VALUE }}} in /etc/default/grub via GRUB_CMDLINE_LINUX" />
+@@ -20,14 +58,11 @@
+             comment="Check GRUB_DISABLE_RECOVERY=true in /etc/default/grub" />
+           </criteria>
+         </criteria>
+-      {{% else %}}
+-        <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
+-        comment="Check if {{{ ARG_NAME_VALUE }}} is present in the GRUB2 environment variable block in {{{ grub2_boot_path }}}/grubenv" />
+-      {{% endif %}}
++      {{%- endif %}}
+     </criteria>
+   </definition>
+ 
+-{{% if product in ["rhel7", "ol7", "rhel9"] or 'ubuntu' in product %}}
++{{%- if system_with_kernel_options_in_etc_default_grub %}}
+   <ind:textfilecontent54_test id="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument"
+   comment="check for {{{ ARG_NAME_VALUE }}} in /etc/default/grub via GRUB_CMDLINE_LINUX"
+   check="all" check_existence="all_exist" version="1">
+@@ -54,8 +89,25 @@
+     <ind:pattern operation="pattern match">^\s*GRUB_CMDLINE_LINUX_DEFAULT="(.*)"$</ind:pattern>
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+   </ind:textfilecontent54_object>
++{{%- endif %}}
++
++{{%- if system_with_kernel_options_in_grubenv %}}
++  <ind:textfilecontent54_test id="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
++  comment="check for kernel command line parameters {{{ ARG_NAME_VALUE }}} in {{{ grub2_boot_path }}}/grubenv for all kernels"
++  check="all" check_existence="all_exist" version="1">
++    <ind:object object_ref="object_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env" />
++    <ind:state state_ref="state_grub2_{{{ SANITIZED_ARG_NAME }}}_argument" />
++  </ind:textfilecontent54_test>
+ 
+-  {{% if product in ["rhel9"] %}}
++  <ind:textfilecontent54_object id="object_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
++  version="1">
++    <ind:filepath>{{{ grub2_boot_path }}}/grubenv</ind:filepath>
++    <ind:pattern operation="pattern match">^kernelopts=(.*)$</ind:pattern>
++    <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
++  </ind:textfilecontent54_object>
++{{%- endif %}}
++
++{{%- if system_with_expanded_kernel_options_in_loader_entries %}}
+     <ind:textfilecontent54_test id="test_grub2_{{{ SANITIZED_ARG_NAME }}}_entries"
+                                 comment="check kernel command line parameters for {{{ ARG_NAME_VALUE }}} for all boot entries."
+                                 check="all" check_existence="all_exist" version="1">
+@@ -69,7 +121,9 @@
+     <ind:pattern operation="pattern match">^options (.*)$</ind:pattern>
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+   </ind:textfilecontent54_object>
+-  {{% else %}}
++{{%- endif %}}
++
++{{%- if system_with_expanded_kernel_options_in_grub_cfg %}}
+   <ind:textfilecontent54_test id="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_cfg"
+   comment="check kernel command line parameters for {{{ ARG_NAME_VALUE }}} in {{{ grub2_boot_path }}}/grub.cfg for all kernels"
+   check="all" check_existence="all_exist" version="1">
+@@ -87,26 +141,7 @@
+     {{% endif %}}
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+   </ind:textfilecontent54_object>
+-
+-  {{% endif %}}
+-
+-{{% else %}}
+-
+-  <ind:textfilecontent54_test id="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
+-  comment="check forkernel command line parameters {{{ ARG_NAME_VALUE }}} in {{{ grub2_boot_path }}}/grubenv for all kernels"
+-  check="all" check_existence="all_exist" version="1">
+-    <ind:object object_ref="object_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env" />
+-    <ind:state state_ref="state_grub2_{{{ SANITIZED_ARG_NAME }}}_argument" />
+-  </ind:textfilecontent54_test>
+-
+-  <ind:textfilecontent54_object id="object_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
+-  version="1">
+-    <ind:filepath>{{{ grub2_boot_path }}}/grubenv</ind:filepath>
+-    <ind:pattern operation="pattern match">^kernelopts=(.*)$</ind:pattern>
+-    <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+-  </ind:textfilecontent54_object>
+-
+-{{% endif %}}
++{{%- endif %}}
+ 
+   <ind:textfilecontent54_state id="state_grub2_{{{ SANITIZED_ARG_NAME }}}_argument"
+   version="1">
+diff --git a/shared/templates/grub2_bootloader_argument/tests/arg_not_there_etcdefaultgrub.fail.sh b/shared/templates/grub2_bootloader_argument/tests/arg_not_there_etcdefaultgrub.fail.sh
+index a56e6d09235..a270be45952 100644
+--- a/shared/templates/grub2_bootloader_argument/tests/arg_not_there_etcdefaultgrub.fail.sh
++++ b/shared/templates/grub2_bootloader_argument/tests/arg_not_there_etcdefaultgrub.fail.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ 
+-# platform = Red Hat Enterprise Linux 7,Red Hat Enterprise Linux 9
++# platform = Red Hat Enterprise Linux 7,Red Hat Enterprise Linux 8,Red Hat Enterprise Linux 9
+ 
+ # Removes argument from kernel command line in /etc/default/grub
+ if grep -q '^GRUB_CMDLINE_LINUX=.*{{{ARG_NAME}}}=.*"'  '/etc/default/grub' ; then
+diff --git a/shared/templates/grub2_bootloader_argument/tests/arg_not_there.fail.sh b/shared/templates/grub2_bootloader_argument/tests/arg_not_there_grubenv.fail.sh
+similarity index 100%
+rename from shared/templates/grub2_bootloader_argument/tests/arg_not_there.fail.sh
+rename to shared/templates/grub2_bootloader_argument/tests/arg_not_there_grubenv.fail.sh
+
+From 0d10bf751d5e1d7f024cd7301f8b02b38c0e3b9c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mat=C4=9Bj=20T=C3=BD=C4=8D?= <matyc@redhat.com>
+Date: Wed, 9 Feb 2022 11:19:06 +0100
+Subject: [PATCH 2/5] Change the default product setting
+
+Assume that every product stores kernel opts in the /etc/default/grub
+---
+ shared/templates/grub2_bootloader_argument/ansible.template | 6 +-----
+ shared/templates/grub2_bootloader_argument/bash.template    | 6 +-----
+ shared/templates/grub2_bootloader_argument/oval.template    | 6 +-----
+ 3 files changed, 3 insertions(+), 15 deletions(-)
+
+diff --git a/shared/templates/grub2_bootloader_argument/ansible.template b/shared/templates/grub2_bootloader_argument/ansible.template
+index de970879c8f..46de9b465c2 100644
+--- a/shared/templates/grub2_bootloader_argument/ansible.template
++++ b/shared/templates/grub2_bootloader_argument/ansible.template
+@@ -11,7 +11,7 @@
+ {{% set system_with_expanded_kernel_options_in_loader_entries = false -%}}
+ {{% set system_with_referenced_kernel_options_in_loader_entries = false -%}}
+ {{% set system_with_kernel_options_in_grubenv = false -%}}
+-{{% set system_with_kernel_options_in_etc_default_grub = false -%}}
++{{% set system_with_kernel_options_in_etc_default_grub = true -%}}
+ {{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
+ 
+ {{% if product in ["rhel9"] %}}
+@@ -27,10 +27,6 @@
+ {{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
+ {{% endif -%}}
+ 
+-{{% if product in ["rhel7", "ol7", "rhel8", "ol8", "rhel9"] or 'ubuntu' in product %}}
+-{{% set system_with_kernel_options_in_etc_default_grub = true %}}
+-{{% endif -%}}
+-
+ {{% if system_with_kernel_options_in_etc_default_grub -%}}
+ - name: Check {{{ ARG_NAME }}} argument exists
+   command: grep 'GRUB_CMDLINE_LINUX.*{{{ ARG_NAME }}}=' /etc/default/grub
+diff --git a/shared/templates/grub2_bootloader_argument/bash.template b/shared/templates/grub2_bootloader_argument/bash.template
+index 817fd1fde23..b188d1e3689 100644
+--- a/shared/templates/grub2_bootloader_argument/bash.template
++++ b/shared/templates/grub2_bootloader_argument/bash.template
+@@ -7,7 +7,7 @@
+ {{% set system_with_expanded_kernel_options_in_loader_entries = false -%}}
+ {{% set system_with_referenced_kernel_options_in_loader_entries = false -%}}
+ {{% set system_with_kernel_options_in_grubenv = false -%}}
+-{{% set system_with_kernel_options_in_etc_default_grub = false -%}}
++{{% set system_with_kernel_options_in_etc_default_grub = true -%}}
+ {{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
+ 
+ {{% if product in ["rhel9"] %}}
+@@ -23,10 +23,6 @@
+ {{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
+ {{% endif -%}}
+ 
+-{{% if product in ["rhel7", "ol7", "rhel8", "ol8", "rhel9"] or 'ubuntu' in product %}}
+-{{% set system_with_kernel_options_in_etc_default_grub = true %}}
+-{{% endif -%}}
+-
+ {{% macro update_etc_default_grub(arg_name_value) %}}
+ {{% if 'ubuntu' in product %}}
+ update-grub
+diff --git a/shared/templates/grub2_bootloader_argument/oval.template b/shared/templates/grub2_bootloader_argument/oval.template
+index 24258a3bcbd..88fa7b7a3ee 100644
+--- a/shared/templates/grub2_bootloader_argument/oval.template
++++ b/shared/templates/grub2_bootloader_argument/oval.template
+@@ -8,7 +8,7 @@
+ {{% set system_with_expanded_kernel_options_in_loader_entries = false -%}}
+ {{% set system_with_referenced_kernel_options_in_loader_entries = false -%}}
+ {{% set system_with_kernel_options_in_grubenv = false -%}}
+-{{% set system_with_kernel_options_in_etc_default_grub = false -%}}
++{{% set system_with_kernel_options_in_etc_default_grub = true -%}}
+ {{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
+ 
+ {{% if product in ["rhel9"] -%}}
+@@ -24,10 +24,6 @@
+ {{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
+ {{%- endif -%}}
+ 
+-{{%- if product in ["rhel7", "ol7", "rhel8", "ol8", "rhel9"] or 'ubuntu' in product %}}
+-{{% set system_with_kernel_options_in_etc_default_grub = true %}}
+-{{%- endif -%}}
+-
+ <def-group>
+   <definition class="compliance" id="{{{ _RULE_ID }}}" version="2">
+     {{{ oval_metadata("Ensure " + ARG_NAME_VALUE + " is configured in the kernel line in /etc/default/grub.") }}}
+
+From fac0aeb351d7acab1112482d11a0be73df662496 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mat=C4=9Bj=20T=C3=BD=C4=8D?= <matyc@redhat.com>
+Date: Fri, 11 Feb 2022 14:55:53 +0100
+Subject: [PATCH 3/5] Improve the template further
+
+- Fix the $kernelopts regex - $ is not a word char.
+- Use grubby exclusively on RHEL systems and structure remediations differently than OVAL checks
+- Exclude the rescue.conf loader entry from checks, as it is not a boot entry for general use.
+---
+ .../grub2_entries_reference_kernelopts.xml    |  2 +-
+ .../ansible.template                          | 72 +------------------
+ .../grub2_bootloader_argument/bash.template   | 67 +++++------------
+ .../grub2_bootloader_argument/oval.template   |  7 +-
+ .../tests/invalid_rescue.pass.sh              |  6 ++
+ tests/test_rule_in_container.sh               |  2 +-
+ 6 files changed, 33 insertions(+), 123 deletions(-)
+ create mode 100644 shared/templates/grub2_bootloader_argument/tests/invalid_rescue.pass.sh
+
+diff --git a/shared/checks/oval/grub2_entries_reference_kernelopts.xml b/shared/checks/oval/grub2_entries_reference_kernelopts.xml
+index 1aec9fe64d2..30f3965a037 100644
+--- a/shared/checks/oval/grub2_entries_reference_kernelopts.xml
++++ b/shared/checks/oval/grub2_entries_reference_kernelopts.xml
+@@ -19,7 +19,7 @@
+   <ind:textfilecontent54_object id="object_grub2_entries_reference_kernelopts" version="1">
+     <ind:path>/boot/loader/entries/</ind:path>
+     <ind:filename operation="pattern match">^.*\.conf$</ind:filename>
+-    <ind:pattern operation="pattern match">^options .*\b\$kernelopts\b.*$</ind:pattern>
++    <ind:pattern operation="pattern match">^options(?:\s+.*)?\s+\$kernelopts\b.*$</ind:pattern>
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>                                                                             
+   </ind:textfilecontent54_object>
+ </def-group>
+diff --git a/shared/templates/grub2_bootloader_argument/ansible.template b/shared/templates/grub2_bootloader_argument/ansible.template
+index 46de9b465c2..db3b4430d4b 100644
+--- a/shared/templates/grub2_bootloader_argument/ansible.template
++++ b/shared/templates/grub2_bootloader_argument/ansible.template
+@@ -4,75 +4,5 @@
+ # complexity = medium
+ # disruption = low
+ 
+-{{#
+-   See the OVAL template for more comments.
+-   Product-specific categorization should be synced across all template content types
+--#}}
+-{{% set system_with_expanded_kernel_options_in_loader_entries = false -%}}
+-{{% set system_with_referenced_kernel_options_in_loader_entries = false -%}}
+-{{% set system_with_kernel_options_in_grubenv = false -%}}
+-{{% set system_with_kernel_options_in_etc_default_grub = true -%}}
+-{{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
+-
+-{{% if product in ["rhel9"] %}}
+-{{% set system_with_expanded_kernel_options_in_loader_entries = true %}}
+-{{% endif -%}}
+-
+-{{% if product in ["rhel8"] %}}
+-{{% set system_with_referenced_kernel_options_in_loader_entries = true %}}
+-{{% set system_with_kernel_options_in_grubenv = true %}}
+-{{% endif -%}}
+-
+-{{% if product in ["rhel7", "ol7"] or 'ubuntu' in product %}}
+-{{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
+-{{% endif -%}}
+-
+-{{% if system_with_kernel_options_in_etc_default_grub -%}}
+-- name: Check {{{ ARG_NAME }}} argument exists
+-  command: grep 'GRUB_CMDLINE_LINUX.*{{{ ARG_NAME }}}=' /etc/default/grub
+-  failed_when: False
+-  register: argcheck
+-
+-- name: Replace existing {{{ ARG_NAME }}} argument
+-  replace:
+-      path: /etc/default/grub
+-      regexp: '{{{ ARG_NAME }}}=\w+'
+-      replace: '{{{ ARG_NAME_VALUE }}}'
+-  when: argcheck.rc == 0
+-
+-- name: Add {{{ ARG_NAME }}} argument
+-  replace:
+-      path: /etc/default/grub
+-      regexp: '(GRUB_CMDLINE_LINUX=.*)"'
+-      replace: '\1 {{{ ARG_NAME_VALUE }}}"'
+-  when: argcheck.rc != 0
+-
+-- name: Update bootloader menu
++- name: Update grub defaults and the bootloader menu
+   command: /sbin/grubby --update-kernel=ALL --args="{{{ ARG_NAME_VALUE }}}"
+-
+-{{%- endif %}}
+-
+-{{% if system_with_kernel_options_in_grubenv -%}}
+-
+-- name: Get current kernel parameters
+-  ansible.builtin.shell:
+-    cmd: '/usr/bin/grub2-editenv - list | grep "kernelopts="'
+-  register: kernelopts
+-  ignore_errors: yes
+-  changed_when: False
+-
+-- name: Update the bootloader menu
+-  command: /usr/bin/grub2-editenv - set "{{ item }} {{{ ARG_NAME_VALUE }}}"
+-  with_items: "{{ kernelopts.stdout_lines | select('match', '^kernelopts.*') | list }}"
+-  when:
+-    - kernelopts.rc == 0
+-    - kernelopts.stdout_lines is defined
+-    - kernelopts.stdout_lines | length > 0
+-    - kernelopts.stdout | regex_search('^kernelopts=(?:.*\s)?{{{ ARG_NAME_VALUE }}}(?:\s.*)?$', multiline=True) is none
+-
+-- name: Update the bootloader menu when there are no entries previously set
+-  command: /usr/bin/grub2-editenv - set "kernelopts={{{ ARG_NAME_VALUE }}}"
+-  when:
+-    - kernelopts.rc != 0
+-
+-{{%- endif %}}
+diff --git a/shared/templates/grub2_bootloader_argument/bash.template b/shared/templates/grub2_bootloader_argument/bash.template
+index b188d1e3689..5f97efd498f 100644
+--- a/shared/templates/grub2_bootloader_argument/bash.template
++++ b/shared/templates/grub2_bootloader_argument/bash.template
+@@ -4,59 +4,28 @@
+    Product-specific categorization should be synced across all template content types
+ -#}}
+ 
+-{{% set system_with_expanded_kernel_options_in_loader_entries = false -%}}
+-{{% set system_with_referenced_kernel_options_in_loader_entries = false -%}}
+-{{% set system_with_kernel_options_in_grubenv = false -%}}
+-{{% set system_with_kernel_options_in_etc_default_grub = true -%}}
+-{{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
++{{% set grub_helper_executable = "grubby" -%}}
++{{% set grub_helper_args = ["--update-kernel=ALL", "--args=" ~ ARG_NAME_VALUE] -%}}
+ 
+-{{% if product in ["rhel9"] %}}
+-{{% set system_with_expanded_kernel_options_in_loader_entries = true %}}
+-{{% endif -%}}
+-
+-{{% if product in ["rhel8"] %}}
+-{{% set system_with_referenced_kernel_options_in_loader_entries = true %}}
+-{{% set system_with_kernel_options_in_grubenv = true %}}
+-{{% endif -%}}
+-
+-{{% if product in ["rhel7", "ol7"] or 'ubuntu' in product %}}
+-{{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
+-{{% endif -%}}
+-
+-{{% macro update_etc_default_grub(arg_name_value) %}}
+-{{% if 'ubuntu' in product %}}
+-update-grub
+-{{% else %}}
+-grubby --update-kernel=ALL --args="{{{ arg_name_value }}}"
+-{{% endif %}}
+-{{% endmacro -%}}
+-
+-{{% if system_with_kernel_options_in_etc_default_grub %}}
+-{{% if '/' in ARG_NAME %}}
+-{{{ raise("ARG_NAME (" + ARG_NAME + ") uses sed path separator (/) in " + rule_id) }}}
+-{{% elif '/' in ARG_NAME_VALUE %}}
+-{{{ raise("ARG_NAME_VALUE (" + ARG_NAME_VALUE + ") uses sed path separator (/) in " + rule_id) }}}
+-{{% endif %}}
++{{%- macro update_etc_default_grub_manually() -%}}
+ # Correct the form of default kernel command line in GRUB
+ if grep -q '^GRUB_CMDLINE_LINUX=.*{{{ ARG_NAME }}}=.*"'  '/etc/default/grub' ; then
+-	# modify the GRUB command-line if an {{{ ARG_NAME }}}= arg already exists
+-	sed -i 's/\(^GRUB_CMDLINE_LINUX=".*\){{{ ARG_NAME }}}=[^[:space:]]*\(.*"\)/\1 {{{ ARG_NAME_VALUE }}} \2/'  '/etc/default/grub'
++       # modify the GRUB command-line if an {{{ ARG_NAME }}}= arg already exists
++       sed -i 's/\(^GRUB_CMDLINE_LINUX=".*\){{{ ARG_NAME }}}=[^[:space:]]*\(.*"\)/\1 {{{ ARG_NAME_VALUE }}} \2/'  '/etc/default/grub'
+ else
+-	# no {{{ ARG_NAME }}}=arg is present, append it
+-	sed -i 's/\(^GRUB_CMDLINE_LINUX=".*\)"/\1 {{{ ARG_NAME_VALUE }}}"/'  '/etc/default/grub'
++       # no {{{ ARG_NAME }}}=arg is present, append it
++       sed -i 's/\(^GRUB_CMDLINE_LINUX=".*\)"/\1 {{{ ARG_NAME_VALUE }}}"/'  '/etc/default/grub'
+ fi
+-{{% endif %}}
++{{%- endmacro %}}
++
++{{% if 'ubuntu' in product %}}
++{{{ update_etc_default_grub_manually() }}}
++{{% set grub_helper_executable = "update-grub" -%}}
++{{% endif -%}}
+ 
+-{{{ update_etc_default_grub(ARG_NAME_VALUE) }}}
++{{% if product in ["rhel8", "ol8"] %}}
++{{# Suppress the None output of append -#}}
++{{{ grub_helper_args.append("--env=/boot/grub2/grubenv") or "" -}}}
++{{% endif -%}}
+ 
+-{{% if system_with_kernel_options_in_grubenv -%}}
+-# Correct grub2 kernelopts value using grub2-editenv
+-existing_kernelopts="$(grub2-editenv - list | grep kernelopts)"
+-if ! printf '%s' "$existing_kernelopts" | grep -qE '^kernelopts=(.*\s)?{{{ ARG_NAME_VALUE }}}(\s.*)?$'; then
+-  if test -n "$existing_kernelopts"; then
+-    grub2-editenv - set "$existing_kernelopts {{{ ARG_NAME_VALUE }}}"
+-  else
+-    grub2-editenv - set "kernelopts={{{ ARG_NAME_VALUE }}}"
+-  fi
+-fi
+-{{% endif %}}
++{{{ grub_helper_executable }}} {{{ " ".join(grub_helper_args) }}}
+diff --git a/shared/templates/grub2_bootloader_argument/oval.template b/shared/templates/grub2_bootloader_argument/oval.template
+index 88fa7b7a3ee..6981cc14045 100644
+--- a/shared/templates/grub2_bootloader_argument/oval.template
++++ b/shared/templates/grub2_bootloader_argument/oval.template
+@@ -1,6 +1,6 @@
+ {{#-
+   We set defaults to "off", and products should enable relevant ones depending on how the product configures grub.
+-   - /boot/loader/entries/* may not exist don't exist
++   - /boot/loader/entries/* may not exist.
+    - If they exist, they can reference variables defined in grubenv, or they can contain literal args
+    - The grub cfg may either use those loader entries, or it can contain literal values as well
+    - Kernel opts can be stored in /etc/default/grub so they are persistent between kernel upgrades
+@@ -116,7 +116,12 @@
+     <ind:filename operation="pattern match">^.*\.conf$</ind:filename>
+     <ind:pattern operation="pattern match">^options (.*)$</ind:pattern>
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
++    <filter action="exclude">state_grub2_rescue_entry_for_{{{ _RULE_ID }}}</filter>
+   </ind:textfilecontent54_object>
++
++  <ind:textfilecontent54_state id="state_grub2_rescue_entry_for_{{{ _RULE_ID }}}" version="1">
++    <ind:filename>rescue.conf</ind:filename>
++  </ind:textfilecontent54_state>
+ {{%- endif %}}
+ 
+ {{%- if system_with_expanded_kernel_options_in_grub_cfg %}}
+diff --git a/shared/templates/grub2_bootloader_argument/tests/invalid_rescue.pass.sh b/shared/templates/grub2_bootloader_argument/tests/invalid_rescue.pass.sh
+new file mode 100644
+index 00000000000..ee6e2c67f34
+--- /dev/null
++++ b/shared/templates/grub2_bootloader_argument/tests/invalid_rescue.pass.sh
+@@ -0,0 +1,6 @@
++# platform = Red Hat Enterprise Linux 7,Red Hat Enterprise Linux 9
++# packages = grub2,grubby
++
++{{{ grub2_bootloader_argument_remediation(ARG_NAME, ARG_NAME_VALUE) }}}
++
++echo "I am an invalid boot entry, but nobody should care, because I am rescue" > /boot/loader/entries/trololol-rescue.conf
+diff --git a/tests/test_rule_in_container.sh b/tests/test_rule_in_container.sh
+index 395fc4e856c..a8691ca7463 100755
+--- a/tests/test_rule_in_container.sh
++++ b/tests/test_rule_in_container.sh
+@@ -221,7 +221,7 @@ additional_args=()
+ test "$_arg_dontclean" = on && additional_args+=(--dontclean)
+ 
+ # Don't act on the default value.
+-test -n "$_arg_scenarios" && additional_args+=(--scenario "'$_arg_scenarios'")
++test -n "$_arg_scenarios" && additional_args+=(--scenario "$_arg_scenarios")
+ 
+ test -n "$_arg_datastream" && additional_args+=(--datastream "$_arg_datastream")
+ 
+
+From 8dda6030dea885c7c7e7e8f1024f5f2edf5bc36c Mon Sep 17 00:00:00 2001
+From: Matej Tyc <matyc@redhat.com>
+Date: Mon, 14 Feb 2022 13:45:09 +0100
+Subject: [PATCH 4/5] Add support for checks of both BIOS/UEFI systems
+
+---
+ .../grub2_bootloader_argument/oval.template   | 57 +++++++++++++++----
+ 1 file changed, 46 insertions(+), 11 deletions(-)
+
+diff --git a/shared/templates/grub2_bootloader_argument/oval.template b/shared/templates/grub2_bootloader_argument/oval.template
+index 6981cc14045..71367465663 100644
+--- a/shared/templates/grub2_bootloader_argument/oval.template
++++ b/shared/templates/grub2_bootloader_argument/oval.template
+@@ -10,6 +10,7 @@
+ {{% set system_with_kernel_options_in_grubenv = false -%}}
+ {{% set system_with_kernel_options_in_etc_default_grub = true -%}}
+ {{% set system_with_expanded_kernel_options_in_grub_cfg = false -%}}
++{{% set system_with_bios_and_uefi_support = false -%}}
+ 
+ {{% if product in ["rhel9"] -%}}
+ {{% set system_with_expanded_kernel_options_in_loader_entries = true %}}
+@@ -24,13 +25,25 @@
+ {{% set system_with_expanded_kernel_options_in_grub_cfg = true %}}
+ {{%- endif -%}}
+ 
++{{% if grub2_uefi_boot_path and grub2_uefi_boot_path != grub2_boot_path -%}}
++{{% set system_with_bios_and_uefi_support = true %}}
++{{%- endif -%}}
++
+ <def-group>
+   <definition class="compliance" id="{{{ _RULE_ID }}}" version="2">
+     {{{ oval_metadata("Ensure " + ARG_NAME_VALUE + " is configured in the kernel line in /etc/default/grub.") }}}
+     <criteria operator="AND">
+       {{% if system_with_kernel_options_in_grubenv -%}}
++      {{% if system_with_bios_and_uefi_support -%}}
++      <criteria operator="OR">
++      {{%- endif %}}
+         <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
+         comment="Check if {{{ ARG_NAME_VALUE }}} is present in the GRUB2 environment variable block in {{{ grub2_boot_path }}}/grubenv" />
++      {{% if system_with_bios_and_uefi_support -%}}
++        <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env_uefi"
++        comment="Check if {{{ ARG_NAME_VALUE }}} is present in the GRUB2 environment variable block in {{{ grub2_uefi_boot_path }}}/grubenv" />
++      </criteria>
++      {{%- endif %}}
+       {{%- endif %}}
+       {{% if system_with_referenced_kernel_options_in_loader_entries -%}}
+         <extend_definition comment="check kernel command line parameters for referenced boot entries reference the $kernelopts variable" definition_ref="grub2_entries_reference_kernelopts" />
+@@ -40,8 +53,16 @@
+                      comment="Check if {{{ ARG_NAME_VALUE }}} is present in the boot parameters in the /boot/loader/entries/*.conf" />
+       {{%- endif %}}
+       {{% if system_with_expanded_kernel_options_in_grub_cfg -%}}
++          {{% if system_with_bios_and_uefi_support -%}}
++          <criteria operator="OR">
++          {{%- endif %}}
+           <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_cfg"
+           comment="Check if {{{ ARG_NAME_VALUE }}} is present in the boot parameters in the {{{ grub2_boot_path }}}/grub.cfg for all kernels" />
++          {{% if system_with_bios_and_uefi_support -%}}
++          <criterion test_ref="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_cfg_uefi"
++          comment="Check if {{{ ARG_NAME_VALUE }}} is present in the boot parameters in the {{{ grub2_uefi_boot_path }}}/grub.cfg for all kernels" />
++          </criteria>
++          {{%- endif %}}
+       {{%- endif %}}
+       {{% if system_with_kernel_options_in_etc_default_grub -%}}
+         <criteria operator="OR">
+@@ -88,19 +109,26 @@
+ {{%- endif %}}
+ 
+ {{%- if system_with_kernel_options_in_grubenv %}}
+-  <ind:textfilecontent54_test id="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
+-  comment="check for kernel command line parameters {{{ ARG_NAME_VALUE }}} in {{{ grub2_boot_path }}}/grubenv for all kernels"
++{{%- macro test_and_object_for_kernel_options_grub_env(base_name, path) %}}
++  <ind:textfilecontent54_test id="test_{{{ base_name }}}"
++  comment="check for kernel command line parameters {{{ ARG_NAME_VALUE }}} in {{{ path }}} for all kernels"
+   check="all" check_existence="all_exist" version="1">
+-    <ind:object object_ref="object_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env" />
++    <ind:object object_ref="object_{{{ base_name }}}" />
+     <ind:state state_ref="state_grub2_{{{ SANITIZED_ARG_NAME }}}_argument" />
+   </ind:textfilecontent54_test>
+ 
+-  <ind:textfilecontent54_object id="object_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_env"
++  <ind:textfilecontent54_object id="object_{{{ base_name }}}"
+   version="1">
+-    <ind:filepath>{{{ grub2_boot_path }}}/grubenv</ind:filepath>
++    <ind:filepath>{{{ path }}}</ind:filepath>
+     <ind:pattern operation="pattern match">^kernelopts=(.*)$</ind:pattern>
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+   </ind:textfilecontent54_object>
++{{%- endmacro %}}
++
++{{{ test_and_object_for_kernel_options_grub_env("grub2_" ~ SANITIZED_ARG_NAME ~ "_argument_grub_env", grub2_boot_path ~ "/grubenv") }}}
++{{% if system_with_bios_and_uefi_support -%}}
++{{{ test_and_object_for_kernel_options_grub_env("grub2_" ~ SANITIZED_ARG_NAME ~ "_argument_grub_env_uefi", grub2_uefi_boot_path ~ "/grubenv") }}}
++{{%- endif %}}
+ {{%- endif %}}
+ 
+ {{%- if system_with_expanded_kernel_options_in_loader_entries %}}
+@@ -120,21 +148,22 @@
+   </ind:textfilecontent54_object>
+ 
+   <ind:textfilecontent54_state id="state_grub2_rescue_entry_for_{{{ _RULE_ID }}}" version="1">
+-    <ind:filename>rescue.conf</ind:filename>
++    <ind:filename operation="pattern match">.*rescue.conf$</ind:filename>
+   </ind:textfilecontent54_state>
+ {{%- endif %}}
+ 
+ {{%- if system_with_expanded_kernel_options_in_grub_cfg %}}
+-  <ind:textfilecontent54_test id="test_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_cfg"
+-  comment="check kernel command line parameters for {{{ ARG_NAME_VALUE }}} in {{{ grub2_boot_path }}}/grub.cfg for all kernels"
++{{%- macro test_and_object_for_kernel_options_grub_cfg(base_name, path) %}}
++  <ind:textfilecontent54_test id="test_{{{ base_name }}}"
++  comment="check kernel command line parameters for {{{ ARG_NAME_VALUE }}} in {{{ path }}} for all kernels"
+   check="all" check_existence="all_exist" version="1">
+-    <ind:object object_ref="object_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_cfg" />
++    <ind:object object_ref="object_{{{ base_name }}}" />
+     <ind:state state_ref="state_grub2_{{{ SANITIZED_ARG_NAME }}}_argument" />
+   </ind:textfilecontent54_test>
+ 
+-  <ind:textfilecontent54_object id="object_grub2_{{{ SANITIZED_ARG_NAME }}}_argument_grub_cfg"
++  <ind:textfilecontent54_object id="object_{{{ base_name }}}"
+   version="1">
+-    <ind:filepath>{{{ grub2_boot_path }}}/grub.cfg</ind:filepath>
++    <ind:filepath>{{{ path }}}</ind:filepath>
+     {{% if product in ["rhel7"] or 'ubuntu' in product %}}
+       <ind:pattern operation="pattern match">^.*/vmlinuz.*(root=.*)$</ind:pattern>
+     {{% else %}}
+@@ -142,6 +171,12 @@
+     {{% endif %}}
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+   </ind:textfilecontent54_object>
++{{%- endmacro %}}
++
++{{{ test_and_object_for_kernel_options_grub_cfg("grub2_" + SANITIZED_ARG_NAME + "_argument_grub_cfg", grub2_boot_path ~ "/grub.cfg") }}}
++{{% if system_with_bios_and_uefi_support -%}}
++{{{ test_and_object_for_kernel_options_grub_cfg("grub2_" + SANITIZED_ARG_NAME + "_argument_grub_cfg_uefi", grub2_uefi_boot_path ~ "/grub.cfg") }}}
++{{%- endif %}}
+ {{%- endif %}}
+ 
+   <ind:textfilecontent54_state id="state_grub2_{{{ SANITIZED_ARG_NAME }}}_argument"
+
+From df44b5d7017328d05c0671397edcfed019a2a448 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mat=C4=9Bj=20T=C3=BD=C4=8D?= <matyc@redhat.com>
+Date: Mon, 14 Feb 2022 14:49:34 +0100
+Subject: [PATCH 5/5] Correct test scenario metadata
+
+- Grubenv doesn't relate to anything else than RHEL8
+- The grubby remediation has different behavior in corner-cases
+  that are technically unsupported, so the corresponding test scenario has been dropped.
+---
+ .../grub2_audit_argument/tests/blank_grubenv_rhel8.fail.sh      | 1 +
+ .../auditing/grub2_audit_argument/tests/correct_grubenv.pass.sh | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/linux_os/guide/system/auditing/grub2_audit_argument/tests/blank_grubenv_rhel8.fail.sh b/linux_os/guide/system/auditing/grub2_audit_argument/tests/blank_grubenv_rhel8.fail.sh
+index 5af2acc317e..956c8ac79fd 100644
+--- a/linux_os/guide/system/auditing/grub2_audit_argument/tests/blank_grubenv_rhel8.fail.sh
++++ b/linux_os/guide/system/auditing/grub2_audit_argument/tests/blank_grubenv_rhel8.fail.sh
+@@ -1,6 +1,7 @@
+ #!/bin/bash
+ 
+ # platform = Red Hat Enterprise Linux 8
++# remediation = none
+ 
+ # Removes audit argument from kernel command line in /boot/grub2/grubenv
+ file="/boot/grub2/grubenv"
+diff --git a/linux_os/guide/system/auditing/grub2_audit_argument/tests/correct_grubenv.pass.sh b/linux_os/guide/system/auditing/grub2_audit_argument/tests/correct_grubenv.pass.sh
+index 0ec9a1d6e38..9823b08dff9 100644
+--- a/linux_os/guide/system/auditing/grub2_audit_argument/tests/correct_grubenv.pass.sh
++++ b/linux_os/guide/system/auditing/grub2_audit_argument/tests/correct_grubenv.pass.sh
+@@ -1,4 +1,4 @@
+ #!/bin/bash
+-# platform = Red Hat Enterprise Linux 8,Red Hat Enterprise Linux 9
++# platform = Red Hat Enterprise Linux 8
+ 
+ grub2-editenv - set "$(grub2-editenv - list | grep kernelopts) audit=1"

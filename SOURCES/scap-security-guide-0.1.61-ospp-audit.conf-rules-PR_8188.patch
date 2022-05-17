@@ -1,0 +1,22 @@
+From 1ff5b861e51e62602386524820b4382976540f03 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Wed, 9 Feb 2022 19:26:54 +0100
+Subject: [PATCH] drop not needed rules
+
+---
+ products/rhel9/profiles/ospp.profile | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index 065681d93a7..c3f4e2d26eb 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -149,8 +149,6 @@ selections:
+     - service_auditd_enabled
+     - var_auditd_flush=incremental_async
+     - auditd_data_retention_flush
+-    - auditd_local_events
+-    - auditd_write_logs
+     - auditd_log_format
+     - auditd_freq
+     - auditd_name_format

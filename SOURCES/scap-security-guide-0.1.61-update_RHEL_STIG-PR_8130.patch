@@ -1,0 +1,685 @@
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/rule.yml
+index dac47a1c6d1..3a6167a5717 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/rule.yml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/rule.yml
+@@ -39,7 +39,7 @@ references:
+     nist: CM-5(6),CM-5(6).1
+     srg: SRG-OS-000259-GPOS-00100
+     stigid@ol8: OL08-00-010350
+-    stigid@rhel8: RHEL-08-010350
++    stigid@rhel8: RHEL-08-010351
+     stigid@sle12: SLES-12-010876
+     stigid@sle15: SLES-15-010356
+     stigid@ubuntu2004: UBTU-20-010431
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/all_dirs_ok.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/all_dirs_ok.pass.sh
+index 50fdb17bd2e..6a05a2b82ea 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/all_dirs_ok.pass.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/all_dirs_ok.pass.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle,Red Hat Enterprise Linux 8,multi_platform_fedora
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora
+ 
+ DIRS="/lib /lib64 /usr/lib /usr/lib64"
+ for dirPath in $DIRS; do
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/correct_groupowner.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/correct_groupowner.pass.sh
+new file mode 100644
+index 00000000000..6a05a2b82ea
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/correct_groupowner.pass.sh
+@@ -0,0 +1,6 @@
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora
++
++DIRS="/lib /lib64 /usr/lib /usr/lib64"
++for dirPath in $DIRS; do
++	find "$dirPath" -type d -exec chgrp root '{}' \;
++done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/incorrect_groupowner.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/incorrect_groupowner.fail.sh
+new file mode 100644
+index 00000000000..36461f5e5c3
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/incorrect_groupowner.fail.sh
+@@ -0,0 +1,6 @@
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora
++
++DIRS="/lib /lib64 /usr/lib /usr/lib64"
++for dirPath in $DIRS; do
++	mkdir -p "$dirPath/testme" && chgrp nobody "$dirPath/testme"
++done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/incorrect_groupowner_2.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/incorrect_groupowner_2.fail.sh
+new file mode 100644
+index 00000000000..3f09e3dd018
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/incorrect_groupowner_2.fail.sh
+@@ -0,0 +1,6 @@
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora
++
++DIRS="/lib /lib64 /usr/lib /usr/lib64"
++for dirPath in $DIRS; do
++	mkdir -p "$dirPath/testme/test2" && chgrp nobody "$dirPath/testme/test2"
++done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/nobody_group_owned_dir_on_lib.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/nobody_group_owned_dir_on_lib.fail.sh
+index 043ad6b2dee..36461f5e5c3 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/nobody_group_owned_dir_on_lib.fail.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_group_ownership_library_dirs/tests/nobody_group_owned_dir_on_lib.fail.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle,Red Hat Enterprise Linux 8,multi_platform_fedora
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora
+ 
+ DIRS="/lib /lib64 /usr/lib /usr/lib64"
+ for dirPath in $DIRS; do
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_binary_dirs/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_binary_dirs/rule.yml
+index e2362388678..ba923d8ac55 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_binary_dirs/rule.yml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_binary_dirs/rule.yml
+@@ -27,7 +27,7 @@ references:
+     srg: SRG-OS-000258-GPOS-00099
+     stigid@ubuntu2004: UBTU-20-010424
+ 
+-ocil_clause: 'any system exectables directories are found to not be owned by root'
++ocil_clause: 'any system executables directories are found to not be owned by root'
+ 
+ ocil: |-
+     System executables are stored in the following directories by default:
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/oval/shared.xml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/oval/shared.xml
+deleted file mode 100644
+index 28e193f827c..00000000000
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/oval/shared.xml
++++ /dev/null
+@@ -1,28 +0,0 @@
+-<def-group>
+-  <definition class="compliance" id="dir_ownership_library_dirs" version="1">
+-    {{{ oval_metadata("
+-        Checks that /lib, /lib64, /usr/lib, /usr/lib64, /lib/modules, and
+-        directories therein, are owned by root.
+-      ") }}}
+-    <criteria operator="AND">
+-      <criterion test_ref="test_dir_ownership_lib_dir" />
+-    </criteria>
+-  </definition>
+-
+-  <unix:file_test  check="all" check_existence="none_exist" comment="library directories uid root" id="test_dir_ownership_lib_dir" version="1">
+-    <unix:object object_ref="object_dir_ownership_lib_dir" />
+-  </unix:file_test>
+-
+-
+-  <unix:file_object comment="library directories" id="object_dir_ownership_lib_dir" version="1">
+-    <!-- Check that /lib, /lib64, /usr/lib, and /usr/lib64 directories belong to user with uid 0 (root) -->
+-    <unix:path operation="pattern match">^\/lib(|64)\/|^\/usr\/lib(|64)\/</unix:path>
+-    <unix:filename xsi:nil="true" />
+-    <filter action="include">state_owner_library_dirs_not_root</filter>
+-  </unix:file_object>
+-
+-  <unix:file_state id="state_owner_library_dirs_not_root" version="1">
+-    <unix:user_id datatype="int" operation="not equal">0</unix:user_id>
+-  </unix:file_state>
+-
+-</def-group>
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/rule.yml
+index d6a0beddf6e..f0781b307b3 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/rule.yml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/rule.yml
+@@ -27,6 +27,8 @@ rationale: |-
+ severity: medium
+ 
+ identifiers:
++    cce@rhel8: CCE-89021-0
++    cce@rhel9: CCE-89022-8
+     cce@sle12: CCE-83236-0
+     cce@sle15: CCE-85735-9
+ 
+@@ -34,6 +36,7 @@ references:
+     disa: CCI-001499
+     nist: CM-5(6),CM-5(6).1
+     srg: SRG-OS-000259-GPOS-00100
++    stigid@rhel8: RHEL-08-010341
+     stigid@sle12: SLES-12-010874
+     stigid@sle15: SLES-15-010354
+     stigid@ubuntu2004: UBTU-20-010429
+@@ -49,3 +52,14 @@ ocil: |-
+     For each of these directories, run the following command to find files not
+     owned by root:
+     <pre>$ sudo find -L <i>$DIR</i> ! -user root -type d -exec chown root {} \;</pre>
++
++template:
++    name: file_owner
++    vars:
++        filepath:
++            - /lib/
++            - /lib64/
++            - /usr/lib/
++            - /usr/lib64/
++        recursive: 'true'
++        fileuid: '0'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/all_dirs_ok.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/correct_owner.pass.sh
+similarity index 69%
+rename from linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/all_dirs_ok.pass.sh
+rename to linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/correct_owner.pass.sh
+index 01891664f64..a0d4990582e 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/all_dirs_ok.pass.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/correct_owner.pass.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle
++# platform = multi_platform_sle,multi_platform_rhel
+ DIRS="/lib /lib64 /usr/lib /usr/lib64"
+ for dirPath in $DIRS; do
+ 	find "$dirPath" -type d -exec chown root '{}' \;
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/nobody_owned_dir_on_lib.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/incorrect_owner.fail.sh
+similarity index 63%
+rename from linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/nobody_owned_dir_on_lib.fail.sh
+rename to linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/incorrect_owner.fail.sh
+index 59b8a1867eb..f366c2d7922 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/nobody_owned_dir_on_lib.fail.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_library_dirs/tests/incorrect_owner.fail.sh
+@@ -1,4 +1,5 @@
+-# platform = multi_platform_sle
++# platform = multi_platform_sle,multi_platform_rhel
++groupadd nogroup
+ DIRS="/lib /lib64"
+ for dirPath in $DIRS; do
+ 	mkdir -p "$dirPath/testme" && chown nobody:nogroup "$dirPath/testme"
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/oval/shared.xml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/oval/shared.xml
+index a0e4e24b4f4..add26b2e778 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/oval/shared.xml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/oval/shared.xml
+@@ -1,8 +1,8 @@
+ <def-group>
+   <definition class="compliance" id="dir_permissions_library_dirs" version="1">
+     {{{ oval_metadata("
+-        Checks that /lib, /lib64, /usr/lib, /usr/lib64, /lib/modules, and
+-        objects therein, are not group-writable or world-writable.
++        Checks that the directories /lib, /lib64, /usr/lib and /usr/lib64
++        are not group-writable or world-writable.
+       ") }}}
+     <criteria operator="AND">
+       <criterion test_ref="dir_test_perms_lib_dir" />
+@@ -19,7 +19,7 @@
+     <unix:path operation="pattern match">^\/lib(|64)|^\/usr\/lib(|64)</unix:path>
+     <unix:filename xsi:nil="true" />
+     <filter action="include">dir_state_perms_nogroupwrite_noworldwrite</filter>
+-    <filter action="exclude">dir_perms_state_symlink</filter>
++    <filter action="exclude">dir_perms_state_nogroupwrite_noworldwrite_symlink</filter>
+   </unix:file_object>
+ 
+   <unix:file_state id="dir_state_perms_nogroupwrite_noworldwrite" version="1" operator="OR">
+@@ -27,7 +27,7 @@
+     <unix:owrite datatype="boolean">true</unix:owrite>
+   </unix:file_state>
+ 
+-  <unix:file_state id="dir_perms_state_symlink" version="1">
++  <unix:file_state id="dir_perms_state_nogroupwrite_noworldwrite_symlink" version="1">
+     <unix:type operation="equals">symbolic link</unix:type>
+   </unix:file_state>
+ 
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/rule.yml
+index db89a5e47a1..6e62e8c6bbf 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/rule.yml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/rule.yml
+@@ -60,3 +60,14 @@ ocil: |-
+     To find shared libraries that are group-writable or world-writable,
+     run the following command for each directory <i>DIR</i> which contains shared libraries:
+     <pre>$ sudo find -L <i>DIR</i> -perm /022 -type d</pre>
++
++template:
++    name: file_permissions
++    vars:
++        filepath:
++            - /lib/
++            - /lib64/
++            - /usr/lib/
++            - /usr/lib64/
++        recursive: 'true'
++        filemode: '0755'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_groupownership_system_commands_dirs/ansible/shared.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_groupownership_system_commands_dirs/ansible/shared.yml
+index 6b3a2905068..eec7485f90c 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_groupownership_system_commands_dirs/ansible/shared.yml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_groupownership_system_commands_dirs/ansible/shared.yml
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle,Oracle Linux 8,Red Hat Enterprise Linux 8,multi_platform_fedora
++# platform = multi_platform_sle,Oracle Linux 8,multi_platform_rhel,multi_platform_fedora
+ # reboot = false
+ # strategy = restrict
+ # complexity = medium
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_groupownership_system_commands_dirs/bash/shared.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_groupownership_system_commands_dirs/bash/shared.sh
+index a9e8c7d8e25..e352dd34a67 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_groupownership_system_commands_dirs/bash/shared.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_groupownership_system_commands_dirs/bash/shared.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle,Oracle Linux 8,Red Hat Enterprise Linux 8,multi_platform_fedora,multi_platform_ubuntu
++# platform = multi_platform_sle,Oracle Linux 8,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
+ 
+ for SYSCMDFILES in /bin /sbin /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin
+ do
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/ansible/shared.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/ansible/shared.yml
+deleted file mode 100644
+index de81a3703b4..00000000000
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/ansible/shared.yml
++++ /dev/null
+@@ -1,18 +0,0 @@
+-# platform = Red Hat Virtualization 4,multi_platform_fedora,multi_platform_rhel,multi_platform_ol,multi_platform_sle
+-# reboot = false
+-# strategy = restrict
+-# complexity = medium
+-# disruption = medium
+-- name: "Read list libraries without root ownership"
+-  command: "find -L /usr/lib /usr/lib64 /lib /lib64 \\! -user root"
+-  register: libraries_not_owned_by_root
+-  changed_when: False
+-  failed_when: False
+-  check_mode: no
+-
+-- name: "Set ownership of system libraries to root"
+-  file:
+-    path: "{{ item }}"
+-    owner: "root"
+-  with_items: "{{ libraries_not_owned_by_root.stdout_lines }}"
+-  when: libraries_not_owned_by_root | length > 0
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/bash/shared.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/bash/shared.sh
+deleted file mode 100644
+index c75167d2fe7..00000000000
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/bash/shared.sh
++++ /dev/null
+@@ -1,8 +0,0 @@
+-# platform = Red Hat Virtualization 4,multi_platform_fedora,multi_platform_rhel,multi_platform_ol,multi_platform_sle
+-for LIBDIR in /usr/lib /usr/lib64 /lib /lib64
+-do
+-  if [ -d $LIBDIR ]
+-  then
+-    find -L $LIBDIR \! -user root -exec chown root {} \; 
+-  fi
+-done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/oval/shared.xml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/oval/shared.xml
+deleted file mode 100644
+index 59ee3d82a21..00000000000
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/oval/shared.xml
++++ /dev/null
+@@ -1,39 +0,0 @@
+-<def-group>
+-  <definition class="compliance" id="file_ownership_library_dirs" version="1">
+-    {{{ oval_metadata("
+-        Checks that /lib, /lib64, /usr/lib, /usr/lib64, /lib/modules, and
+-        objects therein, are owned by root.
+-      ") }}}
+-    <criteria operator="AND">
+-      <criterion test_ref="test_ownership_lib_dir" />
+-      <criterion test_ref="test_ownership_lib_files" />
+-    </criteria>
+-  </definition>
+-
+-  <unix:file_test  check="all" check_existence="none_exist" comment="library directories uid root" id="test_ownership_lib_dir" version="1">
+-    <unix:object object_ref="object_file_ownership_lib_dir" />
+-  </unix:file_test>
+-
+-  <unix:file_test  check="all" check_existence="none_exist" comment="library files uid root" id="test_ownership_lib_files" version="1">
+-    <unix:object object_ref="object_file_ownership_lib_files" />
+-  </unix:file_test>
+-
+-  <unix:file_object comment="library directories" id="object_file_ownership_lib_dir" version="1">
+-    <!-- Check that /lib, /lib64, /usr/lib, and /usr/lib64 directories belong to user with uid 0 (root) -->
+-    <unix:path operation="pattern match">^\/lib(|64)\/|^\/usr\/lib(|64)\/</unix:path>
+-    <unix:filename xsi:nil="true" />
+-    <filter action="include">state_owner_libraries_not_root</filter>
+-  </unix:file_object>
+-
+-  <unix:file_object comment="library files" id="object_file_ownership_lib_files" version="1">
+-    <!-- Check that files within /lib, /lib64, /usr/lib, and /usr/lib64 directories belong to user with uid 0 (root) -->
+-    <unix:path operation="pattern match">^\/lib(|64)\/|^\/usr\/lib(|64)\/</unix:path>
+-    <unix:filename operation="pattern match">^.*$</unix:filename>
+-   <filter action="include">state_owner_libraries_not_root</filter>
+-  </unix:file_object>
+-
+-  <unix:file_state id="state_owner_libraries_not_root" version="1">
+-    <unix:user_id datatype="int" operation="not equal">0</unix:user_id>
+-  </unix:file_state>
+-
+-</def-group>
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/rule.yml
+index d80681c1e65..b6bc18e8310 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/rule.yml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/rule.yml
+@@ -60,3 +60,14 @@ ocil: |-
+     For each of these directories, run the following command to find files not
+     owned by root:
+     <pre>$ sudo find -L <i>$DIR</i> ! -user root -exec chown root {} \;</pre>
++
++template:
++    name: file_owner
++    vars:
++        filepath:
++            - /lib/
++            - /lib64/
++            - /usr/lib/
++            - /usr/lib64/
++        file_regex: ^.*$
++        fileuid: '0'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/tests/correct_owner.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/tests/correct_owner.pass.sh
+new file mode 100644
+index 00000000000..92c6a0889d4
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/tests/correct_owner.pass.sh
+@@ -0,0 +1,9 @@
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
++
++for SYSLIBDIRS in /lib /lib64 /usr/lib /usr/lib64
++do
++    if [[ -d $SYSLIBDIRS  ]]
++    then
++        find $SYSLIBDIRS ! -user root -type f -exec chown root '{}' \;
++    fi
++done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/tests/incorrect_owner.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/tests/incorrect_owner.fail.sh
+new file mode 100644
+index 00000000000..84da71f45f7
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_library_dirs/tests/incorrect_owner.fail.sh
+@@ -0,0 +1,11 @@
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
++
++useradd user_test
++for TESTFILE in /lib/test_me /lib64/test_me /usr/lib/test_me /usr/lib64/test_me
++do
++   if [[ ! -f $TESTFILE ]]
++   then
++     touch $TESTFILE
++   fi
++   chown user_test $TESTFILE
++done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/ansible/shared.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/ansible/shared.yml
+deleted file mode 100644
+index cf9eebace8b..00000000000
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/ansible/shared.yml
++++ /dev/null
+@@ -1,18 +0,0 @@
+-# platform = Red Hat Virtualization 4,multi_platform_fedora,multi_platform_rhel,multi_platform_ol,multi_platform_sle
+-# reboot = false
+-# strategy = restrict
+-# complexity = high
+-# disruption = medium
+-- name: "Read list of world and group writable files in libraries directories"
+-  command: "find /lib /lib64 /usr/lib /usr/lib64 -perm /022 -type f"
+-  register: world_writable_library_files
+-  changed_when: False
+-  failed_when: False
+-  check_mode: no
+-
+-- name: "Disable world/group writability to library files"
+-  file:
+-    path: "{{ item }}"
+-    mode: "go-w"
+-  with_items: "{{ world_writable_library_files.stdout_lines }}"
+-  when: world_writable_library_files.stdout_lines | length > 0
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/bash/shared.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/bash/shared.sh
+deleted file mode 100644
+index af04ad625d3..00000000000
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/bash/shared.sh
++++ /dev/null
+@@ -1,5 +0,0 @@
+-# platform = multi_platform_all
+-DIRS="/lib /lib64 /usr/lib /usr/lib64"
+-for dirPath in $DIRS; do
+-	find "$dirPath" -perm /022 -type f -exec chmod go-w '{}' \;
+-done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/oval/shared.xml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/oval/shared.xml
+deleted file mode 100644
+index f25c52260c4..00000000000
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/oval/shared.xml
++++ /dev/null
+@@ -1,46 +0,0 @@
+-<def-group>
+-  <definition class="compliance" id="file_permissions_library_dirs" version="1">
+-    {{{ oval_metadata("
+-        Checks that /lib, /lib64, /usr/lib, /usr/lib64, /lib/modules, and
+-        objects therein, are not group-writable or world-writable.
+-      ") }}}
+-    <criteria operator="AND">
+-      <criterion test_ref="test_perms_lib_dir" />
+-      <criterion test_ref="test_perms_lib_files" />
+-    </criteria>
+-  </definition>
+-
+-  <unix:file_test check="all" check_existence="none_exist" comment="library directories go-w" id="test_perms_lib_dir" version="1">
+-    <unix:object object_ref="object_file_permissions_lib_dir" />
+-  </unix:file_test>
+-
+-  <unix:file_test check="all" check_existence="none_exist" comment="library files go-w" id="test_perms_lib_files" version="1">
+-    <unix:object object_ref="object_file_permissions_lib_files" />
+-  </unix:file_test>
+-
+-  <unix:file_object comment="library directories" id="object_file_permissions_lib_dir" version="1">
+-    <!-- Check that /lib, /lib64, /usr/lib, /usr/lib64 directories have safe permissions (go-w) -->
+-    <unix:path operation="pattern match">^\/lib(|64)|^\/usr\/lib(|64)</unix:path>
+-    <unix:filename xsi:nil="true" />
+-    <filter action="include">state_perms_nogroupwrite_noworldwrite</filter>
+-    <filter action="exclude">perms_state_symlink</filter>
+-  </unix:file_object>
+-
+-  <unix:file_object comment="library files" id="object_file_permissions_lib_files" version="1">
+-    <!-- Check the files within /lib, /lib64, /usr/lib, /usr/lib64 directories have safe permissions (go-w) -->
+-    <unix:path operation="pattern match">^\/lib(|64)|^\/usr\/lib(|64)</unix:path>
+-    <unix:filename operation="pattern match">^.*$</unix:filename>
+-    <filter action="include">state_perms_nogroupwrite_noworldwrite</filter>
+-    <filter action="exclude">perms_state_symlink</filter>
+-  </unix:file_object>
+-
+-  <unix:file_state id="state_perms_nogroupwrite_noworldwrite" version="1" operator="OR">
+-    <unix:gwrite datatype="boolean">true</unix:gwrite>
+-    <unix:owrite datatype="boolean">true</unix:owrite>
+-  </unix:file_state>
+-
+-  <unix:file_state id="perms_state_symlink" version="1">
+-    <unix:type operation="equals">symbolic link</unix:type>
+-  </unix:file_state>
+-
+-</def-group>
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/rule.yml
+index 9a07e76929e..5a708cf78c3 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/rule.yml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/rule.yml
+@@ -61,3 +61,14 @@ ocil: |-
+     To find shared libraries that are group-writable or world-writable,
+     run the following command for each directory <i>DIR</i> which contains shared libraries:
+     <pre>$ sudo find -L <i>DIR</i> -perm /022 -type f</pre>
++
++template:
++    name: file_permissions
++    vars:
++        filepath:
++            - /lib/
++            - /lib64/
++            - /usr/lib/
++            - /usr/lib64/
++        file_regex: ^.*$
++        filemode: '0755'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/incorrect_permissions.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/lenient_permissions.fail.sh
+similarity index 100%
+rename from linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/incorrect_permissions.fail.sh
+rename to linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/lenient_permissions.fail.sh
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/rule.yml
+index eaf04c8d36c..ec135b5279c 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/rule.yml
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/rule.yml
+@@ -4,7 +4,7 @@ prodtype: fedora,ol8,rhel8,rhel9,sle12,sle15,ubuntu2004
+ 
+ title: |-
+     Verify the system-wide library files in directories
+-    "/lib", "/lib64", "/usr/lib/" and "/usr/lib64" are owned by root.
++    "/lib", "/lib64", "/usr/lib/" and "/usr/lib64" are group-owned by root.
+ 
+ description: |-
+     System-wide library files are stored in the following directories
+@@ -15,7 +15,7 @@ description: |-
+     /usr/lib64
+     </pre>
+     All system-wide shared library files should be protected from unauthorised
+-    access. If any of these files is not owned by root, correct its owner with
++    access. If any of these files is not group-owned by root, correct its group-owner with
+     the following command:
+     <pre>$ sudo chgrp root <i>FILE</i></pre>
+ 
+@@ -48,7 +48,7 @@ references:
+     stigid@sle15: SLES-15-010355
+     stigid@ubuntu2004: UBTU-20-01430
+ 
+-ocil_clause: 'system wide library files are not group owned by root'
++ocil_clause: 'system wide library files are not group-owned by root'
+ 
+ ocil: |-
+     System-wide library files are stored in the following directories:
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/correct_groupowner.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/correct_groupowner.pass.sh
+index 0e982c3b8ca..5356d3742d3 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/correct_groupowner.pass.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/correct_groupowner.pass.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle,Red Hat Enterprise Linux 8,multi_platform_fedora,multi_platform_ubuntu
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
+ 
+ for SYSLIBDIRS in /lib /lib64 /usr/lib /usr/lib64
+ do
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/incorrect_groupowner.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/incorrect_groupowner.fail.sh
+index 23a7703f57d..7352b60aa4b 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/incorrect_groupowner.fail.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/incorrect_groupowner.fail.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle,Red Hat Enterprise Linux 8,multi_platform_fedora,multi_platform_ubuntu
++# platform = multi_platform_sle,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
+ 
+ groupadd group_test
+ for TESTFILE in /lib/test_me /lib64/test_me /usr/lib/test_me /usr/lib64/test_me
+diff --git a/products/rhel8/profiles/stig.profile b/products/rhel8/profiles/stig.profile
+index ff23f83cfbf..88b3a7e3783 100644
+--- a/products/rhel8/profiles/stig.profile
++++ b/products/rhel8/profiles/stig.profile
+@@ -235,8 +235,13 @@ selections:
+     # RHEL-08-010340
+     - file_ownership_library_dirs
+ 
++    # RHEL-08-010341
++    - dir_ownership_library_dirs
++
+     # RHEL-08-010350
+     - root_permissions_syslibrary_files
++
++    # RHEL-08-010351
+     - dir_group_ownership_library_dirs
+ 
+     # RHEL-08-010360
+diff --git a/products/rhel9/profiles/stig.profile b/products/rhel9/profiles/stig.profile
+index 8cc6d132591..65465be2c07 100644
+--- a/products/rhel9/profiles/stig.profile
++++ b/products/rhel9/profiles/stig.profile
+@@ -236,8 +236,13 @@ selections:
+     # RHEL-08-010340
+     - file_ownership_library_dirs
+ 
++    # RHEL-08-010341
++    - dir_ownership_library_dirs
++
+     # RHEL-08-010350
+     - root_permissions_syslibrary_files
++
++    # RHEL-08-010351
+     - dir_group_ownership_library_dirs
+ 
+     # RHEL-08-010360
+diff --git a/shared/references/cce-redhat-avail.txt b/shared/references/cce-redhat-avail.txt
+index 8aad24b20f7..eb3f17f4f3d 100644
+--- a/shared/references/cce-redhat-avail.txt
++++ b/shared/references/cce-redhat-avail.txt
+@@ -2957,8 +2957,6 @@ CCE-89017-8
+ CCE-89018-6
+ CCE-89019-4
+ CCE-89020-2
+-CCE-89021-0
+-CCE-89022-8
+ CCE-89023-6
+ CCE-89024-4
+ CCE-89025-1
+diff --git a/shared/templates/file_groupowner/ansible.template b/shared/templates/file_groupowner/ansible.template
+index 68fc2e1e17e..0b4ab594155 100644
+--- a/shared/templates/file_groupowner/ansible.template
++++ b/shared/templates/file_groupowner/ansible.template
+@@ -12,6 +12,7 @@
+     paths: "{{{ path }}}"
+     patterns: {{{ FILE_REGEX[loop.index0] }}}
+     use_regex: yes
++    hidden: yes
+   register: files_found
+ 
+ - name: Ensure group owner on {{{ path }}} file(s) matching {{{ FILE_REGEX[loop.index0] }}}
+diff --git a/shared/templates/file_groupowner/oval.template b/shared/templates/file_groupowner/oval.template
+index fd2e5db5d93..64a494471a8 100644
+--- a/shared/templates/file_groupowner/oval.template
++++ b/shared/templates/file_groupowner/oval.template
+@@ -45,6 +45,10 @@
+     {{%- else %}}
+       <unix:filepath{{% if FILEPATH_IS_REGEX %}} operation="pattern match"{{% endif %}}>{{{ filepath }}}</unix:filepath>
+     {{%- endif %}}
++    <filter action="exclude">symlink_file_groupowner{{{ FILEID }}}_uid_{{{ FILEGID }}}</filter>
+   </unix:file_object>
+   {{% endfor %}}
++  <unix:file_state id="symlink_file_groupowner{{{ FILEID }}}_uid_{{{ FILEGID }}}" version="1">
++    <unix:type operation="equals">symbolic link</unix:type>
++  </unix:file_state>
+ </def-group>
+diff --git a/shared/templates/file_owner/ansible.template b/shared/templates/file_owner/ansible.template
+index 590c9fc6055..dba9e65a277 100644
+--- a/shared/templates/file_owner/ansible.template
++++ b/shared/templates/file_owner/ansible.template
+@@ -12,6 +12,7 @@
+     paths: "{{{ path }}}"
+     patterns: {{{ FILE_REGEX[loop.index0] }}}
+     use_regex: yes
++    hidden: yes
+   register: files_found
+ 
+ - name: Ensure group owner on {{{ path }}} file(s) matching {{{ FILE_REGEX[loop.index0] }}}
+diff --git a/shared/templates/file_owner/oval.template b/shared/templates/file_owner/oval.template
+index 105e29c81c8..777831d790d 100644
+--- a/shared/templates/file_owner/oval.template
++++ b/shared/templates/file_owner/oval.template
+@@ -44,6 +44,10 @@
+     {{%- else %}}
+       <unix:filepath{{% if FILEPATH_IS_REGEX %}} operation="pattern match"{{% endif %}}>{{{ filepath }}}</unix:filepath>
+     {{%- endif %}}
++    <filter action="exclude">symlink_file_owner{{{ FILEID }}}_uid_{{{ FILEUID }}}</filter>
+   </unix:file_object>
+   {{% endfor %}}
++  <unix:file_state id="symlink_file_owner{{{ FILEID }}}_uid_{{{ FILEUID }}}" version="1">
++    <unix:type operation="equals">symbolic link</unix:type>
++  </unix:file_state>
+ </def-group>
+diff --git a/shared/templates/file_permissions/ansible.template b/shared/templates/file_permissions/ansible.template
+index fc211bdc4c3..6d4dedcee51 100644
+--- a/shared/templates/file_permissions/ansible.template
++++ b/shared/templates/file_permissions/ansible.template
+@@ -12,6 +12,7 @@
+     paths: "{{{ path }}}"
+     patterns: {{{ FILE_REGEX[loop.index0] }}}
+     use_regex: yes
++    hidden: yes
+   register: files_found
+ 
+ - name: Set permissions for {{{ path }}} file(s)
+diff --git a/tests/data/profile_stability/rhel8/stig.profile b/tests/data/profile_stability/rhel8/stig.profile
+index b5621425b96..c5a9b6a32ad 100644
+--- a/tests/data/profile_stability/rhel8/stig.profile
++++ b/tests/data/profile_stability/rhel8/stig.profile
+@@ -181,6 +181,7 @@ selections:
+ - dconf_gnome_screensaver_idle_delay
+ - dconf_gnome_screensaver_lock_enabled
+ - dir_group_ownership_library_dirs
++- dir_ownership_library_dirs
+ - dir_permissions_library_dirs
+ - dir_perms_world_writable_root_owned
+ - dir_perms_world_writable_sticky_bits
+diff --git a/tests/data/profile_stability/rhel8/stig_gui.profile b/tests/data/profile_stability/rhel8/stig_gui.profile
+index 31221ed632c..32d195e28aa 100644
+--- a/tests/data/profile_stability/rhel8/stig_gui.profile
++++ b/tests/data/profile_stability/rhel8/stig_gui.profile
+@@ -192,6 +192,7 @@ selections:
+ - dconf_gnome_screensaver_idle_delay
+ - dconf_gnome_screensaver_lock_enabled
+ - dir_group_ownership_library_dirs
++- dir_ownership_library_dirs
+ - dir_permissions_library_dirs
+ - dir_perms_world_writable_root_owned
+ - dir_perms_world_writable_sticky_bits

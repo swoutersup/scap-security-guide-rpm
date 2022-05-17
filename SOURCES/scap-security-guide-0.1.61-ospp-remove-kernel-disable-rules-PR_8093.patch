@@ -1,0 +1,25 @@
+From e38df8801bd2c1bb1e419151f4f0fe8923287bfc Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Mon, 24 Jan 2022 10:13:13 +0100
+Subject: [PATCH] drop rules
+
+---
+ products/rhel9/profiles/ospp.profile | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index 287a28c43c5..436ea1f3a49 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -161,11 +161,8 @@ selections:
+     - auditd_name_format
+ 
+     ### Module Blacklist
+-    - kernel_module_cramfs_disabled
+     - kernel_module_bluetooth_disabled
+     - kernel_module_sctp_disabled
+-    - kernel_module_firewire-core_disabled
+-    - kernel_module_atm_disabled
+     - kernel_module_can_disabled
+     - kernel_module_tipc_disabled
+ 

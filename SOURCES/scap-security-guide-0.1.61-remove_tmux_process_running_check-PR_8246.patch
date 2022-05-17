@@ -1,0 +1,146 @@
+From 0ffb73fe67cb5773037f62895e6fdc93195f7c38 Mon Sep 17 00:00:00 2001
+From: Gabriel Becker <ggasparb@redhat.com>
+Date: Mon, 21 Feb 2022 12:55:10 +0100
+Subject: [PATCH] Remove tmux process runinng check from
+ configure_bashrc_exec_tmux.
+
+This check can cause troubles since the user must be logged to show up
+as tmux running. For example, an evaluation happening through a cron job
+wouldn't be able to make this rule work, since no terminal is being
+used.
+---
+ .../configure_bashrc_exec_tmux/oval/shared.xml     | 10 ----------
+ .../configure_bashrc_exec_tmux/rule.yml            | 14 +-------------
+ .../tests/correct_value.pass.sh                    |  1 -
+ .../tests/correct_value_d_directory.pass.sh        |  1 -
+ .../tests/duplicate_value_multiple_files.pass.sh   |  1 -
+ .../tests/tmux_not_running.fail.sh                 | 13 -------------
+ .../tests/wrong_value.fail.sh                      |  2 --
+ 7 files changed, 1 insertion(+), 41 deletions(-)
+ delete mode 100644 linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/tmux_not_running.fail.sh
+
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/oval/shared.xml b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/oval/shared.xml
+index 4cb2f9e0e04..58f91eadf66 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/oval/shared.xml
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/oval/shared.xml
+@@ -4,7 +4,6 @@
+     <criteria comment="Check exec tmux configured at the end of bashrc" operator="AND">
+       <criterion comment="check tmux is configured to exec on the last line of /etc/bashrc"
+         test_ref="test_configure_bashrc_exec_tmux" />
+-      <criterion comment="check tmux is running" test_ref="test_tmux_running"/>
+     </criteria>
+   </definition>
+   <ind:textfilecontent54_test check="all" check_existence="all_exist"
+@@ -18,13 +17,4 @@
+     <ind:pattern operation="pattern match">if \[ "\$PS1" \]; then\n\s+parent=\$\(ps -o ppid= -p \$\$\)\n\s+name=\$\(ps -o comm= -p \$parent\)\n\s+case "\$name" in sshd\|login\) exec tmux ;; esac\nfi</ind:pattern>
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+   </ind:textfilecontent54_object>
+-
+-  <unix:process58_test check="all" id="test_tmux_running" comment="is tmux running" version="1">
+-      <unix:object object_ref="obj_tmux_running"/>
+-  </unix:process58_test>
+-
+-  <unix:process58_object id="obj_tmux_running" version="1">
+-      <unix:command_line operation="pattern match">^tmux(?:|[\s]+.*)$</unix:command_line>
+-      <unix:pid datatype="int" operation="greater than">0</unix:pid>
+-  </unix:process58_object>
+ </def-group>
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/rule.yml b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/rule.yml
+index 7afc5fc5e6b..9f224748894 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/rule.yml
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/rule.yml
+@@ -8,19 +8,11 @@ description: |-
+     The <tt>tmux</tt> terminal multiplexer is used to implement
+     automatic session locking. It should be started from
+     <tt>/etc/bashrc</tt> or drop-in files within <tt>/etc/profile.d/</tt>.
+-    Additionally it must be ensured that the <tt>tmux</tt> process is running
+-    and it can be verified with the following command:
+-    <pre>ps all | grep tmux | grep -v grep</pre>
+ 
+ rationale: |-
+     Unlike <tt>bash</tt> itself, the <tt>tmux</tt> terminal multiplexer
+     provides a mechanism to lock sessions after period of inactivity.
+ 
+-warnings:
+-  - general: |-
+-        The remediation does not start the tmux process, so it must be
+-        manually started or have the system rebooted after applying the fix.
+-
+ severity: medium
+ 
+ identifiers:
+@@ -34,7 +26,7 @@ references:
+     stigid@ol8: OL08-00-020041
+     stigid@rhel8: RHEL-08-020041
+ 
+-ocil_clause: 'exec tmux is not present at the end of bashrc or tmux process is not running'
++ocil_clause: 'exec tmux is not present at the end of bashrc'
+ 
+ ocil: |-
+     To verify that tmux is configured to execute,
+@@ -46,9 +38,5 @@ ocil: |-
+       name=$(ps -o comm= -p $parent)
+       case "$name" in sshd|login) exec tmux ;; esac
+     fi</pre>
+-    To verify that the tmux process is running,
+-    run the following command:
+-    <pre>ps all | grep tmux | grep -v grep</pre>
+-    If the command does not produce output, this is a finding.
+ 
+ platform: machine
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value.pass.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value.pass.sh
+index 221c18665ef..fbc7590f27d 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value.pass.sh
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value.pass.sh
+@@ -9,4 +9,3 @@ if [ "$PS1" ]; then
+ fi
+ EOF
+ 
+-tmux new-session -s root -d
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value_d_directory.pass.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value_d_directory.pass.sh
+index 1702bb17e79..6107f86f248 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value_d_directory.pass.sh
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/correct_value_d_directory.pass.sh
+@@ -10,4 +10,3 @@ if [ "$PS1" ]; then
+ fi
+ EOF
+ 
+-tmux new-session -s root -d
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/duplicate_value_multiple_files.pass.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/duplicate_value_multiple_files.pass.sh
+index 16d4acfcb5a..c662221eca1 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/duplicate_value_multiple_files.pass.sh
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/duplicate_value_multiple_files.pass.sh
+@@ -17,4 +17,3 @@ if [ "$PS1" ]; then
+ fi
+ EOF
+ 
+-tmux new-session -s root -d
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/tmux_not_running.fail.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/tmux_not_running.fail.sh
+deleted file mode 100644
+index 6cb9d83efc5..00000000000
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/tmux_not_running.fail.sh
++++ /dev/null
+@@ -1,13 +0,0 @@
+-#!/bin/bash
+-# packages = tmux
+-# remediation = none
+-
+-cat >> /etc/bashrc <<'EOF'
+-if [ "$PS1" ]; then
+-  parent=$(ps -o ppid= -p $$)
+-  name=$(ps -o comm= -p $parent)
+-  case "$name" in sshd|login) exec tmux ;; esac
+-fi
+-EOF
+-
+-killall tmux || true
+diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/wrong_value.fail.sh b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/wrong_value.fail.sh
+index f13a8b038e4..9b461654572 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/wrong_value.fail.sh
++++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_bashrc_exec_tmux/tests/wrong_value.fail.sh
+@@ -101,5 +101,3 @@ if [ -z "$BASHRCSOURCED" ]; then
+ fi
+ # vim:ts=4:sw=4
+ EOF
+-
+-tmux new-session -s root -d

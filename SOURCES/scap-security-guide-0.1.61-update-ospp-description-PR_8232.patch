@@ -1,0 +1,57 @@
+From ca715d7c17056b6f4cfc2ed3ee2ca68b4388a729 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Wed, 16 Feb 2022 09:53:53 +0100
+Subject: [PATCH 1/2] update description of rhel9 ospp profile
+
+---
+ products/rhel9/profiles/ospp.profile | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index c3f4e2d26eb..cb19227a3bd 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -11,14 +11,12 @@ reference: https://www.niap-ccevs.org/Profile/PP.cfm
+ title: '[DRAFT] Protection Profile for General Purpose Operating Systems'
+ 
+ description: |-
+-    This profile reflects mandatory configuration controls identified in the
+-    NIAP Configuration Annex to the Protection Profile for General Purpose
+-    Operating Systems (Protection Profile Version 4.2.1).
+-
+-    This configuration profile is consistent with CNSSI-1253, which requires
+-    U.S. National Security Systems to adhere to certain configuration
+-    parameters. Accordingly, this configuration profile is suitable for
+-    use in U.S. National Security Systems.
++    This profile is part of Red Hat Enterprise Linux 9 Common Criteria Guidance
++    documentation for Target of Evaluation based on Protection Profile for
++    General Purpose Operating Systems (OSPP) version 4.2.1 and Functional
++    Package for SSH version 1.0.
++    Where appropriate, CNSSI 1253 or DoD-specific values are used for
++    configuration, based on Configuration Annex to the OSPP.
+ 
+ selections:
+ 
+
+From 11061228944b3a33a482289dfef5e6a034c39ae4 Mon Sep 17 00:00:00 2001
+From: Gabriel Becker <ggasparb@redhat.com>
+Date: Wed, 16 Feb 2022 11:32:09 +0100
+Subject: [PATCH 2/2] Add newline in the RHEL9 OSPP description
+
+To be nicely rendered in the guide and OAA.
+---
+ products/rhel9/profiles/ospp.profile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index cb19227a3bd..f25abd7e4c4 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -15,6 +15,7 @@ description: |-
+     documentation for Target of Evaluation based on Protection Profile for
+     General Purpose Operating Systems (OSPP) version 4.2.1 and Functional
+     Package for SSH version 1.0.
++
+     Where appropriate, CNSSI 1253 or DoD-specific values are used for
+     configuration, based on Configuration Annex to the OSPP.
+ 

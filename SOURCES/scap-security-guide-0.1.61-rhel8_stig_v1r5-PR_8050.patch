@@ -1,0 +1,375 @@
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/bash/shared.sh b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/bash/shared.sh
+new file mode 100644
+index 00000000000..1c151a1ec1a
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/bash/shared.sh
+@@ -0,0 +1,5 @@
++# platform = multi_platform_rhel,multi_platform_fedora,multi_platform_rhv
++
++if ! grep -q "^password.*sufficient.*pam_unix.so.*sha512" "/etc/pam.d/password-auth"; then
++	sed -i --follow-symlinks "/^password.*sufficient.*pam_unix.so/ s/$/ sha512/" "/etc/pam.d/password-auth"
++fi
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/oval/shared.xml b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/oval/shared.xml
+new file mode 100644
+index 00000000000..24fdbe4c1d4
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/oval/shared.xml
+@@ -0,0 +1,19 @@
++<def-group>
++  <definition class="compliance" id="set_password_hashing_algorithm_passwordauth" version="1">
++    {{{ oval_metadata("The password hashing algorithm should be set correctly in /etc/pam.d/password-auth.") }}}
++    <criteria operator="AND">
++      <criterion test_ref="test_pam_unix_passwordauth_sha512" />
++    </criteria>
++  </definition>
++
++  <ind:textfilecontent54_test check="all" check_existence="at_least_one_exists" comment="check /etc/pam.d/password-auth for correct settings" id="test_pam_unix_passwordauth_sha512" version="1">
++    <ind:object object_ref="object_pam_unix_passwordauth_sha512" />
++  </ind:textfilecontent54_test>
++
++  <ind:textfilecontent54_object comment="check /etc/pam.d/password-auth for correct settings" id="object_pam_unix_passwordauth_sha512" version="1">
++      <ind:filepath>/etc/pam.d/password-auth</ind:filepath>
++      <ind:pattern operation="pattern match">^[\s]*password[\s]+(?:(?:required)|(?:sufficient))[\s]+pam_unix\.so[\s]+.*sha512.*$</ind:pattern>
++    <ind:instance datatype="int">1</ind:instance>
++  </ind:textfilecontent54_object>
++
++</def-group>
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/rule.yml b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/rule.yml
+new file mode 100644
+index 00000000000..9375269161d
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/rule.yml
+@@ -0,0 +1,72 @@
++documentation_complete: true
++
++prodtype: fedora,rhel7,rhel8,rhel9,rhv4
++
++title: "Set PAM's Password Hashing Algorithm - password-auth"
++
++description: |-
++    The PAM system service can be configured to only store encrypted
++    representations of passwords. In
++    <tt>/etc/pam.d/password-auth</tt>,
++    the
++    <tt>password</tt> section of the file controls which PAM modules execute
++    during a password change. Set the <tt>pam_unix.so</tt> module in the
++    <tt>password</tt> section to include the argument <tt>sha512</tt>, as shown
++    below:
++    <br />
++    <pre>password    sufficient    pam_unix.so sha512 <i>other arguments...</i></pre>
++    <br />
++    This will help ensure when local users change their passwords, hashes for
++    the new passwords will be generated using the SHA-512 algorithm. This is
++    the default.
++
++rationale: |-
++    Passwords need to be protected at all times, and encryption is the standard
++    method for protecting passwords. If passwords are not encrypted, they can
++    be plainly read (i.e., clear text) and easily compromised. Passwords that
++    are encrypted with a weak algorithm are no more protected than if they are
++    kepy in plain text.
++    <br /><br />
++    This setting ensures user and group account administration utilities are
++    configured to store only encrypted representations of passwords.
++    Additionally, the <tt>crypt_style</tt> configuration option ensures the use
++    of a strong hashing algorithm that makes password cracking attacks more
++    difficult.
++
++severity: medium
++
++identifiers:
++    cce@rhel7: CCE-85943-9
++    cce@rhel8: CCE-85945-4
++    cce@rhel9: CCE-85946-2
++
++references:
++    anssi: BP28(R32)
++    cis-csc: 1,12,15,16,5
++    cis@rhel7: 5.4.3
++    cis@rhel8: 5.4.4
++    cjis: 5.6.2.2
++    cobit5: DSS05.04,DSS05.05,DSS05.07,DSS05.10,DSS06.03,DSS06.10
++    cui: 3.13.11
++    disa: CCI-000196
++    isa-62443-2009: 4.3.3.2.2,4.3.3.5.1,4.3.3.5.2,4.3.3.6.1,4.3.3.6.2,4.3.3.6.3,4.3.3.6.4,4.3.3.6.5,4.3.3.6.6,4.3.3.6.7,4.3.3.6.8,4.3.3.6.9,4.3.3.7.2,4.3.3.7.4
++    isa-62443-2013: 'SR 1.1,SR 1.10,SR 1.2,SR 1.3,SR 1.4,SR 1.5,SR 1.7,SR 1.8,SR 1.9,SR 2.1'
++    ism: 0418,1055,1402
++    iso27001-2013: A.18.1.4,A.7.1.1,A.9.2.1,A.9.2.2,A.9.2.3,A.9.2.4,A.9.2.6,A.9.3.1,A.9.4.2,A.9.4.3
++    nist: IA-5(c),IA-5(1)(c),CM-6(a)
++    nist-csf: PR.AC-1,PR.AC-6,PR.AC-7
++    pcidss: Req-8.2.1
++    srg: SRG-OS-000073-GPOS-00041
++    stigid@rhel7: RHEL-07-010200
++    stigid@rhel8: RHEL-08-010160
++    vmmsrg: SRG-OS-000480-VMM-002000
++
++ocil_clause: 'it does not'
++
++ocil: |-
++    Inspect the <tt>password</tt> section of <tt>/etc/pam.d/password-auth</tt>
++    and ensure that the <tt>pam_unix.so</tt> module includes the argument
++    <tt>sha512</tt>:
++    <pre>$ grep sha512 /etc/pam.d/password-auth</pre>
++
++platform: pam
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/tests/correct.pass.sh b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/tests/correct.pass.sh
+new file mode 100644
+index 00000000000..a924fe5bd97
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/tests/correct.pass.sh
+@@ -0,0 +1,5 @@
++#!/bin/bash
++
++if ! grep -q "^password.*sufficient.*pam_unix.so.*sha512" "/etc/pam.d/password-auth"; then
++	sed -i --follow-symlinks "/^password.*sufficient.*pam_unix.so/ s/$/ sha512/" "/etc/pam.d/password-auth"
++fi
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/tests/missing.fail.sh b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/tests/missing.fail.sh
+new file mode 100644
+index 00000000000..68e925a645f
+--- /dev/null
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_passwordauth/tests/missing.fail.sh
+@@ -0,0 +1,3 @@
++#!/bin/bash
++
++sed -i --follow-symlinks "/^password.*sufficient.*pam_unix.so/ s/sha512//g" "/etc/pam.d/password-auth"
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/bash/shared.sh b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/bash/shared.sh
+index 542ea521a6c..e7503feeecb 100644
+--- a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/bash/shared.sh
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/bash/shared.sh
+@@ -1,7 +1,9 @@
+-# platform = multi_platform_wrlinux,multi_platform_rhel,multi_platform_fedora,multi_platform_ol,multi_platform_rhv,multi_platform_sle
++# platform = multi_platform_wrlinux,multi_platform_rhel,multi_platform_fedora,multi_platform_ol,multi_platform_rhv
+ 
+ AUTH_FILES[0]="/etc/pam.d/system-auth"
++{{%- if product == "rhel7" %}}
+ AUTH_FILES[1]="/etc/pam.d/password-auth"
++{{%- endif %}}
+ 
+ for pamFile in "${AUTH_FILES[@]}"
+ do
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/oval/shared.xml b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/oval/shared.xml
+index d76b6f80c0c..a754a84df6c 100644
+--- a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/oval/shared.xml
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/oval/shared.xml
+@@ -3,6 +3,9 @@
+     {{{ oval_metadata("The password hashing algorithm should be set correctly in /etc/pam.d/system-auth.") }}}
+     <criteria operator="AND">
+       <criterion test_ref="test_pam_unix_sha512" />
++      {{%- if product == "rhel7" %}}
++      <extend_definition comment="check /etc/pam.d/password-auth for correct settings" definition_ref="set_password_hashing_algorithm_passwordauth" />
++      {{%- endif %}}
+     </criteria>
+   </definition>
+ 
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/rule.yml b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/rule.yml
+index 13da9dd4086..59fb48e93b5 100644
+--- a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/rule.yml
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/rule.yml
+@@ -70,7 +70,7 @@ references:
+     stigid@ol7: OL07-00-010200
+     stigid@ol8: OL08-00-010160
+     stigid@rhel7: RHEL-07-010200
+-    stigid@rhel8: RHEL-08-010160
++    stigid@rhel8: RHEL-08-010159
+     stigid@sle12: SLES-12-010230
+     stigid@sle15: SLES-15-020170
+     vmmsrg: SRG-OS-000480-VMM-002000
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/tests/correct.pass.sh b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/tests/correct.pass.sh
+index 7e481760670..fb9feec4d27 100644
+--- a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/tests/correct.pass.sh
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/tests/correct.pass.sh
+@@ -1,7 +1,9 @@
+ #!/bin/bash
+ 
+ AUTH_FILES[0]="/etc/pam.d/system-auth"
++{{%- if product == "rhel7" %}}
+ AUTH_FILES[1]="/etc/pam.d/password-auth"
++{{%- endif %}}
+ 
+ for pamFile in "${AUTH_FILES[@]}"
+ do
+diff --git a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/tests/missing.fail.sh b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/tests/missing.fail.sh
+index 09bb82dd1d7..2f35381d475 100644
+--- a/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/tests/missing.fail.sh
++++ b/linux_os/guide/system/accounts/accounts-pam/set_password_hashing_algorithm/set_password_hashing_algorithm_systemauth/tests/missing.fail.sh
+@@ -1,7 +1,9 @@
+ #!/bin/bash
+ 
+ AUTH_FILES[0]="/etc/pam.d/system-auth"
++{{%- if product == "rhel7" %}}
+ AUTH_FILES[1]="/etc/pam.d/password-auth"
++{{%- endif %}}
+ 
+ for pamFile in "${AUTH_FILES[@]}"
+ do
+diff --git a/products/rhel8/profiles/pci-dss.profile b/products/rhel8/profiles/pci-dss.profile
+index 3ada8e6fe49..4df21f4ae6e 100644
+--- a/products/rhel8/profiles/pci-dss.profile
++++ b/products/rhel8/profiles/pci-dss.profile
+@@ -126,6 +126,7 @@ selections:
+     - service_pcscd_enabled
+     - sssd_enable_smartcards
+     - set_password_hashing_algorithm_systemauth
++    - set_password_hashing_algorithm_passwordauth
+     - set_password_hashing_algorithm_logindefs
+     - set_password_hashing_algorithm_libuserconf
+     - file_owner_etc_shadow
+diff --git a/products/rhel8/profiles/rht-ccp.profile b/products/rhel8/profiles/rht-ccp.profile
+index 15abd98a6a5..7188062df72 100644
+--- a/products/rhel8/profiles/rht-ccp.profile
++++ b/products/rhel8/profiles/rht-ccp.profile
+@@ -54,6 +54,7 @@ selections:
+     - accounts_password_pam_difok
+     - accounts_passwords_pam_faillock_deny
+     - set_password_hashing_algorithm_systemauth
++    - set_password_hashing_algorithm_passwordauth
+     - set_password_hashing_algorithm_logindefs
+     - set_password_hashing_algorithm_libuserconf
+     - require_singleuser_auth
+diff --git a/products/rhel8/profiles/stig.profile b/products/rhel8/profiles/stig.profile
+index 04f158116ee..8d69bb48d38 100644
+--- a/products/rhel8/profiles/stig.profile
++++ b/products/rhel8/profiles/stig.profile
+@@ -149,6 +149,9 @@ selections:
+     # RHEL-08-010152
+     - require_emergency_target_auth
+ 
++    # RHEL-08-010159
++    - set_password_hashing_algorithm_passwordauth
++
+     # RHEL-08-010160
+     - set_password_hashing_algorithm_systemauth
+ 
+diff --git a/products/rhel9/profiles/pci-dss.profile b/products/rhel9/profiles/pci-dss.profile
+index beb1acda31d..1e4044f4e7e 100644
+--- a/products/rhel9/profiles/pci-dss.profile
++++ b/products/rhel9/profiles/pci-dss.profile
+@@ -123,6 +123,7 @@ selections:
+     - service_pcscd_enabled
+     - sssd_enable_smartcards
+     - set_password_hashing_algorithm_systemauth
++    - set_password_hashing_algorithm_passwordauth
+     - set_password_hashing_algorithm_logindefs
+     - set_password_hashing_algorithm_libuserconf
+     - file_owner_etc_shadow
+diff --git a/products/rhel9/profiles/stig.profile b/products/rhel9/profiles/stig.profile
+index 8f79b22e3e4..b9f557de030 100644
+--- a/products/rhel9/profiles/stig.profile
++++ b/products/rhel9/profiles/stig.profile
+@@ -150,6 +150,9 @@ selections:
+     # RHEL-08-010152
+     - require_emergency_target_auth
+ 
++    # RHEL-08-010159
++    - set_password_hashing_algorithm_passwordauth
++
+     # RHEL-08-010160
+     - set_password_hashing_algorithm_systemauth
+ 
+diff --git a/products/rhv4/profiles/pci-dss.profile b/products/rhv4/profiles/pci-dss.profile
+index c4ed0ec2d48..d00f44996d8 100644
+--- a/products/rhv4/profiles/pci-dss.profile
++++ b/products/rhv4/profiles/pci-dss.profile
+@@ -121,6 +121,7 @@ selections:
+     - service_pcscd_enabled
+     - sssd_enable_smartcards
+     - set_password_hashing_algorithm_systemauth
++    - set_password_hashing_algorithm_passwordauth
+     - set_password_hashing_algorithm_logindefs
+     - set_password_hashing_algorithm_libuserconf
+     - file_owner_etc_shadow
+diff --git a/products/rhv4/profiles/rhvh-stig.profile b/products/rhv4/profiles/rhvh-stig.profile
+index 01c2fd8cc2d..9cf416665ab 100644
+--- a/products/rhv4/profiles/rhvh-stig.profile
++++ b/products/rhv4/profiles/rhvh-stig.profile
+@@ -356,6 +356,7 @@ selections:
+     - set_password_hashing_algorithm_libuserconf
+     - set_password_hashing_algorithm_logindefs
+     - set_password_hashing_algorithm_systemauth
++    - set_password_hashing_algorithm_passwordauth
+     - package_opensc_installed
+     - var_smartcard_drivers=cac
+     - configure_opensc_card_drivers
+diff --git a/products/rhv4/profiles/rhvh-vpp.profile b/products/rhv4/profiles/rhvh-vpp.profile
+index c2b6c106937..e66fe435508 100644
+--- a/products/rhv4/profiles/rhvh-vpp.profile
++++ b/products/rhv4/profiles/rhvh-vpp.profile
+@@ -201,6 +201,7 @@ selections:
+     - accounts_password_pam_unix_remember
+     - set_password_hashing_algorithm_logindefs
+     - set_password_hashing_algorithm_systemauth
++    - set_password_hashing_algorithm_passwordauth
+     - set_password_hashing_algorithm_libuserconf
+     - no_empty_passwords
+ 
+diff --git a/shared/references/cce-redhat-avail.txt b/shared/references/cce-redhat-avail.txt
+index 3f6ec5e17c4..4aa925037b1 100644
+--- a/shared/references/cce-redhat-avail.txt
++++ b/shared/references/cce-redhat-avail.txt
+@@ -53,9 +53,6 @@ CCE-85939-7
+ CCE-85940-5
+ CCE-85941-3
+ CCE-85942-1
+-CCE-85943-9
+-CCE-85945-4
+-CCE-85946-2
+ CCE-85947-0
+ CCE-85948-8
+ CCE-85949-6
+diff --git a/tests/data/profile_stability/rhel8/pci-dss.profile b/tests/data/profile_stability/rhel8/pci-dss.profile
+index f58bcf91cf2..e235d492438 100644
+--- a/tests/data/profile_stability/rhel8/pci-dss.profile
++++ b/tests/data/profile_stability/rhel8/pci-dss.profile
+@@ -1,5 +1,9 @@
++title: PCI-DSS v3.2.1 Control Baseline for Red Hat Enterprise Linux 8
+ description: Ensures PCI-DSS v3.2.1 security configuration settings are applied.
+-documentation_complete: true
++extends: null
++metadata:
++    SMEs:
++    - yuumasato
+ reference: https://www.pcisecuritystandards.org/documents/PCI_DSS_v3-2-1.pdf
+ selections:
+ - account_disable_post_pw_expiration
+@@ -120,6 +124,7 @@ selections:
+ - service_pcscd_enabled
+ - set_password_hashing_algorithm_libuserconf
+ - set_password_hashing_algorithm_logindefs
++- set_password_hashing_algorithm_passwordauth
+ - set_password_hashing_algorithm_systemauth
+ - sshd_set_idle_timeout
+ - sshd_set_keepalive_0
+@@ -136,4 +141,8 @@ selections:
+ - var_multiple_time_servers=rhel
+ - var_sshd_set_keepalive=0
+ - var_smartcard_drivers=cac
+-title: PCI-DSS v3.2.1 Control Baseline for Red Hat Enterprise Linux 8
++platforms: !!set {}
++cpe_names: !!set {}
++platform: null
++filter_rules: ''
++documentation_complete: true
+diff --git a/tests/data/profile_stability/rhel8/stig.profile b/tests/data/profile_stability/rhel8/stig.profile
+index ed739e724f4..c5fcbf47de2 100644
+--- a/tests/data/profile_stability/rhel8/stig.profile
++++ b/tests/data/profile_stability/rhel8/stig.profile
+@@ -336,6 +337,7 @@ selections:
+ - service_systemd-coredump_disabled
+ - service_usbguard_enabled
+ - set_password_hashing_algorithm_logindefs
++- set_password_hashing_algorithm_passwordauth
+ - set_password_hashing_algorithm_systemauth
+ - sshd_disable_compression
+ - sshd_disable_empty_passwords
+diff --git a/tests/data/profile_stability/rhel8/stig_gui.profile b/tests/data/profile_stability/rhel8/stig_gui.profile
+index 56c3fcb9f59..49ec4ae41ac 100644
+--- a/tests/data/profile_stability/rhel8/stig_gui.profile
++++ b/tests/data/profile_stability/rhel8/stig_gui.profile
+@@ -347,6 +348,7 @@ selections:
+ - service_systemd-coredump_disabled
+ - service_usbguard_enabled
+ - set_password_hashing_algorithm_logindefs
++- set_password_hashing_algorithm_passwordauth
+ - set_password_hashing_algorithm_systemauth
+ - sshd_disable_compression
+ - sshd_disable_empty_passwords

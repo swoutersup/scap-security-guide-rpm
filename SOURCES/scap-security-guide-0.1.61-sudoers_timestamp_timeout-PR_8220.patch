@@ -1,0 +1,163 @@
+From 573ae69742cf372d41da6c56a3051745326055cd Mon Sep 17 00:00:00 2001
+From: Gabriel Becker <ggasparb@redhat.com>
+Date: Mon, 14 Feb 2022 15:54:37 +0100
+Subject: [PATCH] Update RHEL-08-010385 to allow only one occurrence of config.
+
+This configuration must appear at only one place so it doesn't get
+overriden by a different file that can loaded on a different order and
+the intended configuration is replaced by non-compliant value.
+---
+ .../ansible/shared.yml                        | 36 ++++++++++++++++++
+ .../bash/shared.sh                            | 38 +++++++++++++++++++
+ .../oval/shared.xml                           |  4 +-
+ .../sudo_require_reauthentication/rule.yml    | 14 +------
+ .../tests/multiple_correct_value.fail.sh      | 10 +++++
+ 5 files changed, 87 insertions(+), 15 deletions(-)
+ create mode 100644 linux_os/guide/system/software/sudo/sudo_require_reauthentication/ansible/shared.yml
+ create mode 100644 linux_os/guide/system/software/sudo/sudo_require_reauthentication/bash/shared.sh
+ create mode 100644 linux_os/guide/system/software/sudo/sudo_require_reauthentication/tests/multiple_correct_value.fail.sh
+
+diff --git a/linux_os/guide/system/software/sudo/sudo_require_reauthentication/ansible/shared.yml b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/ansible/shared.yml
+new file mode 100644
+index 00000000000..b0c67a69af9
+--- /dev/null
++++ b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/ansible/shared.yml
+@@ -0,0 +1,36 @@
++# platform = multi_platform_all
++# reboot = false
++# strategy = restrict
++# complexity = low
++# disruption = low
++
++{{{ ansible_instantiate_variables("var_sudo_timestamp_timeout") }}}
++- name: "Find out if /etc/sudoers.d/* files contain 'Defaults timestamp_timeout' to be deduplicated"
++  find:
++    path: "/etc/sudoers.d"
++    patterns: "*"
++    contains: '^[\s]*Defaults\s.*\btimestamp_timeout=.*'
++  register: sudoers_d_defaults_timestamp_timeout
++
++- name: "Remove found occurrences of 'Defaults timestamp_timeout' from /etc/sudoers.d/* files"
++  lineinfile:
++    path: "{{ item.path }}"
++    regexp: '^[\s]*Defaults\s.*\btimestamp_timeout=.*'
++    state: absent
++  with_items: "{{ sudoers_d_defaults_timestamp_timeout.files }}"
++
++- name: Ensure timestamp_timeout is enabled with the appropriate value in /etc/sudoers
++  lineinfile:
++    path: /etc/sudoers
++    regexp: '^[\s]*Defaults\s(.*)\btimestamp_timeout=[-]?\w+\b(.*)$'
++    line: 'Defaults \1timestamp_timeout={{ var_sudo_timestamp_timeout }}\2'
++    validate: /usr/sbin/visudo -cf %s
++    backrefs: yes
++  register: edit_sudoers_timestamp_timeout_option
++
++- name: Enable timestamp_timeout option with appropriate value in /etc/sudoers
++  lineinfile: # noqa 503
++    path: /etc/sudoers
++    line: 'Defaults timestamp_timeout={{ var_sudo_timestamp_timeout }}'
++    validate: /usr/sbin/visudo -cf %s
++  when: edit_sudoers_timestamp_timeout_option is defined and not edit_sudoers_timestamp_timeout_option.changed
+diff --git a/linux_os/guide/system/software/sudo/sudo_require_reauthentication/bash/shared.sh b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/bash/shared.sh
+new file mode 100644
+index 00000000000..0b623ed4a49
+--- /dev/null
++++ b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/bash/shared.sh
+@@ -0,0 +1,38 @@
++# platform = multi_platform_all
++# reboot = false
++# strategy = restrict
++# complexity = low
++# disruption = low
++
++
++{{{ bash_instantiate_variables("var_sudo_timestamp_timeout") }}}
++
++if grep -x '^[\s]*Defaults.*\btimestamp_timeout=.*' /etc/sudoers.d/*; then
++    find /etc/sudoers.d/ -type f -exec sed -i "/^[\s]*Defaults.*\btimestamp_timeout=.*/d" {} \;
++fi
++
++if /usr/sbin/visudo -qcf /etc/sudoers; then
++    cp /etc/sudoers /etc/sudoers.bak
++    if ! grep -P '^[\s]*Defaults.*\btimestamp_timeout=[-]?\w+\b\b.*$' /etc/sudoers; then
++        # sudoers file doesn't define Option timestamp_timeout
++        echo "Defaults timestamp_timeout=${var_sudo_timestamp_timeout}" >> /etc/sudoers
++    else
++        # sudoers file defines Option timestamp_timeout, remediate if appropriate value is not set
++        if ! grep -P "^[\s]*Defaults.*\btimestamp_timeout=${var_sudo_timestamp_timeout}\b.*$" /etc/sudoers; then
++            
++            sed -Ei "s/(^[\s]*Defaults.*\btimestamp_timeout=)[-]?\w+(\b.*$)/\1${var_sudo_timestamp_timeout}\2/" /etc/sudoers
++        fi
++    fi
++    
++    # Check validity of sudoers and cleanup bak
++    if /usr/sbin/visudo -qcf /etc/sudoers; then
++        rm -f /etc/sudoers.bak
++    else
++        echo "Fail to validate remediated /etc/sudoers, reverting to original file."
++        mv /etc/sudoers.bak /etc/sudoers
++        false
++    fi
++else
++    echo "Skipping remediation, /etc/sudoers failed to validate"
++    false
++fi
+diff --git a/linux_os/guide/system/software/sudo/sudo_require_reauthentication/oval/shared.xml b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/oval/shared.xml
+index 8f404ca6065..dfc319b6f1f 100644
+--- a/linux_os/guide/system/software/sudo/sudo_require_reauthentication/oval/shared.xml
++++ b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/oval/shared.xml
+@@ -6,13 +6,13 @@
+     </criteria>
+   </definition>
+ 
+-  <ind:textfilecontent54_test check="all" check_existence="all_exist" comment="check correct configuration in /etc/sudoers" id="test_sudo_timestamp_timeout" version="1">
++  <ind:textfilecontent54_test check="all" check_existence="only_one_exists" comment="check correct configuration in /etc/sudoers" id="test_sudo_timestamp_timeout" version="1">
+     <ind:object object_ref="obj_sudo_timestamp_timeout"/>
+     <ind:state state_ref="state_sudo_timestamp_timeout" />
+   </ind:textfilecontent54_test>
+ 
+   <ind:textfilecontent54_object id="obj_sudo_timestamp_timeout" version="1">
+-    <ind:filepath>/etc/sudoers</ind:filepath>
++    <ind:filepath operation="pattern match">^/etc/sudoers(\.d/.*)?$</ind:filepath>
+     <ind:pattern operation="pattern match">^[\s]*Defaults[\s]+timestamp_timeout=([-]?[\d]+)$</ind:pattern>
+     <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+   </ind:textfilecontent54_object>
+diff --git a/linux_os/guide/system/software/sudo/sudo_require_reauthentication/rule.yml b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/rule.yml
+index 42c6e28f9e6..eebb96678f1 100644
+--- a/linux_os/guide/system/software/sudo/sudo_require_reauthentication/rule.yml
++++ b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/rule.yml
+@@ -50,16 +50,4 @@ ocil: |-
+     <pre>sudo grep -ri '^Defaults.*timestamp_timeout' /etc/sudoers /etc/sudoers.d</pre>
+     The output should be:
+     <pre>/etc/sudoers:Defaults timestamp_timeout=0</pre> or "timestamp_timeout" is set to a positive number.
+-
+-template:
+-    name: sudo_defaults_option
+-    vars:
+-        option: timestamp_timeout
+-        variable_name: "var_sudo_timestamp_timeout"
+-        # optional minus char added so remediation can detect properly if item is already configured
+-        option_regex_suffix: '=[-]?\w+\b'
+-    backends:
+-        # Template is not able to accomodate this particular check.
+-        # It needs to check for an integer greater than or equal to zero
+-        oval: "off"
+-        
++    If results are returned from more than one file location, this is a finding.
+diff --git a/linux_os/guide/system/software/sudo/sudo_require_reauthentication/tests/multiple_correct_value.fail.sh b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/tests/multiple_correct_value.fail.sh
+new file mode 100644
+index 00000000000..a258d6632b5
+--- /dev/null
++++ b/linux_os/guide/system/software/sudo/sudo_require_reauthentication/tests/multiple_correct_value.fail.sh
+@@ -0,0 +1,10 @@
++#!/bin/bash
++
++
++if grep -q 'timestamp_timeout' /etc/sudoers; then
++	sed -i 's/.*timestamp_timeout.*/Defaults timestamp_timeout=3/' /etc/sudoers
++else
++	echo "Defaults timestamp_timeout=3" >> /etc/sudoers
++fi
++
++echo "Defaults timestamp_timeout=3" > /etc/sudoers.d/00-complianceascode-test.conf

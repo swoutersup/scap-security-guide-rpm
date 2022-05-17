@@ -1,0 +1,126 @@
+From 622558873703704bd97fde1874a9a782d4cb8b0e Mon Sep 17 00:00:00 2001
+From: Gabriel Becker <ggasparb@redhat.com>
+Date: Mon, 14 Feb 2022 17:51:50 +0100
+Subject: [PATCH] Introduce CPE for aarch64 and make package_rear_installed n/a
+ aarch64.
+
+This rule is not applicable for RHEL9 only.
+---
+ .../package_rear_installed/rule.yml           |  4 +++
+ shared/applicability/arch.yml                 | 12 +++++++
+ ...proc_sys_kernel_osrelease_arch_aarch64.xml | 33 +++++++++++++++++++
+ ..._sys_kernel_osrelease_arch_not_aarch64.xml | 16 +++++++++
+ ssg/constants.py                              |  2 ++
+ 5 files changed, 67 insertions(+)
+ create mode 100644 shared/checks/oval/proc_sys_kernel_osrelease_arch_aarch64.xml
+ create mode 100644 shared/checks/oval/proc_sys_kernel_osrelease_arch_not_aarch64.xml
+
+diff --git a/linux_os/guide/system/software/system-tools/package_rear_installed/rule.yml b/linux_os/guide/system/software/system-tools/package_rear_installed/rule.yml
+index 6e3c11e5749..efb591654a9 100644
+--- a/linux_os/guide/system/software/system-tools/package_rear_installed/rule.yml
++++ b/linux_os/guide/system/software/system-tools/package_rear_installed/rule.yml
+@@ -25,6 +25,10 @@ ocil: '{{{ ocil_package(package="rear") }}}'
+ # The package is not available for s309x on RHEL<8.5
+ # platform: not_s390x_arch
+ 
++{{%- if product == "rhel9" %}}
++platform: not_aarch64_arch
++{{%- endif %}}
++
+ template:
+     name: package_installed
+     vars:
+diff --git a/shared/applicability/arch.yml b/shared/applicability/arch.yml
+index d2cbd102310..9ac05317a95 100644
+--- a/shared/applicability/arch.yml
++++ b/shared/applicability/arch.yml
+@@ -12,3 +12,15 @@ cpes:
+       check_id: proc_sys_kernel_osrelease_arch_s390x
+       bash_conditional: 'grep -q s390x /proc/sys/kernel/osrelease'
+ 
++  - not_aarch64_arch:
++      name: "cpe:/a:not_aarch64_arch"
++      title: "System architecture is not AARCH64"
++      check_id: proc_sys_kernel_osrelease_arch_not_aarch64
++      bash_conditional: "! grep -q aarch64 /proc/sys/kernel/osrelease"
++
++  - aarch64_arch:
++      name: "cpe:/a:aarch64_arch"
++      title: "System architecture is AARCH64"
++      check_id: proc_sys_kernel_osrelease_arch_aarch64
++      bash_conditional: 'grep -q aarch64 /proc/sys/kernel/osrelease'
++
+diff --git a/shared/checks/oval/proc_sys_kernel_osrelease_arch_aarch64.xml b/shared/checks/oval/proc_sys_kernel_osrelease_arch_aarch64.xml
+new file mode 100644
+index 00000000000..3d54f81e6d4
+--- /dev/null
++++ b/shared/checks/oval/proc_sys_kernel_osrelease_arch_aarch64.xml
+@@ -0,0 +1,33 @@
++<def-group>
++  <definition class="inventory" id="proc_sys_kernel_osrelease_arch_aarch64"
++  version="1">
++    <metadata>
++      <title>Test that the architecture is aarch64</title>
++      <affected family="unix">
++        <platform>multi_platform_all</platform>
++      </affected>
++      <description>Check that architecture of kernel in /proc/sys/kernel/osrelease is aarch64</description>
++    </metadata>
++    <criteria>
++      <criterion comment="Architecture is aarch64"
++      test_ref="test_proc_sys_kernel_osrelease_arch_aarch64" />
++    </criteria>
++  </definition>
++  <ind:textfilecontent54_test check="all" check_existence="all_exist"
++      comment="proc_sys_kernel is for aarch64 architecture"
++      id="test_proc_sys_kernel_osrelease_arch_aarch64"
++  version="1">
++    <ind:object object_ref="object_proc_sys_kernel_osrelease_arch_aarch64" />
++    <ind:state state_ref="state_proc_sys_kernel_osrelease_arch_aarch64" />
++  </ind:textfilecontent54_test>
++
++  <ind:textfilecontent54_object id="object_proc_sys_kernel_osrelease_arch_aarch64" version="1">
++    <ind:filepath>/proc/sys/kernel/osrelease</ind:filepath>
++    <ind:pattern operation="pattern match">^.*\.(.*)$</ind:pattern>
++    <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
++  </ind:textfilecontent54_object>
++
++  <ind:textfilecontent54_state id="state_proc_sys_kernel_osrelease_arch_aarch64" version="1">
++    <ind:subexpression datatype="string" operation="pattern match">^aarch64$</ind:subexpression>
++  </ind:textfilecontent54_state>
++</def-group>
+diff --git a/shared/checks/oval/proc_sys_kernel_osrelease_arch_not_aarch64.xml b/shared/checks/oval/proc_sys_kernel_osrelease_arch_not_aarch64.xml
+new file mode 100644
+index 00000000000..3fce66ee00a
+--- /dev/null
++++ b/shared/checks/oval/proc_sys_kernel_osrelease_arch_not_aarch64.xml
+@@ -0,0 +1,16 @@
++<def-group>
++  <definition class="inventory" id="proc_sys_kernel_osrelease_arch_not_aarch64"
++  version="1">
++    <metadata>
++      <title>Test for different architecture than aarch64</title>
++      <affected family="unix">
++        <platform>multi_platform_all</platform>
++      </affected>
++      <description>Check that architecture of kernel in /proc/sys/kernel/osrelease is not aarch64</description>
++    </metadata>
++    <criteria>
++      <extend_definition comment="Architecture is not aarch64"
++      definition_ref="proc_sys_kernel_osrelease_arch_aarch64" negate="true"/>
++    </criteria>
++  </definition>
++</def-group>
+diff --git a/ssg/constants.py b/ssg/constants.py
+index 64d7d36c989..92cc2f8de34 100644
+--- a/ssg/constants.py
++++ b/ssg/constants.py
+@@ -424,6 +424,8 @@
+   "non-uefi": None,
+   "not_s390x_arch": None,
+   "s390x_arch": None,
++  "not_aarch64_arch": None,
++  "aarch64_arch": None,
+   "ovirt": None,
+   "no_ovirt": None,
+ }

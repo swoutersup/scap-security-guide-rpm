@@ -1,0 +1,43 @@
+diff --git a/linux_os/guide/system/software/integrity/crypto/configure_ssh_crypto_policy/rule.yml b/linux_os/guide/system/software/integrity/crypto/configure_ssh_crypto_policy/rule.yml
+index 395129acb66..60b0ce0eb7d 100644
+--- a/linux_os/guide/system/software/integrity/crypto/configure_ssh_crypto_policy/rule.yml
++++ b/linux_os/guide/system/software/integrity/crypto/configure_ssh_crypto_policy/rule.yml
+@@ -30,7 +30,7 @@ references:
+     nist: AC-17(a),AC-17(2),CM-6(a),MA-4(6),SC-13
+     srg: SRG-OS-000250-GPOS-00093
+     stigid@ol8: OL08-00-010020
+-    stigid@rhel8: RHEL-08-010020
++    stigid@rhel8: RHEL-08-010287
+ 
+ ocil_clause: 'the CRYPTO_POLICY variable is not set or is commented in the /etc/sysconfig/sshd'
+ 
+diff --git a/products/rhel8/profiles/stig.profile b/products/rhel8/profiles/stig.profile
+index 04f158116ee..60eafa9c566 100644
+--- a/products/rhel8/profiles/stig.profile
++++ b/products/rhel8/profiles/stig.profile
+@@ -191,9 +191,7 @@ selections:
+     # RHEL-08-010260
+     - file_groupowner_var_log
+ 
+-    # *** SHARED *** #
+-    # RHEL-08-010290 && RHEL-08-010291
+-    # *** SHARED *** #
++    # RHEL-08-010287
+     - configure_ssh_crypto_policy
+ 
+     # RHEL-08-010290
+diff --git a/products/rhel9/profiles/stig.profile b/products/rhel9/profiles/stig.profile
+index 8f79b22e3e4..9bd1a2b0f51 100644
+--- a/products/rhel9/profiles/stig.profile
++++ b/products/rhel9/profiles/stig.profile
+@@ -192,9 +192,7 @@ selections:
+     # RHEL-08-010260
+     - file_groupowner_var_log
+ 
+-    # *** SHARED *** #
+-    # RHEL-08-010290 && RHEL-08-010291
+-    # *** SHARED *** #
++    # RHEL-08-010287
+     - configure_ssh_crypto_policy
+ 
+     # RHEL-08-010290

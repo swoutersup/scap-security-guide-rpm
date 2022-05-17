@@ -1,0 +1,288 @@
+diff --git a/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/rule.yml b/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/rule.yml
+new file mode 100644
+index 00000000000..968ef336148
+--- /dev/null
++++ b/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/rule.yml
+@@ -0,0 +1,39 @@
++documentation_complete: true
++
++title: 'Audit Configuration Files Must Be Owned By Root'
++
++description: |-
++    All audit configuration files must be owned by root user.
++    {{{ describe_file_owner(file="/etc/audit/", owner="root") }}}
++    {{{ describe_file_owner(file="/etc/audit/rules.d/", owner="root") }}}
++
++rationale: |-
++    Without the capability to restrict which roles and individuals can
++    select which events are audited, unauthorized personnel may be able
++    to prevent the auditing of critical events.
++    Misconfigured audits may degrade the system's performance by
++    overwhelming the audit log. Misconfigured audits may also make it more
++    difficult to establish, correlate, and investigate the events relating
++    to an incident or identify those responsible for one.
++
++severity: medium
++
++references:
++    disa: CCI-000171
++    srg: SRG-OS-000063-GPOS-00032
++    stigid@ubuntu2004: UBTU-20-010134
++
++ocil: |-
++    {{{ describe_file_owner(file="/etc/audit/", owner="root") }}}
++    {{{ describe_file_owner(file="/etc/audit/rules.d/", owner="root") }}}
++
++template:
++    name: file_owner
++    vars:
++        filepath:
++            - /etc/audit/
++            - /etc/audit/rules.d/
++        file_regex:
++            - ^audit(\.rules|d\.conf)$
++            - ^.*\.rules$
++        fileuid: '0'
+diff --git a/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/tests/correct_owner.pass.sh b/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/tests/correct_owner.pass.sh
+new file mode 100644
+index 00000000000..4d67307a1ef
+--- /dev/null
++++ b/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/tests/correct_owner.pass.sh
+@@ -0,0 +1,6 @@
++#!/bin/bash
++# packages = audit
++
++chown 0 /etc/audit/audit.rules
++chown 0 /etc/audit/auditd.conf
++chown 0 -R /etc/audit/rules.d/
+diff --git a/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/tests/incorrect_owner.fail.sh b/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/tests/incorrect_owner.fail.sh
+new file mode 100644
+index 00000000000..337074fab92
+--- /dev/null
++++ b/linux_os/guide/system/auditing/auditd_configure_rules/file_ownership_audit_configuration/tests/incorrect_owner.fail.sh
+@@ -0,0 +1,7 @@
++#!/bin/bash
++# packages = audit
++
++useradd testuser_123
++chown testuser_123 /etc/audit/audit.rules
++chown testuser_123 /etc/audit/auditd.conf
++chown testuser_123 -R /etc/audit/rules.d/
+diff --git a/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_owner_var_log_syslog/rule.yml b/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_owner_var_log_syslog/rule.yml
+new file mode 100644
+index 00000000000..f1bf515455d
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_owner_var_log_syslog/rule.yml
+@@ -0,0 +1,27 @@
++documentation_complete: true
++
++title: 'Verify User Who Owns /var/log/syslog File'
++
++description: '{{{ describe_file_owner(file="/var/log/syslog", owner="syslog") }}}'
++
++rationale: |-
++    The <tt>/var/log/syslog</tt> file contains logs of error messages in
++    the system and should only be accessed by authorized personnel.
++
++severity: medium
++
++references:
++    disa: CCI-001314
++    srg: SRG-OS-000206-GPOS-00084
++    stigid@ubuntu2004: UBTU-20-010421
++
++ocil_clause: '{{{ ocil_clause_file_owner(file="/var/log/syslog", owner="syslog") }}}'
++
++ocil: |-
++    {{{ ocil_file_owner(file="/var/log/syslog", owner="syslog") }}}
++
++template:
++    name: file_owner
++    vars:
++        filepath: /var/log/syslog
++        fileuid: '104'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_binary_dirs/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_binary_dirs/rule.yml
+new file mode 100644
+index 00000000000..e2362388678
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_ownership_binary_dirs/rule.yml
+@@ -0,0 +1,55 @@
++documentation_complete: true
++
++title: 'Verify that System Executable Have Root Ownership'
++
++description: |-
++    <pre>/bin
++    /sbin
++    /usr/bin
++    /usr/sbin
++    /usr/local/bin
++    /usr/local/sbin</pre>
++    All these directories should be owned by the <tt>root</tt> user.
++    If any directory <i>DIR</i> in these directories is found
++    to be owned by a user other than root, correct its ownership with the
++    following command:
++    <pre>$ sudo chown root <i>DIR</i></pre>
++
++rationale: |-
++    System binaries are executed by privileged users as well as system services,
++    and restrictive permissions are necessary to ensure that their
++    execution of these programs cannot be co-opted.
++
++severity: medium
++
++references:
++    disa: CCI-001495
++    srg: SRG-OS-000258-GPOS-00099
++    stigid@ubuntu2004: UBTU-20-010424
++
++ocil_clause: 'any system exectables directories are found to not be owned by root'
++
++ocil: |-
++    System executables are stored in the following directories by default:
++    <pre>/bin
++    /sbin
++    /usr/bin
++    /usr/local/bin
++    /usr/local/sbin
++    /usr/sbin</pre>
++    For each of these directories, run the following command to find files
++    not owned by root:
++    <pre>$ sudo find -L <i>DIR/</i> ! -user root -type d -exec chown root {} \;</pre>
++
++template:
++    name: file_owner
++    vars:
++        filepath:
++            - /bin/
++            - /sbin/
++            - /usr/bin/
++            - /usr/sbin/
++            - /usr/local/bin/
++            - /usr/local/sbin/
++        recursive: 'true'
++        fileuid: '0'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_audit_binaries/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_audit_binaries/rule.yml
+new file mode 100644
+index 00000000000..0c7d9b313d5
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_ownership_audit_binaries/rule.yml
+@@ -0,0 +1,77 @@
++documentation_complete: true
++
++prodtype: ubuntu2004
++
++title: 'Verify that audit tools are owned by root'
++
++description: |-
++    The {{{ full_name }}} operating system audit tools must have the proper
++    ownership configured to protected against unauthorized access.
++
++    Verify it by running the following command:
++    <pre>$ stat -c "%n %U" /sbin/auditctl /sbin/aureport /sbin/ausearch /sbin/autrace /sbin/auditd /sbin/audispd /sbin/augenrules
++
++    /sbin/auditctl root
++    /sbin/aureport root
++    /sbin/ausearch root
++    /sbin/autrace root
++    /sbin/auditd root
++    /sbin/audispd root
++    /sbin/augenrules root
++    </pre>
++
++    Audit tools needed to successfully view and manipulate audit information
++    system activity and records. Audit tools include custom queries and report
++    generators
++
++rationale: |-
++    Protecting audit information also includes identifying and protecting the
++    tools used to view and manipulate log data. Therefore, protecting audit
++    tools is necessary to prevent unauthorized operation on audit information.
++ 
++    Operating systems providing tools to interface with audit information
++    will leverage user permissions and roles identifying the user accessing the
++    tools and the corresponding rights the user enjoys to make access decisions
++    regarding the access to audit tools.
++
++severity: medium
++
++references:
++    disa: CCI-001493,CCI-001494
++    srg: SRG-OS-000256-GPiOS-00097,SRG-OS-000257-GPOS-00098
++    stigid@ubuntu2004: UBTU-20-010200
++
++ocil: |-
++    Verify it by running the following command:
++    <pre>$ stat -c "%n %U" /sbin/auditctl /sbin/aureport /sbin/ausearch /sbin/autrace /sbin/auditd /sbin/audispd /sbin/augenrules
++
++    /sbin/auditctl root
++    /sbin/aureport root
++    /sbin/ausearch root
++    /sbin/autrace root
++    /sbin/auditd root
++    /sbin/audispd root
++    /sbin/augenrules root
++    </pre>
++
++    If the command does not return all the above lines, the missing ones
++    need to be added.
++
++    Run the following command to correct the permissions of the missing
++    entries:
++    <pre>$ sudo chown root [audit_tool] </pre>
++
++    Replace "[audit_tool]" with each audit tool not owned by root.
++
++template:
++    name: file_owner
++    vars:
++        filepath:
++            - /sbin/auditctl
++            - /sbin/aureport
++            - /sbin/ausearch
++            - /sbin/autrace
++            - /sbin/auditd
++            - /sbin/audispd
++            - /sbin/augenrules
++        fileuid: '0'
+diff --git a/shared/templates/file_owner/ansible.template b/shared/templates/file_owner/ansible.template
+index 80eaae8d50b..590c9fc6055 100644
+--- a/shared/templates/file_owner/ansible.template
++++ b/shared/templates/file_owner/ansible.template
+@@ -25,7 +25,7 @@
+ 
+ - name: Ensure owner on {{{ path }}} recursively
+   file:
+-    paths "{{{ path }}}"
++    path: "{{{ path }}}"
+     state: directory
+     recurse: yes
+     owner: "{{{ FILEUID }}}"
+diff --git a/shared/templates/file_owner/tests/missing_file_test.pass.sh b/shared/templates/file_owner/tests/missing_file_test.pass.sh
+index 938e6b30819..4e3683f9dcf 100644
+--- a/shared/templates/file_owner/tests/missing_file_test.pass.sh
++++ b/shared/templates/file_owner/tests/missing_file_test.pass.sh
+@@ -1,8 +1,18 @@
+ #!/bin/bash
+ #
+ 
+-{{% if MISSING_FILE_PASS %}}
+-    rm -f {{{ FILEPATH }}}
+-{{% else %}}
+-    true
+-{{% endif %}}
++{{% for path in FILEPATH %}}
++    {{% if MISSING_FILE_PASS %}}
++        rm -f {{{ path }}}
++    {{% else %}}
++        {{% if IS_DIRECTORY and RECURSIVE %}}
++        find -L {{{ path }}} -type d -exec chown {{{ FILEUID }}} {} \;
++        {{% else %}}
++        if [ ! -f {{{ path }}} ]; then
++            mkdir -p "$(dirname '{{{ path }}}')"
++            touch {{{ path }}}
++        fi
++        chown {{{ FILEUID }}} {{{ path }}}
++        {{% endif %}}
++    {{% endif %}}
++{{% endfor %}}

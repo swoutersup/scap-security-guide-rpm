@@ -1,0 +1,409 @@
+diff --git a/linux_os/guide/system/permissions/files/permissions_local_var_log/bash/ubuntu.sh b/linux_os/guide/system/permissions/files/permissions_local_var_log/bash/ubuntu.sh
+new file mode 100644
+index 00000000000..93fd73e6ece
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_local_var_log/bash/ubuntu.sh
+@@ -0,0 +1,14 @@
++# platform = multi_platform_ubuntu
++
++readarray -t files < <(find /var/log/)
++for file in "${files[@]}"; do
++    if basename $file | grep -qE '^.*$'; then
++        chmod 0640 $file
++    fi
++done
++
++if grep -qE "^f \/var\/log\/(btmp|wtmp|lastlog)? " /usr/lib/tmpfiles.d/var.conf; then
++    sed -i --follow-symlinks "s/\(^f[[:space:]]\+\/var\/log\/btmp[[:space:]]\+\)\(\([[:digit:]]\+\)[^ $]*\)/\10640/" /usr/lib/tmpfiles.d/var.conf
++    sed -i --follow-symlinks "s/\(^f[[:space:]]\+\/var\/log\/wtmp[[:space:]]\+\)\(\([[:digit:]]\+\)[^ $]*\)/\10640/" /usr/lib/tmpfiles.d/var.conf
++    sed -i --follow-symlinks "s/\(^f[[:space:]]\+\/var\/log\/lastlog[[:space:]]\+\)\(\([[:digit:]]\+\)[^ $]*\)/\10640/" /usr/lib/tmpfiles.d/var.conf
++fi
+diff --git a/linux_os/guide/system/permissions/files/permissions_local_var_log/oval/shared.xml b/linux_os/guide/system/permissions/files/permissions_local_var_log/oval/shared.xml
+deleted file mode 100644
+index dd95ce05936..00000000000
+--- a/linux_os/guide/system/permissions/files/permissions_local_var_log/oval/shared.xml
++++ /dev/null
+@@ -1,36 +0,0 @@
+-<def-group>
+-  <definition class="compliance" id="permissions_local_var_log" version="1">
+-    {{{ oval_metadata("
+-        Checks that files in /var/log have permission at least 0640
+-      ") }}}
+-    <criteria operator="AND">
+-      <criterion test_ref="test_mode_log_files" />
+-    </criteria>
+-  </definition>
+-
+-  <unix:file_test  check="all" check_existence="none_exist" comment="log file with less restrictive permission than 0640" id="test_mode_log_files" version="1">
+-    <unix:object object_ref="object_file_mode_log_files" />
+-  </unix:file_test>
+-
+-  <unix:file_object comment="log files" id="object_file_mode_log_files" version="1">
+-    <unix:path operation="pattern match">^\/var\/log\/</unix:path>
+-    <unix:filename operation="pattern match">^.*$</unix:filename>
+-    <filter action="include">log_files_permission_more_0640</filter>
+-    <filter action="exclude">var_log_symlinks</filter>
+-  </unix:file_object>
+-
+-  <unix:file_state id="log_files_permission_more_0640" version="1" operator="OR">
+-     <!-- if any one of these is true then mode is NOT 0640 (hence the OR operator) -->
+-    <unix:uexec datatype="boolean">true</unix:uexec>
+-    <unix:gwrite datatype="boolean">true</unix:gwrite>
+-    <unix:gexec datatype="boolean">true</unix:gexec>
+-    <unix:oread datatype="boolean">true</unix:oread>
+-    <unix:owrite datatype="boolean">true</unix:owrite>
+-    <unix:oexec datatype="boolean">true</unix:oexec>
+-  </unix:file_state>
+-
+-  <unix:file_state id="var_log_symlinks" version="1">
+-    <unix:type operation="equals">symbolic link</unix:type>
+-  </unix:file_state>
+-
+-</def-group>
+diff --git a/linux_os/guide/system/permissions/files/permissions_local_var_log/rule.yml b/linux_os/guide/system/permissions/files/permissions_local_var_log/rule.yml
+index 2b0431b7763..9ce79cfde4e 100644
+--- a/linux_os/guide/system/permissions/files/permissions_local_var_log/rule.yml
++++ b/linux_os/guide/system/permissions/files/permissions_local_var_log/rule.yml
+@@ -47,3 +47,10 @@ ocil: |-
+     <pre>
+     sudo find /var/log -perm /137 -type f -exec stat -c "%n %a" {} \;
+     </pre>
++
++template:
++    name: file_permissions
++    vars:
++        filepath: /var/log/
++        file_regex: '.*'
++        filemode: '0640'
+diff --git a/linux_os/guide/system/permissions/files/permissions_local_var_log/tests/var_logfile_correct_mode.pass.sh b/linux_os/guide/system/permissions/files/permissions_local_var_log/tests/var_logfile_correct_mode.pass.sh
+index 5317ef272b8..1793259cff5 100644
+--- a/linux_os/guide/system/permissions/files/permissions_local_var_log/tests/var_logfile_correct_mode.pass.sh
++++ b/linux_os/guide/system/permissions/files/permissions_local_var_log/tests/var_logfile_correct_mode.pass.sh
+@@ -1,5 +1,6 @@
+ #!/bin/bash
+ 
++chmod -R 640 /var/log
+ mkdir -p /var/log/testme
+ touch /var/log/testme/test.log
+ chmod 640 /var/log/testme/test.log
+diff --git a/linux_os/guide/system/permissions/files/permissions_local_var_log/tests/world_writable_dir.pass.sh b/linux_os/guide/system/permissions/files/permissions_local_var_log/tests/world_writable_dir.pass.sh
+index 83db1acf8d3..69b081473a5 100644
+--- a/linux_os/guide/system/permissions/files/permissions_local_var_log/tests/world_writable_dir.pass.sh
++++ b/linux_os/guide/system/permissions/files/permissions_local_var_log/tests/world_writable_dir.pass.sh
+@@ -1,4 +1,5 @@
+ #!/bin/bash
+ 
++chmod -R 640 /var/log/
+ mkdir -p /var/log/testme
+ chmod 777 /var/log/testme
+diff --git a/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_permissions_var_log/bash/ubuntu.sh b/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_permissions_var_log/bash/ubuntu.sh
+new file mode 100644
+index 00000000000..93962ea66a7
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_permissions_var_log/bash/ubuntu.sh
+@@ -0,0 +1,7 @@
++# platform = multi_platform_ubuntu
++
++chmod 0755 /var/log/
++
++if grep -q "^z \/var\/log " /usr/lib/tmpfiles.d/00rsyslog.conf; then
++    sed -i --follow-symlinks "s/\(^z[[:space:]]\+\/var\/log[[:space:]]\+\)\(\([[:digit:]]\+\)[^ $]*\)/\10755/" /usr/lib/tmpfiles.d/00rsyslog.conf
++fi
+diff --git a/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_permissions_var_log_syslog/rule.yml b/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_permissions_var_log_syslog/rule.yml
+new file mode 100644
+index 00000000000..73258d40fdc
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_var_log_dir/file_permissions_var_log_syslog/rule.yml
+@@ -0,0 +1,28 @@
++documentation_complete: true
++
++title: 'Verify Permissions on /var/log/syslog File'
++
++description: |-
++    {{{ describe_file_permissions(file="/var/log/syslog", perms="0640") }}}
++
++rationale: |-
++    The <tt>/var/log/syslog</tt> file contains logs of error messages in
++    the system and should only be accessed by authorized personnel.
++
++severity: medium
++
++references:
++    disa: CCI-001314
++    srg: SRG-OS-000206-GPOS-00084
++    stigid@ubuntu2004: UBTU-20-010422
++
++ocil_clause: '{{{ ocil_clause_file_permissions(file="/var/log/syslog", perms="-rw-r-----") }}}'
++
++ocil: |-
++    {{{ ocil_file_permissions(file="/var/log/syslog", perms="-rw-r-----") }}}
++
++template:
++    name: file_permissions
++    vars:
++        filepath: /var/log/syslog
++        filemode: '0640'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_binary_dirs/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_binary_dirs/rule.yml
+new file mode 100644
+index 00000000000..a666c768870
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_binary_dirs/rule.yml
+@@ -0,0 +1,57 @@
++documentation_complete: true
++
++title: 'Verify that System Executable Directories Have Restrictive Permissions'
++
++description: |-
++    System executables are stored in the following directories by default:
++    <pre>/bin
++    /sbin
++    /usr/bin
++    /usr/sbin
++    /usr/local/bin
++    /usr/local/sbin</pre>
++    These directories should not be group-writable or world-writable.
++    If any directory <i>DIR</i> in these directories is found to be
++    group-writable or world-writable, correct its permission with the
++    following command:
++    <pre>$ sudo chmod go-w <i>DIR</i></pre>
++
++rationale: |-
++    System binaries are executed by privileged users, as well as system services,
++    and restrictive permissions are necessary to ensure execution of these programs
++    cannot be co-opted.
++
++severity: medium
++
++references:
++    disa: CCI-001495
++    srg: SRG-OS-000258-GPOS-00099
++    stigid@ubuntu2004: UBTU-20-010423
++
++ocil_clause: 'any of these files are group-writable or world-writable'
++
++ocil: |-
++    System executables are stored in the following directories by default:
++    <pre>/bin
++    /sbin
++    /usr/bin
++    /usr/sbin
++    /usr/local/bin
++    /usr/local/sbin</pre>
++    To find system executables directories that are group-writable or
++    world-writable, run the following command for each directory <i>DIR</i>
++    which contains system executables:
++    <pre>$ sudo find -L <i>DIR</i> -perm /022 -type d</pre>
++
++template:
++    name: file_permissions
++    vars:
++        filepath:
++            - /bin/
++            - /sbin/
++            - /usr/bin/
++            - /usr/sbin/
++            - /usr/local/bin/
++            - /usr/local/sbin/
++        recursive: 'true'
++        filemode: '0755'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/all_dirs_ok.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/all_dirs_ok.pass.sh
+index 3f7239deef9..af078463b05 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/all_dirs_ok.pass.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/all_dirs_ok.pass.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle
++# platform = multi_platform_sle,multi_platform_ubuntu
+ DIRS="/lib /lib64 /usr/lib /usr/lib64"
+ for dirPath in $DIRS; do
+ 	find "$dirPath" -perm /022 -type d -exec chmod go-w '{}' \;
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/owner_only_writable_dir.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/owner_only_writable_dir.pass.sh
+index 1f68586853d..d58616bcafb 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/owner_only_writable_dir.pass.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/owner_only_writable_dir.pass.sh
+@@ -1,5 +1,6 @@
+-# platform = multi_platform_sle
++# platform = multi_platform_sle,multi_platform_ubuntu
+ DIRS="/lib /lib64 /usr/lib /usr/lib64"
+ for dirPath in $DIRS; do
++    chmod -R 755 "$dirPath"
+ 	mkdir -p "$dirPath/testme" && chmod 700  "$dirPath/testme"
+ done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/world_writable_dir_on_lib.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/world_writable_dir_on_lib.fail.sh
+index b60a7269568..98d18cde3ea 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/world_writable_dir_on_lib.fail.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/world_writable_dir_on_lib.fail.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle
++# platform = multi_platform_sle,multi_platform_ubuntu
+ DIRS="/lib /lib64"
+ for dirPath in $DIRS; do
+ 	mkdir -p "$dirPath/testme" && chmod 777  "$dirPath/testme"
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/world_writable_dir_on_usr_lib.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/world_writable_dir_on_usr_lib.fail.sh
+index 5438b51bb6a..6df6e2f8f9b 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/world_writable_dir_on_usr_lib.fail.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/dir_permissions_library_dirs/tests/world_writable_dir_on_usr_lib.fail.sh
+@@ -1,4 +1,4 @@
+-# platform = multi_platform_sle
++# platform = multi_platform_sle,multi_platform_ubuntu
+ DIRS="/usr/lib /usr/lib64"
+ for dirPath in $DIRS; do
+ 	mkdir -p "$dirPath/testme" && chmod 777 "$dirPath/testme"
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_audit_binaries/rule.yml b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_audit_binaries/rule.yml
+new file mode 100644
+index 00000000000..da42e997478
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_audit_binaries/rule.yml
+@@ -0,0 +1,78 @@
++documentation_complete: true
++
++prodtype: ubuntu2004
++
++title: 'Verify that audit tools Have Mode 0755 or less'
++
++description: |-
++    The {{{ full_name }}} operating system audit tools must have the proper
++    permissions configured to protected against unauthorized access.
++
++    Verify it by running the following command:
++    <pre>$ stat -c "%n %a" /sbin/auditctl /sbin/aureport /sbin/ausearch /sbin/autrace /sbin/auditd /sbin/audispd /sbin/augenrules
++
++    /sbin/auditctl 755
++    /sbin/aureport 755
++    /sbin/ausearch 755
++    /sbin/autrace 755
++    /sbin/auditd 755
++    /sbin/audispd 755
++    /sbin/augenrules 755
++    </pre>
++
++    Audit tools needed to successfully view and manipulate audit information
++    system activity and records. Audit tools include custom queries and report
++    generators
++
++rationale: |-
++    Protecting audit information also includes identifying and protecting the
++    tools used to view and manipulate log data. Therefore, protecting audit
++    tools is necessary to prevent unauthorized operation on audit information.
++ 
++    Operating systems providing tools to interface with audit information
++    will leverage user permissions and roles identifying the user accessing the
++    tools and the corresponding rights the user enjoys to make access decisions
++    regarding the access to audit tools.
++
++severity: medium
++
++references:
++    disa: CCI-001493,CCI-001494
++    srg: SRG-OS-000256-GPOS-00097,SRG-OS-000257-GPOS-00098
++    stigid@ubuntu2004: UBTU-20-010199
++
++ocil: |-
++    Verify it by running the following command:
++    <pre>$ stat -c "%n %a" /sbin/auditctl /sbin/aureport /sbin/ausearch /sbin/autrace /sbin/auditd /sbin/audispd /sbin/augenrules
++
++    /sbin/auditctl 755
++    /sbin/aureport 755
++    /sbin/ausearch 755
++    /sbin/autrace 755
++    /sbin/auditd 755
++    /sbin/audispd 755
++    /sbin/augenrules 755
++    </pre>
++
++    If the command does not return all the above lines, the missing ones
++    need to be added.
++
++    Run the following command to correct the permissions of the missing
++    entries:
++    <pre>$ sudo chmod 0755 [audit_tool] </pre>
++
++    Replace "[audit_tool]" with the audit tool that does not have the
++    correct permissions.
++
++template:
++    name: file_permissions
++    vars:
++        filepath:
++            - /sbin/auditctl
++            - /sbin/aureport
++            - /sbin/ausearch
++            - /sbin/autrace
++            - /sbin/auditd
++            - /sbin/audispd
++            - /sbin/augenrules
++        filemode: '0755'
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/bash/shared.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/bash/shared.sh
+index de2e1e98dfa..ab89b277a52 100644
+--- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/bash/shared.sh
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/bash/shared.sh
+@@ -1,4 +1,4 @@
+-# platform = Red Hat Virtualization 4,multi_platform_rhel,multi_platform_ol,multi_platform_sle
++# platform = Red Hat Virtualization 4,multi_platform_rhel,multi_platform_ol,multi_platform_sle,multi_platform_ubuntu
+ DIRS="/bin /usr/bin /usr/local/bin /sbin /usr/sbin /usr/local/sbin /usr/libexec"
+ for dirPath in $DIRS; do
+ 	find "$dirPath" -perm /022 -exec chmod go-w '{}' \;
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/tests/correct_permissions.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/tests/correct_permissions.pass.sh
+new file mode 100644
+index 00000000000..59b8838581c
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/tests/correct_permissions.pass.sh
+@@ -0,0 +1,6 @@
++#!/bin/bash
++
++DIRS="/bin /usr/bin /usr/local/bin /sbin /usr/sbin /usr/local/sbin /usr/libexec"
++for dirPath in $DIRS; do
++    find "$dirPath" -perm /022 -type f -exec chmod 0755 '{}' \;
++done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/tests/incorrect_permissions.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/tests/incorrect_permissions.fail.sh
+new file mode 100644
+index 00000000000..9d9ce30064b
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_binary_dirs/tests/incorrect_permissions.fail.sh
+@@ -0,0 +1,6 @@
++#!/bin/bash
++
++DIRS="/bin /usr/bin /usr/local/bin /sbin /usr/sbin /usr/local/sbin /usr/libexec"
++for dirPath in $DIRS; do
++    find "$dirPath" -type f -exec chmod 0777 '{}' \;
++done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/correct_permissions.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/correct_permissions.pass.sh
+new file mode 100644
+index 00000000000..de388e63325
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/correct_permissions.pass.sh
+@@ -0,0 +1,6 @@
++#!/bin/bash
++
++DIRS="/lib /lib64 /usr/lib /usr/lib64"
++for dirPath in $DIRS; do
++    chmod -R 755 "$dirPath"
++done
+diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/incorrect_permissions.fail.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/incorrect_permissions.fail.sh
+new file mode 100644
+index 00000000000..913e75e7b17
+--- /dev/null
++++ b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/file_permissions_library_dirs/tests/incorrect_permissions.fail.sh
+@@ -0,0 +1,7 @@
++#!/bin/bash
++
++DIRS="/lib /lib64 /usr/lib /usr/lib64"
++for dirPath in $DIRS; do
++    find "$dirPath" -type d -exec chmod go-w '{}' \;
++    find "$dirPath" -type f -exec chmod go+w '{}' \;
++done
+diff --git a/shared/templates/file_permissions/oval.template b/shared/templates/file_permissions/oval.template
+index 89083e812c1..6b3616a7f42 100644
+--- a/shared/templates/file_permissions/oval.template
++++ b/shared/templates/file_permissions/oval.template
+@@ -67,6 +67,11 @@
+       #}}
+       <filter action="include">state_file_permissions{{{ FILEID }}}_{{{ loop.index0 }}}_mode_not_{{{ FILEMODE }}}</filter>
+     {{%- endif %}}
++      <filter action="exclude">exclude_symlinks_{{{ FILEID }}}</filter>
+   </unix:file_object>
+   {{% endfor %}}
++
++  <unix:file_state id="exclude_symlinks_{{{ FILEID }}}" version="1">
++    <unix:type operation="equals">symbolic link</unix:type>
++  </unix:file_state>
+ </def-group>
