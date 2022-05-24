@@ -6,7 +6,7 @@
 
 Name:		scap-security-guide
 Version:	0.1.60
-Release:	6%{?dist}
+Release:	6%{?dist}.alma
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
@@ -65,6 +65,9 @@ Patch47:	scap-security-guide-0.1.61-fix_bug_in_delta_tailering_script-PR_8245.pa
 Patch48:	scap-security-guide-0.1.61-fix_enable_fips_mode-PR_8255.patch
 Patch49:	scap-security-guide-0.1.61-update_rhel9_gpg_key-PR_8411.patch
 
+# AlmaLinux 9
+Patch1000:      scap-security-guide-0.1.60-add-almalinux9-product.patch
+
 BuildRequires:	libxslt
 BuildRequires:	expat
 BuildRequires:	openscap-scanner >= 1.2.5
@@ -97,7 +100,7 @@ The %{name}-doc package contains HTML formatted documents containing
 hardening guidances that have been generated from XCCDF benchmarks
 present in %{name} package.
 
-%if ( %{defined rhel} && (! %{defined centos}) )
+%if %{defined rhel}
 %package	rule-playbooks
 Summary:	Ansible playbooks per each rule.
 Group:		System Environment/Base
@@ -117,6 +120,9 @@ The %{name}-rule-playbooks package contains individual ansible playbooks per rul
 %endif
 %if 0%{?centos}
 %define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=FALSE -DSSG_PRODUCT_RHEL%{centos}:BOOLEAN=TRUE -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=ON
+%endif
+%if 0%{?almalinux}
+%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=FALSE -DSSG_PRODUCT_ALMALINUX%{almalinux}:BOOLEAN=TRUE -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_ANSIBLE_PLAYBOOKS_PER_RULE_ENABLED:BOOL=ON
 %endif
 
 mkdir -p build
@@ -143,13 +149,16 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %doc %{_docdir}/%{name}/guides/*.html
 %doc %{_docdir}/%{name}/tables/*.html
 
-%if ( %{defined rhel} && (! %{defined centos}) )
+%if %{defined rhel}
 %files rule-playbooks
 %defattr(-,root,root,-)
 %{_datadir}/%{name}/ansible/rule_playbooks
 %endif
 
 %changelog
+* Wed May 25 2022 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.60.6.alma
+- Add AlmaLinux 9 support
+
 * Thu Mar 24 2022 Gabriel Becker <ggasparb@redhat.com> - 0.1.60-6
 - Update RHEL9 auxiliary GPG key references (RHBZ#2067109)
 
