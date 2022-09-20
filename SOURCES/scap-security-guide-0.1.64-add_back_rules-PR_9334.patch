@@ -1,0 +1,60 @@
+From be2aba89ab61767fd301ee1ac4f4e64bf5a66887 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Thu, 11 Aug 2022 16:53:48 +0200
+Subject: [PATCH] add 4 rules back to RHEL9 datastream
+
+---
+ .../services/kerberos/package_krb5-server_removed/rule.yml      | 2 +-
+ .../guide/services/obsolete/nis/package_ypbind_removed/rule.yml | 2 +-
+ .../guide/services/obsolete/nis/package_ypserv_removed/rule.yml | 2 +-
+ .../system-tools/package_krb5-workstation_removed/rule.yml      | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/linux_os/guide/services/kerberos/package_krb5-server_removed/rule.yml b/linux_os/guide/services/kerberos/package_krb5-server_removed/rule.yml
+index 78577046409..17d742d9692 100644
+--- a/linux_os/guide/services/kerberos/package_krb5-server_removed/rule.yml
++++ b/linux_os/guide/services/kerberos/package_krb5-server_removed/rule.yml
+@@ -1,6 +1,6 @@
+ documentation_complete: true
+ 
+-prodtype: ol7,ol8,rhel7,rhel8
++prodtype: ol7,ol8,rhel7,rhel8,rhel9
+ 
+ title: 'Remove the Kerberos Server Package'
+ 
+diff --git a/linux_os/guide/services/obsolete/nis/package_ypbind_removed/rule.yml b/linux_os/guide/services/obsolete/nis/package_ypbind_removed/rule.yml
+index d8a3910ff4d..9be95ffed5c 100644
+--- a/linux_os/guide/services/obsolete/nis/package_ypbind_removed/rule.yml
++++ b/linux_os/guide/services/obsolete/nis/package_ypbind_removed/rule.yml
+@@ -1,6 +1,6 @@
+ documentation_complete: true
+ 
+-prodtype: alinux2,alinux3,ol7,ol8,rhel7,rhel8,rhv4,sle12,sle15
++prodtype: alinux2,alinux3,ol7,ol8,rhel7,rhel8,rhel9,rhv4,sle12,sle15
+ 
+ title: 'Remove NIS Client'
+ 
+diff --git a/linux_os/guide/services/obsolete/nis/package_ypserv_removed/rule.yml b/linux_os/guide/services/obsolete/nis/package_ypserv_removed/rule.yml
+index ee7ccb2d8da..0f7ad7c0431 100644
+--- a/linux_os/guide/services/obsolete/nis/package_ypserv_removed/rule.yml
++++ b/linux_os/guide/services/obsolete/nis/package_ypserv_removed/rule.yml
+@@ -1,6 +1,6 @@
+ documentation_complete: true
+ 
+-prodtype: ol7,ol8,rhel7,rhel8,rhv4,sle12,sle15
++prodtype: ol7,ol8,rhel7,rhel8,rhel9,rhv4,sle12,sle15
+ 
+ title: 'Uninstall ypserv Package'
+ 
+diff --git a/linux_os/guide/system/software/system-tools/package_krb5-workstation_removed/rule.yml b/linux_os/guide/system/software/system-tools/package_krb5-workstation_removed/rule.yml
+index 7a02459825d..4750fd6b266 100644
+--- a/linux_os/guide/system/software/system-tools/package_krb5-workstation_removed/rule.yml
++++ b/linux_os/guide/system/software/system-tools/package_krb5-workstation_removed/rule.yml
+@@ -1,6 +1,6 @@
+ documentation_complete: true
+ 
+-prodtype: fedora,ol7,ol8,ol9,rhel7,rhel8
++prodtype: fedora,ol7,ol8,ol9,rhel7,rhel8,rhel9
+ 
+ title: 'Uninstall krb5-workstation Package'
+ 

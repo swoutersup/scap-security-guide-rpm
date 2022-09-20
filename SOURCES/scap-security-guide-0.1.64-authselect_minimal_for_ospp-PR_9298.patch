@@ -1,0 +1,90 @@
+From 4ef59d44355179b6450ac493d4417a8b29d8ccf1 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Fri, 5 Aug 2022 11:45:15 +0200
+Subject: [PATCH 1/4] fix ospp references
+
+---
+ linux_os/guide/system/accounts/enable_authselect/rule.yml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linux_os/guide/system/accounts/enable_authselect/rule.yml b/linux_os/guide/system/accounts/enable_authselect/rule.yml
+index c151d3c4aa1..f9b46c51ddd 100644
+--- a/linux_os/guide/system/accounts/enable_authselect/rule.yml
++++ b/linux_os/guide/system/accounts/enable_authselect/rule.yml
+@@ -34,6 +34,7 @@ references:
+     disa: CCI-000213
+     hipaa: 164.308(a)(1)(ii)(B),164.308(a)(7)(i),164.308(a)(7)(ii)(A),164.310(a)(1),164.310(a)(2)(i),164.310(a)(2)(ii),164.310(a)(2)(iii),164.310(b),164.310(c),164.310(d)(1),164.310(d)(2)(iii)  # taken from require_singleuser_auth
+     nist: AC-3
++    ospp: FIA_UAU.1,FIA_AFL.1
+     srg: SRG-OS-000480-GPOS-00227
+ 
+ ocil: |-
+
+From 05a0414b565097c155d0c4a1696d8c4f2da91298 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Fri, 5 Aug 2022 11:45:42 +0200
+Subject: [PATCH 2/4] change authselect profile to minimal in rhel9 ospp
+
+---
+ products/rhel9/profiles/ospp.profile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index b47630c62b0..dcc41970043 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -115,7 +115,7 @@ selections:
+     - coredump_disable_storage
+     - coredump_disable_backtraces
+     - service_systemd-coredump_disabled
+-    - var_authselect_profile=sssd
++    - var_authselect_profile=minimal
+     - enable_authselect
+     - use_pam_wheel_for_su
+ 
+
+From 350135aa0c49a8a383103f88034acbb3925bb556 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Fri, 5 Aug 2022 11:45:54 +0200
+Subject: [PATCH 3/4] change authselect profile to minimal in rhel8 ospp
+
+---
+ products/rhel8/profiles/ospp.profile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/products/rhel8/profiles/ospp.profile b/products/rhel8/profiles/ospp.profile
+index 39ad1797c7a..ebec8a3a6f9 100644
+--- a/products/rhel8/profiles/ospp.profile
++++ b/products/rhel8/profiles/ospp.profile
+@@ -220,7 +220,7 @@ selections:
+     - var_accounts_max_concurrent_login_sessions=10
+     - accounts_max_concurrent_login_sessions
+     - securetty_root_login_console_only
+-    - var_authselect_profile=sssd
++    - var_authselect_profile=minimal
+     - enable_authselect
+     - var_password_pam_unix_remember=5
+     - accounts_password_pam_unix_remember
+
+From 9d6014242b3fcda06b38ac35d73d5d4df75313a3 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Fri, 5 Aug 2022 13:55:05 +0200
+Subject: [PATCH 4/4] update profile stability test
+
+---
+ tests/data/profile_stability/rhel8/ospp.profile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/data/profile_stability/rhel8/ospp.profile b/tests/data/profile_stability/rhel8/ospp.profile
+index 5d73a8c6fef..21e93e310d5 100644
+--- a/tests/data/profile_stability/rhel8/ospp.profile
++++ b/tests/data/profile_stability/rhel8/ospp.profile
+@@ -242,7 +242,7 @@ selections:
+ - var_slub_debug_options=P
+ - var_auditd_flush=incremental_async
+ - var_accounts_max_concurrent_login_sessions=10
+-- var_authselect_profile=sssd
++- var_authselect_profile=minimal
+ - var_password_pam_unix_remember=5
+ - var_selinux_state=enforcing
+ - var_selinux_policy_name=targeted
