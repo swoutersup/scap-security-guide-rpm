@@ -1,0 +1,48 @@
+From d76e93e697755e63d5c833747adef4af23c3256b Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Mon, 22 Aug 2022 13:51:28 +0200
+Subject: [PATCH 1/2] switch sysctl_kernel_core_pattern_empty_string for
+ sysctl_kernel_core_pattern
+
+---
+ products/rhel9/profiles/ospp.profile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index b1b18261d48..9fdd1354e38 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -110,7 +110,7 @@ selections:
+     - package_gnutls-utils_installed
+ 
+     ### Login
+-    - sysctl_kernel_core_pattern_empty_string
++    - sysctl_kernel_core_pattern
+     - sysctl_kernel_core_uses_pid
+     - service_systemd-coredump_disabled
+     - var_authselect_profile=minimal
+
+From d304b9f0037bfac6e20b1365e0d320f714ce09a3 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Mon, 22 Aug 2022 13:51:55 +0200
+Subject: [PATCH 2/2] remove ospp reference from
+ sysctl_kernel_core_pattern_empty_string
+
+---
+ .../sysctl_kernel_core_pattern_empty_string/rule.yml           | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_core_pattern_empty_string/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_core_pattern_empty_string/rule.yml
+index 089bb1481aa..dc21f53c98c 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_core_pattern_empty_string/rule.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_core_pattern_empty_string/rule.yml
+@@ -30,9 +30,6 @@ conflicts:
+ identifiers:
+     cce@rhel9: CCE-86005-6
+ 
+-references:
+-    ospp: FMT_SMF_EXT.1
+-
+ ocil_clause: |-
+     the returned line does not have a value of ''.
+ 

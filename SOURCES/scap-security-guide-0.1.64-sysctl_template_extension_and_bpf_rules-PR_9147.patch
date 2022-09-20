@@ -1,0 +1,1888 @@
+From 81c2f59f42ffa2cf5a611eaeccc40c802bedd6d7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Fri, 8 Jul 2022 17:51:57 +0200
+Subject: [PATCH 01/23] Remove a rule from RHEL 9 OSPP
+
+Remove rule sysctl_net_core_bpf_jit_harden from RHEL 9 OSPP.  This rule
+requires to set net.core.bpf_jit_harden value to 2, the RHEL 9 default
+is 1. However, bpf_jit_harden=1 disables kallsyms access from bpf
+programs and all users, and it turns on constants blinding by using
+random value + XOR for CAP_BPF; so the only thing in which value 1 and 2
+differ is the constants blinding for CAP_SYS_ADMIN processes in the
+initial user namespaces. The extra constants blinding with
+bpf_jit_harden=2 does not really help with CVE mitigation.
+
+Fixes: https://bugzilla.redhat.com/show_bug.cgi?id=2081728
+---
+ products/rhel9/profiles/ospp.profile | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index 244a421fb48..a7ba9532d2c 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -75,7 +75,6 @@ selections:
+     - sysctl_kernel_perf_event_paranoid
+     - sysctl_user_max_user_namespaces
+     - sysctl_kernel_unprivileged_bpf_disabled
+-    - sysctl_net_core_bpf_jit_harden
+     - service_kdump_disabled
+ 
+     ### Audit
+
+From bdcd2bafe5dd68448c0fc13e1aa1be64df607c8f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 12 Jul 2022 11:24:42 +0200
+Subject: [PATCH 02/23] Rename IDs in sysctl OVAL template
+
+The sysctl template uses its sysctlvar parameter value as a part of OVAL
+object IDs, test IDs and state IDs. That means we can't have multiple
+rules using the sysctl template with the same value of sysctlvar
+parameter (only differ in other parameters) because there would be
+duplicate elements. We will fix this by using the rule ID as a part of
+OVAL object IDs, test IDs and state IDs.  That will allow to use the
+template for the same sysctlvar in different rules.
+---
+ .../oval/sysctl_kernel_ipv6_disable.xml       |   4 +-
+ shared/templates/sysctl/oval.template         | 156 +++++++++---------
+ 2 files changed, 80 insertions(+), 80 deletions(-)
+
+diff --git a/shared/checks/oval/sysctl_kernel_ipv6_disable.xml b/shared/checks/oval/sysctl_kernel_ipv6_disable.xml
+index 1195cea518f..f971d28a047 100644
+--- a/shared/checks/oval/sysctl_kernel_ipv6_disable.xml
++++ b/shared/checks/oval/sysctl_kernel_ipv6_disable.xml
+@@ -19,8 +19,8 @@
+     </metadata>
+     <criteria comment="IPv6 disabled or net.ipv6.conf.all.disable_ipv6 set correctly" operator="OR">
+       <criteria operator="AND">
+-        <extend_definition comment="net.ipv6.conf.all.disable_ipv6 configuration setting check" definition_ref="sysctl_static_net_ipv6_conf_all_disable_ipv6" />
+-        <extend_definition comment="net.ipv6.conf.all.disable_ipv6 runtime setting check" definition_ref="sysctl_runtime_net_ipv6_conf_all_disable_ipv6" />
++        <extend_definition comment="net.ipv6.conf.all.disable_ipv6 configuration setting check" definition_ref="sysctl_net_ipv6_conf_all_disable_ipv6_static" />
++        <extend_definition comment="net.ipv6.conf.all.disable_ipv6 runtime setting check" definition_ref="sysctl_net_ipv6_conf_all_disable_ipv6_runtime" />
+       </criteria>
+     </criteria>
+   </definition>
+diff --git a/shared/templates/sysctl/oval.template b/shared/templates/sysctl/oval.template
+index 74583dbee1d..52671c06402 100644
+--- a/shared/templates/sysctl/oval.template
++++ b/shared/templates/sysctl/oval.template
+@@ -5,8 +5,8 @@
+ {{%- endif %}}
+ 
+ {{% macro state_static_sysctld(prefix) -%}}
+-    <ind:object object_ref="object_static_{{{ prefix }}}_{{{ SYSCTLID }}}"/>
+-    <ind:state state_ref="state_static_sysctld_{{{ SYSCTLID }}}"/>
++    <ind:object object_ref="object_static_{{{ prefix }}}_{{{ rule_id }}}"/>
++    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}"/>
+ {{%- endmacro -%}}
+ {{%- macro sysctl_match() -%}}
+ {{%- if SYSCTLVAL == "" -%}}
+@@ -20,13 +20,13 @@
+ {{%- if "P" in FLAGS -%}}
+ 
+ <def-group>
+-  <definition class="compliance" id="sysctl_{{{ SYSCTLID }}}" version="3">
++  <definition class="compliance" id="{{{ rule_id }}}" version="3">
+     {{{ oval_metadata("The '" + SYSCTLVAR + "' kernel parameter should be set to the appropriate value in both system configuration and system runtime.") }}}
+     <criteria operator="AND">
+       <extend_definition comment="{{{ SYSCTLVAR }}} configuration setting check"
+-                         definition_ref="sysctl_static_{{{ SYSCTLID }}}"/>
++                         definition_ref="{{{ rule_id }}}_static"/>
+       <extend_definition comment="{{{ SYSCTLVAR }}} runtime setting check"
+-                         definition_ref="sysctl_runtime_{{{ SYSCTLID }}}"/>
++                         definition_ref="{{{ rule_id }}}_runtime"/>
+     </criteria>
+   </definition>
+ </def-group>
+@@ -34,7 +34,7 @@
+ {{%- elif "I" in FLAGS -%}}
+ 
+ <def-group>
+-  <definition class="compliance" id="sysctl_{{{ SYSCTLID }}}" version="4">
++  <definition class="compliance" id="{{{ rule_id }}}" version="4">
+     {{{ oval_metadata("The kernel '" + SYSCTLVAR + "' parameter should be set to the appropriate value in both system configuration and system runtime.") }}}
+     <criteria comment="IPv6 disabled or {{{ SYSCTLVAR }}} set correctly" operator="OR">
+ {{% if product in ["ubuntu1604", "ubuntu1804"] %}}
+@@ -46,9 +46,9 @@
+ {{% endif %}}
+       <criteria operator="AND">
+         <extend_definition comment="{{{ SYSCTLVAR }}} configuration setting check"
+-                           definition_ref="sysctl_static_{{{ SYSCTLID }}}"/>
++                           definition_ref="{{{ rule_id }}}_static"/>
+         <extend_definition comment="{{{ SYSCTLVAR }}} runtime setting check"
+-                           definition_ref="sysctl_runtime_{{{ SYSCTLID }}}"/>
++                           definition_ref="{{{ rule_id }}}_runtime"/>
+       </criteria>
+     </criteria>
+   </definition>
+@@ -58,33 +58,33 @@
+ {{%- if "R" in FLAGS -%}}
+ 
+ <def-group>
+-  <definition class="compliance" id="sysctl_runtime_{{{ SYSCTLID }}}" version="3">
++  <definition class="compliance" id="{{{ rule_id }}}_runtime" version="3">
+     {{{ oval_metadata("The kernel '" + SYSCTLVAR + "' parameter should be set to " + COMMENT_VALUE + " in the system runtime.") }}}
+     <criteria operator="AND">
+       <criterion comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}}"
+-                 test_ref="test_sysctl_runtime_{{{ SYSCTLID }}}"/>
++                 test_ref="test_{{{ rule_id }}}_runtime"/>
+     </criteria>
+   </definition>
+-  <unix:sysctl_test id="test_sysctl_runtime_{{{ SYSCTLID }}}" version="1"
++  <unix:sysctl_test id="test_{{{ rule_id }}}_runtime" version="1"
+                     comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}}"
+                     check="all" check_existence="all_exist">
+-    <unix:object object_ref="object_sysctl_runtime_{{{ SYSCTLID }}}"/>
+-    <unix:state state_ref="state_sysctl_runtime_{{{ SYSCTLID }}}"/>
++    <unix:object object_ref="object_{{{ rule_id }}}_runtime"/>
++    <unix:state state_ref="state_{{{ rule_id }}}_runtime"/>
+   </unix:sysctl_test>
+ 
+-  <unix:sysctl_object id="object_sysctl_runtime_{{{ SYSCTLID }}}" version="1">
++  <unix:sysctl_object id="object_{{{ rule_id }}}_runtime" version="1">
+     <unix:name>{{{ SYSCTLVAR }}}</unix:name>
+   </unix:sysctl_object>
+ {{% if SYSCTLVAL == "" %}}
+-  <unix:sysctl_state id="state_sysctl_runtime_{{{ SYSCTLID }}}" version="1">
++  <unix:sysctl_state id="state_{{{ rule_id }}}_runtime" version="1">
+     <unix:value datatype="{{{ DATATYPE }}}" operation="equals"
+-                var_ref="sysctl_{{{ SYSCTLID }}}_value"/>
++                var_ref="{{{ rule_id }}}_value"/>
+   </unix:sysctl_state>
+ 
+-  <external_variable id="sysctl_{{{ SYSCTLID }}}_value" version="1"
++  <external_variable id="{{{ rule_id }}}_value" version="1"
+                      comment="External variable for {{{ SYSCTLVAR }}}" datatype="{{{ DATATYPE }}}"/>
+ {{%- else %}}
+-  <unix:sysctl_state id="state_sysctl_runtime_{{{ SYSCTLID }}}" version="1">
++  <unix:sysctl_state id="state_{{{ rule_id }}}_runtime" version="1">
+ {{% if OPERATION == "pattern match" %}}
+     <unix:value datatype="{{{ DATATYPE }}}"
+                 operation="{{{ OPERATION }}}">{{{ SYSCTLVAL_REGEX }}}</unix:value>
+@@ -100,46 +100,46 @@
+ {{%- if "S" in FLAGS -%}}
+ 
+ <def-group>
+-  <definition class="compliance" id="sysctl_static_{{{ SYSCTLID }}}" version="3">
++  <definition class="compliance" id="{{{ rule_id }}}_static" version="3">
+     {{{ oval_metadata("The kernel '" + SYSCTLVAR + "' parameter should be set to " + COMMENT_VALUE + " in the system configuration.") }}}
+     <criteria operator="AND">
+       <criteria operator="OR">
+         <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}} in /etc/sysctl.conf"
+-                   test_ref="test_static_sysctl_{{{ SYSCTLID }}}"/>
++                   test_ref="test_{{{ rule_id }}}_static"/>
+         <!-- see sysctl.d(5) -->
+         <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}} in /etc/sysctl.d/*.conf"
+-                   test_ref="test_static_etc_sysctld_{{{ SYSCTLID }}}"/>
++                   test_ref="test_{{{ rule_id }}}_static_etc_sysctld"/>
+         <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}} in /run/sysctl.d/*.conf"
+-                   test_ref="test_static_run_sysctld_{{{ SYSCTLID }}}"/>
++                   test_ref="test_{{{ rule_id }}}_static_run_sysctld"/>
+ {{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+         <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}} in /usr/lib/sysctl.d/*.conf"
+-                   test_ref="test_static_usr_lib_sysctld_{{{ SYSCTLID }}}"/>
++                   test_ref="test_{{{ rule_id }}}_static_usr_lib_sysctld"/>
+ {{% endif %}}
+       </criteria>
+ {{% if target_oval_version >= [5, 11] %}}
+-      <criterion comment="Check that {{{ SYSCTLID }}} is defined in only one file" test_ref="test_sysctl_{{{ SYSCTLID }}}_defined_in_one_file" />
++      <criterion comment="Check that {{{ SYSCTLID }}} is defined in only one file" test_ref="test_{{{ rule_id }}}_defined_in_one_file" />
+ {{% endif %}}
+     </criteria>
+   </definition>
+ 
+-  <ind:textfilecontent54_test id="test_static_sysctl_{{{ SYSCTLID }}}" version="1"
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static" version="1"
+                               check="all" check_existence="all_exist"
+                               comment="{{{ SYSCTLVAR }}} static configuration">
+     {{{ state_static_sysctld("sysctl") }}}
+   </ind:textfilecontent54_test>
+ 
+-  <ind:textfilecontent54_test id="test_static_etc_sysctld_{{{ SYSCTLID }}}" version="1" check="all"
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_etc_sysctld" version="1" check="all"
+                           comment="{{{ SYSCTLVAR }}} static configuration in /etc/sysctl.d/*.conf">
+     {{{ state_static_sysctld("etc_sysctld") }}}
+   </ind:textfilecontent54_test>
+ 
+-  <ind:textfilecontent54_test id="test_static_run_sysctld_{{{ SYSCTLID }}}" version="1" check="all"
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_run_sysctld" version="1" check="all"
+                           comment="{{{ SYSCTLVAR }}} static configuration in /run/sysctl.d/*.conf">
+     {{{ state_static_sysctld("run_sysctld") }}}
+   </ind:textfilecontent54_test>
+ 
+ {{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+-  <ind:textfilecontent54_test id="test_static_usr_lib_sysctld_{{{ SYSCTLID }}}" version="1"
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_usr_lib_sysctld" version="1"
+                           check="all"
+                           comment="{{{ SYSCTLVAR }}} static configuration in /usr/lib/sysctl.d/*.conf">
+     {{{ state_static_sysctld("usr_lib_sysctld") }}}
+@@ -148,79 +148,79 @@
+ 
+ {{% if target_oval_version >= [5, 11] %}}
+   <ind:variable_test check="all" check_existence="all_exist" comment="Check that only one file contains {{{ SYSCTLID }}}"
+-  id="test_sysctl_{{{ SYSCTLID }}}_defined_in_one_file" version="1">
+-    <ind:object object_ref="oject_sysctl_{{{ SYSCTLID }}}_defined_in_one_file" />
+-    <ind:state state_ref="state_sysctl_{{{ SYSCTLID }}}_defined_in_one_file" />
++  id="test_{{{ rule_id }}}_defined_in_one_file" version="1">
++    <ind:object object_ref="object_{{{ rule_id }}}_defined_in_one_file" />
++    <ind:state state_ref="state_{{{ rule_id }}}_defined_in_one_file" />
+   </ind:variable_test>
+ 
+-  <ind:variable_object id="oject_sysctl_{{{ SYSCTLID }}}_defined_in_one_file" version="1">
+-    <ind:var_ref>local_var_unique_sysctl_{{{ SYSCTLID }}}_counter</ind:var_ref>
++  <ind:variable_object id="object_{{{ rule_id }}}_defined_in_one_file" version="1">
++    <ind:var_ref>local_var_{{{ rule_id }}}_counter</ind:var_ref>
+   </ind:variable_object>
+ 
+-  <ind:variable_state id="state_sysctl_{{{ SYSCTLID }}}_defined_in_one_file" version="1">
++  <ind:variable_state id="state_{{{ rule_id }}}_defined_in_one_file" version="1">
+     <ind:value operation="equals" datatype="int">1</ind:value>
+   </ind:variable_state>
+ 
+-  <local_variable comment="Count unique sysctls" datatype="int" id="local_var_unique_sysctl_{{{ SYSCTLID }}}_counter" version="1">
++  <local_variable comment="Count unique sysctls" datatype="int" id="local_var_{{{ rule_id }}}_counter" version="1">
+     <count>
+       <unique>
+-        <object_component object_ref="object_static_set_sysctls_{{{ SYSCTLID }}}" item_field="filepath" />
++        <object_component object_ref="object_{{{ rule_id }}}_static_set_sysctls" item_field="filepath" />
+       </unique>
+     </count>
+   </local_variable>
+ 
+-  <ind:textfilecontent54_object id="object_static_set_sysctls_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_object id="object_{{{ rule_id }}}_static_set_sysctls" version="1">
+     <set>
+-      <object_reference>object_static_set_unfiltered_sysctls_{{{ SYSCTLID }}}</object_reference>
+-      <filter action="exclude">state_{{{ SYSCTLID }}}_filepath_is_symlink</filter>
++      <object_reference>object_{{{ rule_id }}}_static_set_sysctls_unfiltered</object_reference>
++      <filter action="exclude">state_{{{ rule_id }}}_filepath_is_symlink</filter>
+     </set>
+   </ind:textfilecontent54_object>
+ 
+-  <ind:textfilecontent54_state id="state_{{{ SYSCTLID }}}_filepath_is_symlink" version="1">
+-    <ind:filepath operation="equals" var_check="at least one" var_ref="local_var_safe_symlinks_{{{ SYSCTLID }}}" datatype="string" />
++  <ind:textfilecontent54_state id="state_{{{ rule_id }}}_filepath_is_symlink" version="1">
++    <ind:filepath operation="equals" var_check="at least one" var_ref="local_var_{{{ rule_id }}}_safe_symlinks" datatype="string" />
+   </ind:textfilecontent54_state>
+ 
+-  <!-- <no simlink handling> -->
++  <!-- <no symlink handling> -->
+   <!-- We craft a variable with blank string to combine with the symlink paths found.
+        This ultimately avoids referencing a variable with "no values",
+        we reference a variable with a blank string -->
+-  <local_variable comment="Unique list of symlink conf files" datatype="string" id="local_var_safe_symlinks_{{{ SYSCTLID }}}" version="1">
++  <local_variable comment="Unique list of symlink conf files" datatype="string" id="local_var_{{{ rule_id }}}_safe_symlinks" version="1">
+     <unique>
+-      <object_component object_ref="var_object_symlink_{{{ SYSCTLID }}}" item_field="value" />
++      <object_component object_ref="var_object_symlink_{{{ rule_id }}}" item_field="value" />
+     </unique>
+   </local_variable>
+ 
+-  <ind:variable_object id="var_object_symlink_{{{ SYSCTLID }}}" comment="combine the blank string with symlink paths found" version="1">
++  <ind:variable_object id="var_object_symlink_{{{ rule_id }}}" comment="combine the blank string with symlink paths found" version="1">
+     <set>
+-      <object_reference>var_obj_symlink_{{{ SYSCTLID }}}</object_reference>
+-      <object_reference>var_obj_blank_{{{ SYSCTLID }}}</object_reference>
++      <object_reference>var_obj_symlink_{{{ rule_id }}}</object_reference>
++      <object_reference>var_obj_blank_{{{ rule_id }}}</object_reference>
+     </set>
+   </ind:variable_object>
+ 
+-  <ind:variable_object id="var_obj_blank_{{{ SYSCTLID }}}" comment="variable object of the blank string" version="1">
+-    <ind:var_ref>local_var_blank_path_{{{ SYSCTLID }}}</ind:var_ref>
++  <ind:variable_object id="var_obj_blank_{{{ rule_id }}}" comment="variable object of the blank string" version="1">
++    <ind:var_ref>local_var_blank_path_{{{ rule_id }}}</ind:var_ref>
+   </ind:variable_object>
+ 
+-  <local_variable comment="Blank string" datatype="string" id="local_var_blank_path_{{{ SYSCTLID }}}" version="1">
++  <local_variable comment="Blank string" datatype="string" id="local_var_blank_path_{{{ rule_id }}}" version="1">
+     <literal_component datatype="string"></literal_component>
+   </local_variable>
+ 
+-  <ind:variable_object id="var_obj_symlink_{{{ SYSCTLID }}}" comment="variable object of the symlinks found" version="1">
+-    <ind:var_ref>local_var_symlinks_{{{ SYSCTLID }}}</ind:var_ref>
++  <ind:variable_object id="var_obj_symlink_{{{ rule_id }}}" comment="variable object of the symlinks found" version="1">
++    <ind:var_ref>local_var_symlinks_{{{ rule_id }}}</ind:var_ref>
+   </ind:variable_object>
+-  <!-- </no simlink handling> -->
++  <!-- </no symlink handling> -->
+ 
+-  <local_variable comment="Unique list of symlink conf files" datatype="string" id="local_var_symlinks_{{{ SYSCTLID }}}" version="1">
++  <local_variable comment="Unique list of symlink conf files" datatype="string" id="local_var_symlinks_{{{ rule_id }}}" version="1">
+     <unique>
+-      <object_component object_ref="object_{{{ SYSCTLID }}}_symlinks" item_field="filepath" />
++      <object_component object_ref="object_{{{ rule_id }}}_symlinks" item_field="filepath" />
+     </unique>
+   </local_variable>
+ 
+   <!-- "pattern match" doesn't seem to work with symlink_object, not sure if a bug or not.
+        Workaround by querying for all conf files found -->
+-  <unix:symlink_object comment="Symlinks referencing files in default dirs" id="object_{{{ SYSCTLID }}}_symlinks" version="1">
+-    <unix:filepath operation="equals" var_ref="local_var_conf_files_{{{ SYSCTLID }}}" />
+-    <filter action="exclude">state_symlink_points_outside_usual_dirs_{{{ SYSCTLID }}}</filter>
++  <unix:symlink_object comment="Symlinks referencing files in default dirs" id="object_{{{ rule_id }}}_symlinks" version="1">
++    <unix:filepath operation="equals" var_ref="local_var_conf_files_{{{ rule_id }}}" />
++    <filter action="exclude">state_symlink_points_outside_usual_dirs_{{{ rule_id }}}</filter>
+   </unix:symlink_object>
+ 
+   <!-- The state matches symlinks that don't point to the default dirs, i.e. paths that are not:
+@@ -228,59 +228,59 @@
+        ^/etc/sysctl.d/.*$
+        ^/run/sysctl.d/.*$
+        ^/usr/lib/sysctl.d/.*$ -->
+-  <unix:symlink_state comment="State that matches symlinks referencing files not in the default dirs" id="state_symlink_points_outside_usual_dirs_{{{ SYSCTLID }}}" version="1">
++  <unix:symlink_state comment="State that matches symlinks referencing files not in the default dirs" id="state_symlink_points_outside_usual_dirs_{{{ rule_id }}}" version="1">
+     <unix:canonical_path operation="pattern match">^(?!(\/etc\/sysctl\.conf$|(\/etc|\/run|\/usr\/lib)\/sysctl\.d\/)).*$</unix:canonical_path>
+   </unix:symlink_state>
+ {{% endif %}}
+ 
+-  <local_variable comment="List of conf files" datatype="string" id="local_var_conf_files_{{{ SYSCTLID }}}" version="1">
+-    <object_component object_ref="object_static_set_unfiltered_sysctls_{{{ SYSCTLID }}}" item_field="filepath" />
++  <local_variable comment="List of conf files" datatype="string" id="local_var_conf_files_{{{ rule_id }}}" version="1">
++    <object_component object_ref="object_{{{ rule_id }}}_static_set_sysctls_unfiltered" item_field="filepath" />
+   </local_variable>
+ 
+   <!-- Avoid directly referencing a possibly empty collection, one empty collection will cause the
+        variable to have no value even when there are valid objects. -->
+-  <ind:textfilecontent54_object id="object_static_set_unfiltered_sysctls_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_object id="object_{{{ rule_id }}}_static_set_sysctls_unfiltered" version="1">
+     <set>
+-      <object_reference>object_static_etc_sysctls_{{{ SYSCTLID }}}</object_reference>
+-      <object_reference>object_static_run_usr_sysctls_{{{ SYSCTLID }}}</object_reference>
++      <object_reference>object_static_etc_sysctls_{{{ rule_id }}}</object_reference>
++      <object_reference>object_static_run_usr_sysctls_{{{ rule_id }}}</object_reference>
+     </set>
+   </ind:textfilecontent54_object>
+ 
+-  <ind:textfilecontent54_object id="object_static_etc_sysctls_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_object id="object_static_etc_sysctls_{{{ rule_id }}}" version="1">
+     <set>
+-      <object_reference>object_static_sysctl_{{{ SYSCTLID }}}</object_reference>
+-      <object_reference>object_static_etc_sysctld_{{{ SYSCTLID }}}</object_reference>
++      <object_reference>object_static_sysctl_{{{ rule_id }}}</object_reference>
++      <object_reference>object_static_etc_sysctld_{{{ rule_id }}}</object_reference>
+     </set>
+   </ind:textfilecontent54_object>
+ 
+-  <ind:textfilecontent54_object id="object_static_run_usr_sysctls_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_object id="object_static_run_usr_sysctls_{{{ rule_id }}}" version="1">
+     <set>
+-      <object_reference>object_static_run_sysctld_{{{ SYSCTLID }}}</object_reference>
++      <object_reference>object_static_run_sysctld_{{{ rule_id }}}</object_reference>
+ {{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+-      <object_reference>object_static_usr_lib_sysctld_{{{ SYSCTLID }}}</object_reference>
++      <object_reference>object_static_usr_lib_sysctld_{{{ rule_id }}}</object_reference>
+ {{% endif %}}
+     </set>
+   </ind:textfilecontent54_object>
+ 
+-  <ind:textfilecontent54_object id="object_static_sysctl_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_object id="object_static_sysctl_{{{ rule_id }}}" version="1">
+     <ind:filepath>/etc/sysctl.conf</ind:filepath>
+     {{{ sysctl_match() }}}
+   </ind:textfilecontent54_object>
+ 
+-  <ind:textfilecontent54_object id="object_static_etc_sysctld_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_object id="object_static_etc_sysctld_{{{ rule_id }}}" version="1">
+     <ind:path>/etc/sysctl.d</ind:path>
+     <ind:filename operation="pattern match">^.*\.conf$</ind:filename>
+     {{{ sysctl_match() }}}
+   </ind:textfilecontent54_object>
+ 
+-  <ind:textfilecontent54_object id="object_static_run_sysctld_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_object id="object_static_run_sysctld_{{{ rule_id }}}" version="1">
+     <ind:path>/run/sysctl.d</ind:path>
+     <ind:filename operation="pattern match">^.*\.conf$</ind:filename>
+     {{{ sysctl_match() }}}
+   </ind:textfilecontent54_object>
+ 
+ {{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+-  <ind:textfilecontent54_object id="object_static_usr_lib_sysctld_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_object id="object_static_usr_lib_sysctld_{{{ rule_id }}}" version="1">
+     <ind:path>/usr/lib/sysctl.d</ind:path>
+     <ind:filename operation="pattern match">^.*\.conf$</ind:filename>
+     {{{ sysctl_match() }}}
+@@ -288,15 +288,15 @@
+ {{% endif %}}
+ {{% if SYSCTLVAL == "" %}}
+ 
+-  <ind:textfilecontent54_state id="state_static_sysctld_{{{ SYSCTLID }}}" version="1">
+-    <ind:subexpression operation="{{{ OPERATION }}}" var_ref="sysctl_{{{ SYSCTLID }}}_value"
++  <ind:textfilecontent54_state id="state_static_sysctld_{{{ rule_id }}}" version="1">
++    <ind:subexpression operation="{{{ OPERATION }}}" var_ref="{{{ rule_id }}}_value"
+                        datatype="{{{ DATATYPE }}}" />
+   </ind:textfilecontent54_state>
+ 
+-  <external_variable id="sysctl_{{{ SYSCTLID }}}_value" version="1"
++  <external_variable id="{{{ rule_id }}}_value" version="1"
+                      comment="External variable for {{{ SYSCTLVAR }}}" datatype="{{{ DATATYPE }}}"/>
+ {{% else %}}
+-  <ind:textfilecontent54_state id="state_static_sysctld_{{{ SYSCTLID }}}" version="1">
++  <ind:textfilecontent54_state id="state_static_sysctld_{{{ rule_id }}}" version="1">
+ {{% if OPERATION == "pattern match" %}}
+     <ind:subexpression operation="{{{ OPERATION }}}" datatype="{{{ DATATYPE }}}">{{{ SYSCTLVAL_REGEX }}}</ind:subexpression>
+ {{% else %}}
+
+From ee5d91aaf33504e56b6959c17c8ebc6006a17a5f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 13 Jul 2022 10:16:45 +0200
+Subject: [PATCH 03/23] Use a list of values in sysctl template
+
+This patch adds an ability to use a list of values instead of a single
+value in the sysctlval parameter of the sysctl template.  This is useful
+for situations when we want to create a rule that passes for multiple
+different sysctl values.  This commit modifies the OVAL for the runtime
+configuration.  The runtime configuration will be allowed to be any of
+the values in the list.  There is an OR relation between the values.  In
+fact, this is a first step to enable multiple values in the sysctlval
+parameter in the sysctl template, because we will also need to check the
+static configuration, which is not done in this commit.
+---
+ shared/templates/sysctl/oval.template | 32 +++++++++++++++++++++++++++
+ shared/templates/sysctl/template.py   | 24 ++++++++++++--------
+ 2 files changed, 47 insertions(+), 9 deletions(-)
+
+diff --git a/shared/templates/sysctl/oval.template b/shared/templates/sysctl/oval.template
+index 52671c06402..b73ccc94f72 100644
+--- a/shared/templates/sysctl/oval.template
++++ b/shared/templates/sysctl/oval.template
+@@ -1,5 +1,7 @@
+ {{%- if SYSCTLVAL == "" %}}
+ {{%- set COMMENT_VALUE="the appropriate value" %}}
++{{%- elif SYSCTLVAL is sequence %}}
++{{%- set COMMENT_VALUE = SYSCTLVAL | join(" or " ) %}}
+ {{%- else %}}
+ {{%- set COMMENT_VALUE=SYSCTLVAL %}}
+ {{%- endif %}}
+@@ -60,21 +62,43 @@
+ <def-group>
+   <definition class="compliance" id="{{{ rule_id }}}_runtime" version="3">
+     {{{ oval_metadata("The kernel '" + SYSCTLVAR + "' parameter should be set to " + COMMENT_VALUE + " in the system runtime.") }}}
++{{% if SYSCTLVAL is string %}}
+     <criteria operator="AND">
+       <criterion comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}}"
+                  test_ref="test_{{{ rule_id }}}_runtime"/>
+     </criteria>
++{{% elif SYSCTLVAL is sequence %}}
++    <criteria operator="OR">
++{{% for x in SYSCTLVAL %}}
++      <criterion comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ x }}}"
++                 test_ref="test_{{{ rule_id }}}_runtime_{{{ x }}}"/>
++{{% endfor %}}
++    </criteria>
++{{% endif %}}
+   </definition>
++
++{{% if SYSCTLVAL is string %}}
+   <unix:sysctl_test id="test_{{{ rule_id }}}_runtime" version="1"
+                     comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}}"
+                     check="all" check_existence="all_exist">
+     <unix:object object_ref="object_{{{ rule_id }}}_runtime"/>
+     <unix:state state_ref="state_{{{ rule_id }}}_runtime"/>
+   </unix:sysctl_test>
++{{% elif SYSCTLVAL is sequence %}}
++{{% for x in SYSCTLVAL %}}
++  <unix:sysctl_test id="test_{{{ rule_id }}}_runtime_{{{ x }}}" version="1"
++                    comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ x }}}"
++                    check="all" check_existence="all_exist">
++    <unix:object object_ref="object_{{{ rule_id }}}_runtime"/>
++    <unix:state state_ref="state_{{{ rule_id }}}_runtime_{{{ x }}}" />
++  </unix:sysctl_test>
++{{% endfor %}}
++{{% endif %}}
+ 
+   <unix:sysctl_object id="object_{{{ rule_id }}}_runtime" version="1">
+     <unix:name>{{{ SYSCTLVAR }}}</unix:name>
+   </unix:sysctl_object>
++{{% if SYSCTLVAL is string %}}
+ {{% if SYSCTLVAL == "" %}}
+   <unix:sysctl_state id="state_{{{ rule_id }}}_runtime" version="1">
+     <unix:value datatype="{{{ DATATYPE }}}" operation="equals"
+@@ -94,6 +118,14 @@
+ {{% endif %}}
+   </unix:sysctl_state>
+ {{%- endif %}}
++{{% elif SYSCTLVAL is sequence %}}
++{{% for x in SYSCTLVAL %}}
++  <unix:sysctl_state id="state_{{{ rule_id }}}_runtime_{{{ x }}}" version="1">
++    <unix:value datatype="{{{ DATATYPE }}}"
++                operation="{{{ OPERATION }}}">{{{ x }}}</unix:value>
++  </unix:sysctl_state>
++{{% endfor %}}
++{{% endif %}}
+ </def-group>
+ 
+ {{%- endif -%}}
+diff --git a/shared/templates/sysctl/template.py b/shared/templates/sysctl/template.py
+index fa981a9dce9..c62591357c0 100644
+--- a/shared/templates/sysctl/template.py
++++ b/shared/templates/sysctl/template.py
+@@ -12,6 +12,13 @@ def preprocess(data, lang):
+     if "operation" not in data:
+         data["operation"] = "equals"
+ 
++    if data["datatype"] not in ["string", "int"]:
++        raise ValueError(
++            "Test scenarios for data type '{0}' are not implemented yet.\n"
++            "Please check if rule '{1}' has correct data type and edit "
++            "{2} to add tests for it.".format(
++                data["datatype"], data["_rule_id"], __file__))
++
+     # Configure data for test scenarios
+     if data["sysctlval"] == "":
+         if data["datatype"] == "int":
+@@ -20,20 +27,19 @@ def preprocess(data, lang):
+         elif data["datatype"] == "string":
+             data["sysctl_correct_value"] = "correct_value"
+             data["sysctl_wrong_value"] = "wrong_value"
+-        else:
++    elif isinstance(data["sysctlval"], list):
++        if len(data["sysctlval"]) == 0:
+             raise ValueError(
+-                "Test scenarios for data type '{0}' are not implemented yet.\n"
+-                "Please check if rule '{1}' has correct data type and edit "
+-                "{2} to add tests for it.".format(data["datatype"], data["_rule_id"], __file__))
++                "The sysctlval parameter of {0} is an empty list".format(data["_rule_id"]))
++        data["sysctl_correct_value"] = data["sysctlval"][0]
++        if data["datatype"] == "int":
++            data["sysctl_wrong_value"] = "1" + data["sysctlval"][0]
++        elif data["datatype"] == "string":
++            data["sysctl_wrong_value"] = "wrong_value"
+     else:
+         data["sysctl_correct_value"] = data["sysctlval"]
+         if data["datatype"] == "int":
+             data["sysctl_wrong_value"] = "1" + data["sysctlval"]
+         elif data["datatype"] == "string":
+             data["sysctl_wrong_value"] = "wrong_value"
+-        else:
+-            raise ValueError(
+-                "Test scenarios for data type '{0}' are not implemented yet.\n"
+-                "Please check if rule '{1}' has correct data type and edit "
+-                "{2} to add tests for it.".format(data["datatype"], data["_rule_id"], __file__))
+     return data
+
+From c50304234dfac1dcd74b3056c978eec2c097216d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 13 Jul 2022 10:47:51 +0200
+Subject: [PATCH 04/23] Move check unrelated to the test scenarios
+
+The check for an mepty list is unrelated to the test scenarios,
+rather is a generic check to avoid problems during the build.
+Therefore, it shouldn't be inside code block that is handling
+data for test scenarios, but can be extracted to a sooner position.
+---
+ shared/templates/sysctl/template.py | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/shared/templates/sysctl/template.py b/shared/templates/sysctl/template.py
+index c62591357c0..421e42c6ca1 100644
+--- a/shared/templates/sysctl/template.py
++++ b/shared/templates/sysctl/template.py
+@@ -11,7 +11,12 @@ def preprocess(data, lang):
+     data["flags"] = "SR" + ipv6_flag
+     if "operation" not in data:
+         data["operation"] = "equals"
++    if isinstance(data["sysctlval"], list) and len(data["sysctlval"]) == 0:
++        raise ValueError(
++            "The sysctlval parameter of {0} is an empty list".format(
++                data["_rule_id"]))
+ 
++    # Configure data for test scenarios
+     if data["datatype"] not in ["string", "int"]:
+         raise ValueError(
+             "Test scenarios for data type '{0}' are not implemented yet.\n"
+@@ -19,7 +24,6 @@ def preprocess(data, lang):
+             "{2} to add tests for it.".format(
+                 data["datatype"], data["_rule_id"], __file__))
+ 
+-    # Configure data for test scenarios
+     if data["sysctlval"] == "":
+         if data["datatype"] == "int":
+             data["sysctl_correct_value"] = "0"
+@@ -28,9 +32,6 @@ def preprocess(data, lang):
+             data["sysctl_correct_value"] = "correct_value"
+             data["sysctl_wrong_value"] = "wrong_value"
+     elif isinstance(data["sysctlval"], list):
+-        if len(data["sysctlval"]) == 0:
+-            raise ValueError(
+-                "The sysctlval parameter of {0} is an empty list".format(data["_rule_id"]))
+         data["sysctl_correct_value"] = data["sysctlval"][0]
+         if data["datatype"] == "int":
+             data["sysctl_wrong_value"] = "1" + data["sysctlval"][0]
+
+From eb1fe4f349e2dcadd9b870e074e679383601be62 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 13 Jul 2022 11:57:50 +0200
+Subject: [PATCH 05/23] Allow multiple values in sysctl static configuration
+
+This extends the OVAL checks for sysctl static configuration
+to enable a list of values instead of a single value in the
+sysctlval parameter of the sysctl template. The template
+will generate OVAL tests for each value in the sysctlval
+list.
+---
+ shared/templates/sysctl/oval.template | 56 +++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
+
+diff --git a/shared/templates/sysctl/oval.template b/shared/templates/sysctl/oval.template
+index b73ccc94f72..4e1bf3cfce3 100644
+--- a/shared/templates/sysctl/oval.template
++++ b/shared/templates/sysctl/oval.template
+@@ -136,6 +136,7 @@
+     {{{ oval_metadata("The kernel '" + SYSCTLVAR + "' parameter should be set to " + COMMENT_VALUE + " in the system configuration.") }}}
+     <criteria operator="AND">
+       <criteria operator="OR">
++{{% if SYSCTLVAL is string %}}
+         <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}} in /etc/sysctl.conf"
+                    test_ref="test_{{{ rule_id }}}_static"/>
+         <!-- see sysctl.d(5) -->
+@@ -146,6 +147,21 @@
+ {{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+         <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}} in /usr/lib/sysctl.d/*.conf"
+                    test_ref="test_{{{ rule_id }}}_static_usr_lib_sysctld"/>
++{{% endif %}}
++{{% elif SYSCTLVAL is sequence %}}
++{{% for x in SYSCTLVAL %}}
++        <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ x }}} in /etc/sysctl.conf"
++                   test_ref="test_{{{ rule_id }}}_static_{{{ x }}}"/>
++        <!-- see sysctl.d(5) -->
++        <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ x }}} in /etc/sysctl.d/*.conf"
++                   test_ref="test_{{{ rule_id }}}_static_{{{ x }}}_etc_sysctld"/>
++        <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ x }}} in /run/sysctl.d/*.conf"
++                   test_ref="test_{{{ rule_id }}}_static_{{{ x }}}_run_sysctld"/>
++{{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
++        <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ x }}} in /usr/lib/sysctl.d/*.conf"
++                   test_ref="test_{{{ rule_id }}}_static_{{{ x }}}_usr_lib_sysctld"/>
++{{% endif %}}
++{{% endfor %}}
+ {{% endif %}}
+       </criteria>
+ {{% if target_oval_version >= [5, 11] %}}
+@@ -154,6 +170,7 @@
+     </criteria>
+   </definition>
+ 
++{{% if SYSCTLVAL is string %}}
+   <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static" version="1"
+                               check="all" check_existence="all_exist"
+                               comment="{{{ SYSCTLVAR }}} static configuration">
+@@ -177,6 +194,37 @@
+     {{{ state_static_sysctld("usr_lib_sysctld") }}}
+   </ind:textfilecontent54_test>
+ {{% endif %}}
++{{% elif SYSCTLVAL is sequence %}}
++{{% for x in SYSCTLVAL %}}
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_{{{ x }}}" version="1"
++                              check="all" check_existence="all_exist"
++                              comment="{{{ SYSCTLVAR }}} static configuration">
++    <ind:object object_ref="object_static_sysctl_{{{ rule_id }}}"/>
++    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}"/>
++  </ind:textfilecontent54_test>
++
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_{{{ x }}}_etc_sysctld" version="1" check="all"
++                          comment="{{{ SYSCTLVAR }}} static configuration in /etc/sysctl.d/*.conf">
++    <ind:object object_ref="object_static_etc_sysctld_{{{ rule_id }}}"/>
++    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}"/>
++  </ind:textfilecontent54_test>
++
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_{{{ x }}}_run_sysctld" version="1" check="all"
++                          comment="{{{ SYSCTLVAR }}} static configuration in /run/sysctl.d/*.conf">
++    <ind:object object_ref="object_static_run_sysctld_{{{ rule_id }}}"/>
++    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}"/>
++  </ind:textfilecontent54_test>
++
++{{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_{{{ x }}}_usr_lib_sysctld" version="1"
++                          check="all"
++                          comment="{{{ SYSCTLVAR }}} static configuration in /usr/lib/sysctl.d/*.conf">
++    <ind:object object_ref="object_static_usr_lib_sysctld_{{{ rule_id }}}"/>
++    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}"/>
++  </ind:textfilecontent54_test>
++{{% endif %}}
++{{% endfor %}}
++{{% endif %}}
+ 
+ {{% if target_oval_version >= [5, 11] %}}
+   <ind:variable_test check="all" check_existence="all_exist" comment="Check that only one file contains {{{ SYSCTLID }}}"
+@@ -318,6 +366,7 @@
+     {{{ sysctl_match() }}}
+   </ind:textfilecontent54_object>
+ {{% endif %}}
++{{% if SYSCTLVAL is string %}}
+ {{% if SYSCTLVAL == "" %}}
+ 
+   <ind:textfilecontent54_state id="state_static_sysctld_{{{ rule_id }}}" version="1">
+@@ -336,5 +385,12 @@
+ {{% endif %}}
+   </ind:textfilecontent54_state>
+ {{% endif %}}
++{{% elif SYSCTLVAL is sequence %}}
++{{% for x in SYSCTLVAL %}}
++  <ind:textfilecontent54_state id="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}" version="1">
++    <ind:subexpression operation="{{{ OPERATION }}}" datatype="{{{ DATATYPE }}}">{{{ x }}}</ind:subexpression>
++  </ind:textfilecontent54_state>
++{{% endfor %}}
++{{% endif %}}
+ </def-group>
+ {{%- endif -%}}
+
+From 93d496fb8dda6c47707e27c0b2cad15616261f27 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 13 Jul 2022 14:55:28 +0200
+Subject: [PATCH 06/23] Add option to allow system default
+
+Introduce new template option `missing_static_pass` to the
+systemctl template. If this option is set to `"true"` in rule.yml
+the OVAL will be generated in a way that the check will pass if
+there is no sysctl static configuration option in the watched sysctl
+configuration files. In other words, the OVAL check will pass if
+the system default isn't overridden.
+---
+ shared/templates/sysctl/oval.template | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/shared/templates/sysctl/oval.template b/shared/templates/sysctl/oval.template
+index 4e1bf3cfce3..1719a59f9c7 100644
+--- a/shared/templates/sysctl/oval.template
++++ b/shared/templates/sysctl/oval.template
+@@ -134,6 +134,9 @@
+ <def-group>
+   <definition class="compliance" id="{{{ rule_id }}}_static" version="3">
+     {{{ oval_metadata("The kernel '" + SYSCTLVAR + "' parameter should be set to " + COMMENT_VALUE + " in the system configuration.") }}}
++{{% if MISSING_STATIC_PASS == "true" %}}
++    <criteria operator="OR">
++{{% endif %}}
+     <criteria operator="AND">
+       <criteria operator="OR">
+ {{% if SYSCTLVAL is string %}}
+@@ -168,8 +171,20 @@
+       <criterion comment="Check that {{{ SYSCTLID }}} is defined in only one file" test_ref="test_{{{ rule_id }}}_defined_in_one_file" />
+ {{% endif %}}
+     </criteria>
++{{% if MISSING_STATIC_PASS == "true" %}}
++      <criterion comment="Check that {{{ SYSCTLID }}} is not defined in any file" test_ref="test_{{{ rule_id }}}_not_defined" />
++    </criteria>
++{{% endif %}}
+   </definition>
+ 
++{{% if MISSING_STATIC_PASS == "true" %}}
++  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_not_defined" version="1"
++                              check="all" check_existence="none_exist"
++                              comment="{{{ SYSCTLVAR }}} static configuration">
++    <ind:object object_ref="object_{{{ rule_id }}}_static_set_sysctls" />
++  </ind:textfilecontent54_test>
++{{% endif %}}
++
+ {{% if SYSCTLVAL is string %}}
+   <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static" version="1"
+                               check="all" check_existence="all_exist"
+
+From 97dca34b717621d5fbbdfdab459ac087f20d1e4b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 13 Jul 2022 17:02:35 +0200
+Subject: [PATCH 07/23] Accept multiple values in the sysctl remediation
+
+A new parameter sysctlval_remediate is introduced to the sysctl
+template. This allows to choose which of the multiple values in
+the sysctl list will be used in the Bash and Ansible remediations.
+---
+ docs/templates/template_reference.md     |  8 ++++++++
+ shared/templates/sysctl/ansible.template |  6 +++---
+ shared/templates/sysctl/bash.template    | 10 +++++-----
+ shared/templates/sysctl/template.py      |  9 +++++++++
+ 4 files changed, 25 insertions(+), 8 deletions(-)
+
+diff --git a/docs/templates/template_reference.md b/docs/templates/template_reference.md
+index a439e3dca94..5785f1d453f 100644
+--- a/docs/templates/template_reference.md
++++ b/docs/templates/template_reference.md
+@@ -818,6 +818,14 @@ The selected value can be changed in the profile (consult the actual variable fo
+     -   **sysctlval** - value of the sysctl value, eg. `'1'`. If this
+         parameter is not specified, XCCDF Value is used instead.
+ 
++    -   **sysctlval_remediate** - the value that will be used in remediations.
++        If **sysctlval_remediate** is not specified, the template will use the
++        value of the **sysctlval** parameter in the remediations.
++        This parameter is mandatory when the **sysctlval** parameter is a list
++        because we need to know which of the values in the list the system
++        should be remedied to. When  the **sysctlval** parameter is not a list
++        this parameter is optional.
++
+     -   **operation** - operation used for comparison of collected object
+         with **sysctlval**. Default value: `equals`.
+ 
+diff --git a/shared/templates/sysctl/ansible.template b/shared/templates/sysctl/ansible.template
+index c13bb6637fe..7724db5e5ff 100644
+--- a/shared/templates/sysctl/ansible.template
++++ b/shared/templates/sysctl/ansible.template
+@@ -21,7 +21,7 @@
+     replace: '#{{{ SYSCTLVAR }}}'
+   loop: "{{ find_sysctl_d.files }}"
+ 
+-{{%- if SYSCTLVAL == "" %}}
++{{%- if SYSCTLVAL_REMEDIATE == "" %}}
+ - (xccdf-var sysctl_{{{ SYSCTLID }}}_value)
+ 
+ - name: Ensure sysctl {{{ SYSCTLVAR }}} is set
+@@ -29,10 +29,10 @@
+     name: "{{{ SYSCTLVAR }}}"
+     value: "{{ sysctl_{{{ SYSCTLID }}}_value }}"
+ {{%- else %}}
+-- name: Ensure sysctl {{{ SYSCTLVAR }}} is set to {{{ SYSCTLVAL }}}
++- name: Ensure sysctl {{{ SYSCTLVAR }}} is set to {{{ SYSCTLVAL_REMEDIATE }}}
+   sysctl:
+     name: "{{{ SYSCTLVAR }}}"
+-    value: "{{{ SYSCTLVAL }}}"
++    value: "{{{ SYSCTLVAL_REMEDIATE }}}"
+ {{%- endif %}}
+     state: present
+     reload: yes
+diff --git a/shared/templates/sysctl/bash.template b/shared/templates/sysctl/bash.template
+index d67a59c3886..63948bd5a26 100644
+--- a/shared/templates/sysctl/bash.template
++++ b/shared/templates/sysctl/bash.template
+@@ -20,7 +20,7 @@ for f in /etc/sysctl.d/*.conf /run/sysctl.d/*.conf; do
+   fi
+ done
+ 
+-{{%- if SYSCTLVAL == "" %}}
++{{%- if SYSCTLVAL_REMEDIATE == "" %}}
+ {{{ bash_instantiate_variables("sysctl_" + SYSCTLID + "_value") }}}
+ 
+ #
+@@ -38,11 +38,11 @@ done
+ #
+ # Set runtime for {{{ SYSCTLVAR }}}
+ #
+-/sbin/sysctl -q -n -w {{{ SYSCTLVAR }}}="{{{ SYSCTLVAL }}}"
++/sbin/sysctl -q -n -w {{{ SYSCTLVAR }}}="{{{ SYSCTLVAL_REMEDIATE }}}"
+ 
+ #
+-# If {{{ SYSCTLVAR }}} present in /etc/sysctl.conf, change value to "{{{ SYSCTLVAL }}}"
+-#	else, add "{{{ SYSCTLVAR }}} = {{{ SYSCTLVAL }}}" to /etc/sysctl.conf
++# If {{{ SYSCTLVAR }}} present in /etc/sysctl.conf, change value to "{{{ SYSCTLVAL_REMEDIATE }}}"
++#	else, add "{{{ SYSCTLVAR }}} = {{{ SYSCTLVAL_REMEDIATE }}}" to /etc/sysctl.conf
+ #
+-{{{ bash_replace_or_append('/etc/sysctl.conf', '^' + SYSCTLVAR , SYSCTLVAL ) }}}
++{{{ bash_replace_or_append('/etc/sysctl.conf', '^' + SYSCTLVAR , SYSCTLVAL_REMEDIATE ) }}}
+ {{%- endif %}}
+diff --git a/shared/templates/sysctl/template.py b/shared/templates/sysctl/template.py
+index 421e42c6ca1..2574d5d42b0 100644
+--- a/shared/templates/sysctl/template.py
++++ b/shared/templates/sysctl/template.py
+@@ -16,6 +16,15 @@ def preprocess(data, lang):
+             "The sysctlval parameter of {0} is an empty list".format(
+                 data["_rule_id"]))
+ 
++    if not data.get("sysctlval_remediate"):
++        if isinstance(data["sysctlval"], list):
++            raise ValueError(
++                "Problem with rule {0}: the 'sysctlval' parameter is a list "
++                "but we are missing the 'sysctlval_remediate' parameter, so "
++                "we don't know how to generate remediation content.".format(
++                    data["_rule_id"]))
++        data["sysctlval_remediate"] = data["sysctlval"]
++
+     # Configure data for test scenarios
+     if data["datatype"] not in ["string", "int"]:
+         raise ValueError(
+
+From 8a3ba3f74760b360e179da221acf7bb06f4bdc12 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 13 Jul 2022 17:10:16 +0200
+Subject: [PATCH 08/23] Introduce new rule
+ sysctl_kernel_unprivileged_bpf_disabled_accept_default
+
+This rule is very similar to the existing rule
+sysctl_kernel_unprivileged_bpf_disabled, but it allows the sysctl
+setting kernel.unprivileged_bpf_disabled to be either 1 or 2. Also, the
+rule will pass when the explicit configuration isn't present, allowing
+to honor the system's default value which is 2. The goal of this rule is
+to prevent unnecessary modification of the RHEL system default value
+while still checking for the secure configuration.
+
+See the explanation in
+https://bugzilla.redhat.com/show_bug.cgi?id=2081728:
+sysctl_kernel_unprivileged_bpf_disabled sets the
+kernel.unprivileged_bpf_disabled value to 1.  However, on RHEL 9 the
+kernel supports new value 2 which per
+https://www.kernel.org/doc/html/latest/admin-guide/sysctl/kernel.html#unprivileged-bpf-disabled
+makes it for a privileged admin to re-enable unprivileged BPF. The value
+2 is also the RHEL 9 default. So the current
+sysctl_kernel_unprivileged_bpf_disabled rule unnecessarily modifies
+the RHEL 9 default.
+---
+ .../rule.yml                                  | 82 +++++++++++++++++++
+ shared/references/cce-redhat-avail.txt        |  1 -
+ 2 files changed, 82 insertions(+), 1 deletion(-)
+ create mode 100644 linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+new file mode 100644
+index 00000000000..f45769dd2d0
+--- /dev/null
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+@@ -0,0 +1,82 @@
++documentation_complete: true
++
++prodtype: rhel9
++
++title: 'Disable Access to Network bpf() Syscall From Unprivileged Processes'
++
++description: |-
++    To prevent unprivileged processes from using the <code>bpf()</code> syscall
++    the <code>kernel.unprivileged_bpf_disabled</code> kernel parameter must
++    be set to <code>1</code> or <code>2</code>.
++
++    Writing <code>1</code> to this entry will disable unprivileged calls to <code>bpf()</code>; once
++    disabled, calling <code>bpf()</code> without <code>CAP_SYS_ADMIN</code> or <code>CAP_BPF</code> will return <code>-EPERM</code>.
++    Once set to <code>1</code>, this can't be cleared from the running kernel anymore.
++
++    Writing <code>2</code> to this entry will also disable unprivileged calls to <code>bpf()</code>,
++    however, an admin can still change this setting later on, if needed, by
++    writing <code>0</code> or <code>1</code> to this entry.
++
++    {{{ describe_sysctl_option_value(sysctl="kernel.unprivileged_bpf_disabled", value="1") }}}
++
++rationale: |-
++    Loading and accessing the packet filters programs and maps using the bpf()
++    syscall has the potential of revealing sensitive information about the kernel state.
++
++severity: medium
++
++identifiers:
++    cce@rhel9: CCE-87712-6
++
++references:
++    disa: CCI-000366
++    nist: AC-6,SC-7(10)
++    ospp: FMT_SMF_EXT.1
++    srg: SRG-OS-000132-GPOS-00067,SRG-OS-000480-GPOS-00227
++    stigid@ol8: OL08-00-040281
++    stigid@rhel8: RHEL-08-040281
++
++ocil: |-
++    The runtime status of the <code>kernel.unprivileged_bpf_disabled</code>
++    kernel parameter can be queried by running the following command:
++    <pre>$ sysctl kernel.unprivileged_bpf_disabled</pre>
++    The output of the command should indicate either:
++    kernel.unprivileged_bpf_disabled = 1
++    or:
++    kernel.unprivileged_bpf_disabled = 2
++    The output of the command should not indicate:
++    kernel.unprivileged_bpf_disabled = 0
++
++    The preferable way how to assure the runtime compliance is to have
++    correct persistent configuration, and rebooting the system.
++
++    The persistent kernel parameter configuration is performed by specifying the appropriate
++    assignment in any file located in the <pre>/etc/sysctl.d</pre> directory.
++    Verify that there is not any existing incorrect configuration by executing the following command:
++    <pre>$ grep -r '^\s*{{{ sysctl }}}\s*=' /etc/sysctl.conf /etc/sysctl.d</pre>
++    The command should not find any assignments other than:
++    kernel.unprivileged_bpf_disabled = 1
++    or:
++    kernel.unprivileged_bpf_disabled = 2
++
++    Duplicate assignments are not allowed. Empty output is allowed, because the system default is 2.
++
++ocil_clause: "the kernel.unprivileged_bpf_disabled is not set to 1 or 2 or is configured to be 0"
++
++fixtext: |-
++    Configure {{{ full_name }}} to prevent privilege escalation thru the kernel by disabling access to the bpf syscall.
++
++srg_requirement: '{{{ full_name }}} must disable access to network bpf syscall from unprivileged processes.'
++
++platform: machine
++
++template:
++    name: sysctl
++    vars:
++        sysctlvar: kernel.unprivileged_bpf_disabled
++        sysctlval:
++        - '1'
++        - '2'
++        sysctlval_remediate: "2"
++        missing_static_pass: "true"
++        datatype: int
+diff --git a/shared/references/cce-redhat-avail.txt b/shared/references/cce-redhat-avail.txt
+index 914233f06bf..2c2cf12cafe 100644
+--- a/shared/references/cce-redhat-avail.txt
++++ b/shared/references/cce-redhat-avail.txt
+@@ -1435,7 +1435,6 @@ CCE-87708-4
+ CCE-87709-2
+ CCE-87710-0
+ CCE-87711-8
+-CCE-87712-6
+ CCE-87713-4
+ CCE-87714-2
+ CCE-87715-9
+
+From 0327b48990c2cf35aeff8adf63a2102378e43c54 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 13 Jul 2022 17:21:50 +0200
+Subject: [PATCH 09/23] Add test scenarios for rule
+ sysctl_kernel_unprivileged_bpf_disabled_accept_default
+
+---
+ .../tests/system_default.pass.sh                      |  5 +++++
+ .../tests/test_config.yml                             |  6 ++++++
+ .../tests/value_0.fail.sh                             | 11 +++++++++++
+ .../tests/value_1.pass.sh                             | 11 +++++++++++
+ .../tests/value_2.pass.sh                             | 11 +++++++++++
+ 5 files changed, 44 insertions(+)
+ create mode 100644 linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/system_default.pass.sh
+ create mode 100644 linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
+ create mode 100644 linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_0.fail.sh
+ create mode 100644 linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_1.pass.sh
+ create mode 100644 linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_2.pass.sh
+
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/system_default.pass.sh b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/system_default.pass.sh
+new file mode 100644
+index 00000000000..b9776227bdb
+--- /dev/null
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/system_default.pass.sh
+@@ -0,0 +1,5 @@
++#!/bin/bash
++# platform = Red Hat Enterprise Linux 9
++
++# Clean sysctl config directories
++rm -rf /usr/lib/sysctl.d/* /run/sysctl.d/* /etc/sysctl.d/*
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
+new file mode 100644
+index 00000000000..dbac89b4caa
+--- /dev/null
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
+@@ -0,0 +1,6 @@
++deny_templated_scenarios:
++  - line_not_there.fail.sh
++  - comment.fail.sh
++  - wrong_value.fail.sh
++  - wrong_value_d_directory.fail.sh
++  - wrong_runtime.fail.sh
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_0.fail.sh b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_0.fail.sh
+new file mode 100644
+index 00000000000..9f19e0140b4
+--- /dev/null
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_0.fail.sh
+@@ -0,0 +1,11 @@
++#!/bin/bash
++# platform = Red Hat Enterprise Linux 9
++
++# Clean sysctl config directories
++rm -rf /usr/lib/sysctl.d/* /run/sysctl.d/* /etc/sysctl.d/*
++
++sed -i "/kernel.unprivileged_bpf_disabled/d" /etc/sysctl.conf
++echo "kernel.unprivileged_bpf_disabled = 0" >> /etc/sysctl.conf
++
++# set correct runtime value to check if the filesystem configuration is evaluated properly
++sysctl -w kernel.unprivileged_bpf_disabled="0"
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_1.pass.sh b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_1.pass.sh
+new file mode 100644
+index 00000000000..e976db594c8
+--- /dev/null
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_1.pass.sh
+@@ -0,0 +1,11 @@
++#!/bin/bash
++# platform = Red Hat Enterprise Linux 9
++
++# Clean sysctl config directories
++rm -rf /usr/lib/sysctl.d/* /run/sysctl.d/* /etc/sysctl.d/*
++
++sed -i "/kernel.unprivileged_bpf_disabled/d" /etc/sysctl.conf
++echo "kernel.unprivileged_bpf_disabled = 1" >> /etc/sysctl.conf
++
++# set correct runtime value to check if the filesystem configuration is evaluated properly
++sysctl -w kernel.unprivileged_bpf_disabled="1"
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_2.pass.sh b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_2.pass.sh
+new file mode 100644
+index 00000000000..b1537175eb4
+--- /dev/null
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/value_2.pass.sh
+@@ -0,0 +1,11 @@
++#!/bin/bash
++# platform = Red Hat Enterprise Linux 9
++
++# Clean sysctl config directories
++rm -rf /usr/lib/sysctl.d/* /run/sysctl.d/* /etc/sysctl.d/*
++
++sed -i "/kernel.unprivileged_bpf_disabled/d" /etc/sysctl.conf
++echo "kernel.unprivileged_bpf_disabled = 2" >> /etc/sysctl.conf
++
++# set correct runtime value to check if the filesystem configuration is evaluated properly
++sysctl -w kernel.unprivileged_bpf_disabled="2"
+
+From 52415b3effb7bf80038b8d866982fd44c8c45312 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Thu, 14 Jul 2022 09:14:53 +0200
+Subject: [PATCH 10/23] Use rule
+ sysctl_kernel_unprivileged_bpf_disabled_accept_default
+
+Use rule sysctl_kernel_unprivileged_bpf_disabled_accept_default
+instead of the rule sysctl_kernel_unprivileged_bpf_disabled
+in the RHEL 9 OSPP profile.
+---
+ products/rhel9/profiles/ospp.profile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index a7ba9532d2c..19e4878c4b0 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -74,7 +74,7 @@ selections:
+     - sysctl_kernel_yama_ptrace_scope
+     - sysctl_kernel_perf_event_paranoid
+     - sysctl_user_max_user_namespaces
+-    - sysctl_kernel_unprivileged_bpf_disabled
++    - sysctl_kernel_unprivileged_bpf_disabled_accept_default
+     - service_kdump_disabled
+ 
+     ### Audit
+
+From 4ff536a006a9d25c9c90a1b1e5fce0f957c51c28 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Thu, 14 Jul 2022 09:25:26 +0200
+Subject: [PATCH 11/23] Document that sysctlval can be a list
+
+---
+ docs/templates/template_reference.md | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/docs/templates/template_reference.md b/docs/templates/template_reference.md
+index 5785f1d453f..716407fd5c9 100644
+--- a/docs/templates/template_reference.md
++++ b/docs/templates/template_reference.md
+@@ -815,7 +815,8 @@ The selected value can be changed in the profile (consult the actual variable fo
+ 
+     -   **datatype** - data type of the sysctl value, eg. `int`.
+ 
+-    -   **sysctlval** - value of the sysctl value, eg. `'1'`. If this
++    -   **sysctlval** - value of the sysctl value. This can be either an atomic
++        value, eg. `'1'`, or a list of values, eg. `['1','2']`. If this
+         parameter is not specified, XCCDF Value is used instead.
+ 
+     -   **sysctlval_remediate** - the value that will be used in remediations.
+
+From df27fec11a6e8037288ee8cf5b7bfc7d05537f33 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Thu, 14 Jul 2022 11:00:59 +0200
+Subject: [PATCH 12/23] Document the missing_static_pass option
+
+---
+ docs/templates/template_reference.md | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/docs/templates/template_reference.md b/docs/templates/template_reference.md
+index 716407fd5c9..65da697b808 100644
+--- a/docs/templates/template_reference.md
++++ b/docs/templates/template_reference.md
+@@ -827,6 +827,11 @@ The selected value can be changed in the profile (consult the actual variable fo
+         should be remedied to. When  the **sysctlval** parameter is not a list
+         this parameter is optional.
+ 
++    -   **missing_static_pass** - if set to `true` the check will pass if the
++        setting for the given **sysctlvar** is not present in sysctl
++        configuration files. In other words, the check will pass if the system
++        default isn't overriden by configuration. Default value: `false`.
++
+     -   **operation** - operation used for comparison of collected object
+         with **sysctlval**. Default value: `equals`.
+ 
+
+From e8b8497d32d84282d7f34d83f3661c02235d33cb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Thu, 14 Jul 2022 11:03:53 +0200
+Subject: [PATCH 13/23] Introduce sysctlval_wrong parameter
+
+When the `sysctalval` parameter is a list, this parameter will be
+substitued into the SYSCTL_WRONG_VALUE parameter in test scenarios. This
+is better than current computing of the SYSCTL_WRONG_VALUE parameter
+which is done by prepending "1" to the string value, because the
+computed value could be invalid and the `sysctl -w` command used in the
+test scenario wrong_runtime.fail.sh could fail to set the value to
+SYSCTL_WRONG_VALUE therefore not changing the runtime. If at the same
+time the `missing_static_pass` is set to `true` and the system is set to
+system default, then the unchanged runtime would cause the check to pass
+and therefore the test scenario wrong_runtime.fail.sh to error.
+---
+ docs/templates/template_reference.md                       | 3 +++
+ .../rule.yml                                               | 1 +
+ shared/templates/sysctl/template.py                        | 7 ++-----
+ 3 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/docs/templates/template_reference.md b/docs/templates/template_reference.md
+index 65da697b808..7e1fc7049cf 100644
+--- a/docs/templates/template_reference.md
++++ b/docs/templates/template_reference.md
+@@ -827,6 +827,9 @@ The selected value can be changed in the profile (consult the actual variable fo
+         should be remedied to. When  the **sysctlval** parameter is not a list
+         this parameter is optional.
+ 
++    -   **sysctlval_wrong** - the value that is always wrong. This will be used
++        only in the test scenarios only if **sysctlval** is a list.
++
+     -   **missing_static_pass** - if set to `true` the check will pass if the
+         setting for the given **sysctlvar** is not present in sysctl
+         configuration files. In other words, the check will pass if the system
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+index f45769dd2d0..ddff15dff8f 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+@@ -78,5 +78,6 @@ template:
+         - '1'
+         - '2'
+         sysctlval_remediate: "2"
++        sysctlval_wrong: "0"
+         missing_static_pass: "true"
+         datatype: int
+diff --git a/shared/templates/sysctl/template.py b/shared/templates/sysctl/template.py
+index 2574d5d42b0..96663694997 100644
+--- a/shared/templates/sysctl/template.py
++++ b/shared/templates/sysctl/template.py
+@@ -41,11 +41,8 @@ def preprocess(data, lang):
+             data["sysctl_correct_value"] = "correct_value"
+             data["sysctl_wrong_value"] = "wrong_value"
+     elif isinstance(data["sysctlval"], list):
+-        data["sysctl_correct_value"] = data["sysctlval"][0]
+-        if data["datatype"] == "int":
+-            data["sysctl_wrong_value"] = "1" + data["sysctlval"][0]
+-        elif data["datatype"] == "string":
+-            data["sysctl_wrong_value"] = "wrong_value"
++        data["sysctl_correct_value"] = data["sysctlval_remediate"]
++        data["sysctl_wrong_value"] = data["sysctlval_wrong"]
+     else:
+         data["sysctl_correct_value"] = data["sysctlval"]
+         if data["datatype"] == "int":
+
+From 5f391a7053f7ce18dd34c45a1d319d65b78348d4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Thu, 14 Jul 2022 11:23:59 +0200
+Subject: [PATCH 14/23] Change test_config.yml
+
+---
+ .../tests/test_config.yml                                   | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
+index dbac89b4caa..c379680e25c 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
+@@ -1,6 +1,6 @@
+ deny_templated_scenarios:
++  # this rule uses missing_static_pass: true which means the check should pass
++  # if the configuration is missing (or commented out) therefore we disable
++  # line_not_there.fail.sh and comment.fail.sh test scenarios
+   - line_not_there.fail.sh
+   - comment.fail.sh
+-  - wrong_value.fail.sh
+-  - wrong_value_d_directory.fail.sh
+-  - wrong_runtime.fail.sh
+
+From 92207a9bd11df0e69bf732e27fb91e5db270f7f6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Fri, 15 Jul 2022 10:36:05 +0200
+Subject: [PATCH 15/23] Simplify sysctl template
+
+Instead of using multiple OVAL tests in OR relation we can have
+a single OVAL test containing multiple OVAL states in OR relation.
+That will simplify the code.
+---
+ shared/templates/sysctl/oval.template | 82 +++++----------------------
+ 1 file changed, 13 insertions(+), 69 deletions(-)
+
+diff --git a/shared/templates/sysctl/oval.template b/shared/templates/sysctl/oval.template
+index 1719a59f9c7..8241c391ad2 100644
+--- a/shared/templates/sysctl/oval.template
++++ b/shared/templates/sysctl/oval.template
+@@ -8,7 +8,13 @@
+ 
+ {{% macro state_static_sysctld(prefix) -%}}
+     <ind:object object_ref="object_static_{{{ prefix }}}_{{{ rule_id }}}"/>
++{{% if SYSCTLVAL is string %}}
+     <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}"/>
++{{% elif SYSCTLVAL is sequence %}}
++{{% for x in SYSCTLVAL %}}
++    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}" />
++{{% endfor %}}
++{{% endif %}}
+ {{%- endmacro -%}}
+ {{%- macro sysctl_match() -%}}
+ {{%- if SYSCTLVAL == "" -%}}
+@@ -62,38 +68,24 @@
+ <def-group>
+   <definition class="compliance" id="{{{ rule_id }}}_runtime" version="3">
+     {{{ oval_metadata("The kernel '" + SYSCTLVAR + "' parameter should be set to " + COMMENT_VALUE + " in the system runtime.") }}}
+-{{% if SYSCTLVAL is string %}}
+     <criteria operator="AND">
+       <criterion comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}}"
+                  test_ref="test_{{{ rule_id }}}_runtime"/>
+     </criteria>
+-{{% elif SYSCTLVAL is sequence %}}
+-    <criteria operator="OR">
+-{{% for x in SYSCTLVAL %}}
+-      <criterion comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ x }}}"
+-                 test_ref="test_{{{ rule_id }}}_runtime_{{{ x }}}"/>
+-{{% endfor %}}
+-    </criteria>
+-{{% endif %}}
+   </definition>
+ 
+-{{% if SYSCTLVAL is string %}}
+   <unix:sysctl_test id="test_{{{ rule_id }}}_runtime" version="1"
+                     comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}}"
+-                    check="all" check_existence="all_exist">
++                    check="all" check_existence="all_exist" state_operator="OR">
+     <unix:object object_ref="object_{{{ rule_id }}}_runtime"/>
++{{% if SYSCTLVAL is string %}}
+     <unix:state state_ref="state_{{{ rule_id }}}_runtime"/>
+-  </unix:sysctl_test>
+ {{% elif SYSCTLVAL is sequence %}}
+ {{% for x in SYSCTLVAL %}}
+-  <unix:sysctl_test id="test_{{{ rule_id }}}_runtime_{{{ x }}}" version="1"
+-                    comment="kernel runtime parameter {{{ SYSCTLVAR }}} set to {{{ x }}}"
+-                    check="all" check_existence="all_exist">
+-    <unix:object object_ref="object_{{{ rule_id }}}_runtime"/>
+     <unix:state state_ref="state_{{{ rule_id }}}_runtime_{{{ x }}}" />
+-  </unix:sysctl_test>
+ {{% endfor %}}
+ {{% endif %}}
++  </unix:sysctl_test>
+ 
+   <unix:sysctl_object id="object_{{{ rule_id }}}_runtime" version="1">
+     <unix:name>{{{ SYSCTLVAR }}}</unix:name>
+@@ -139,7 +131,6 @@
+ {{% endif %}}
+     <criteria operator="AND">
+       <criteria operator="OR">
+-{{% if SYSCTLVAL is string %}}
+         <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}} in /etc/sysctl.conf"
+                    test_ref="test_{{{ rule_id }}}_static"/>
+         <!-- see sysctl.d(5) -->
+@@ -150,21 +141,6 @@
+ {{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+         <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ COMMENT_VALUE }}} in /usr/lib/sysctl.d/*.conf"
+                    test_ref="test_{{{ rule_id }}}_static_usr_lib_sysctld"/>
+-{{% endif %}}
+-{{% elif SYSCTLVAL is sequence %}}
+-{{% for x in SYSCTLVAL %}}
+-        <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ x }}} in /etc/sysctl.conf"
+-                   test_ref="test_{{{ rule_id }}}_static_{{{ x }}}"/>
+-        <!-- see sysctl.d(5) -->
+-        <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ x }}} in /etc/sysctl.d/*.conf"
+-                   test_ref="test_{{{ rule_id }}}_static_{{{ x }}}_etc_sysctld"/>
+-        <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ x }}} in /run/sysctl.d/*.conf"
+-                   test_ref="test_{{{ rule_id }}}_static_{{{ x }}}_run_sysctld"/>
+-{{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+-        <criterion comment="kernel static parameter {{{ SYSCTLVAR }}} set to {{{ x }}} in /usr/lib/sysctl.d/*.conf"
+-                   test_ref="test_{{{ rule_id }}}_static_{{{ x }}}_usr_lib_sysctld"/>
+-{{% endif %}}
+-{{% endfor %}}
+ {{% endif %}}
+       </criteria>
+ {{% if target_oval_version >= [5, 11] %}}
+@@ -185,61 +161,29 @@
+   </ind:textfilecontent54_test>
+ {{% endif %}}
+ 
+-{{% if SYSCTLVAL is string %}}
+   <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static" version="1"
+                               check="all" check_existence="all_exist"
+-                              comment="{{{ SYSCTLVAR }}} static configuration">
++                              comment="{{{ SYSCTLVAR }}} static configuration" state_operator="OR">
+     {{{ state_static_sysctld("sysctl") }}}
+   </ind:textfilecontent54_test>
+ 
+   <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_etc_sysctld" version="1" check="all"
+-                          comment="{{{ SYSCTLVAR }}} static configuration in /etc/sysctl.d/*.conf">
++                          comment="{{{ SYSCTLVAR }}} static configuration in /etc/sysctl.d/*.conf" state_operator="OR">
+     {{{ state_static_sysctld("etc_sysctld") }}}
+   </ind:textfilecontent54_test>
+ 
+   <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_run_sysctld" version="1" check="all"
+-                          comment="{{{ SYSCTLVAR }}} static configuration in /run/sysctl.d/*.conf">
++                          comment="{{{ SYSCTLVAR }}} static configuration in /run/sysctl.d/*.conf" state_operator="OR">
+     {{{ state_static_sysctld("run_sysctld") }}}
+   </ind:textfilecontent54_test>
+ 
+ {{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+   <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_usr_lib_sysctld" version="1"
+                           check="all"
+-                          comment="{{{ SYSCTLVAR }}} static configuration in /usr/lib/sysctl.d/*.conf">
++                          comment="{{{ SYSCTLVAR }}} static configuration in /usr/lib/sysctl.d/*.conf" state_operator="OR">
+     {{{ state_static_sysctld("usr_lib_sysctld") }}}
+   </ind:textfilecontent54_test>
+ {{% endif %}}
+-{{% elif SYSCTLVAL is sequence %}}
+-{{% for x in SYSCTLVAL %}}
+-  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_{{{ x }}}" version="1"
+-                              check="all" check_existence="all_exist"
+-                              comment="{{{ SYSCTLVAR }}} static configuration">
+-    <ind:object object_ref="object_static_sysctl_{{{ rule_id }}}"/>
+-    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}"/>
+-  </ind:textfilecontent54_test>
+-
+-  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_{{{ x }}}_etc_sysctld" version="1" check="all"
+-                          comment="{{{ SYSCTLVAR }}} static configuration in /etc/sysctl.d/*.conf">
+-    <ind:object object_ref="object_static_etc_sysctld_{{{ rule_id }}}"/>
+-    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}"/>
+-  </ind:textfilecontent54_test>
+-
+-  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_{{{ x }}}_run_sysctld" version="1" check="all"
+-                          comment="{{{ SYSCTLVAR }}} static configuration in /run/sysctl.d/*.conf">
+-    <ind:object object_ref="object_static_run_sysctld_{{{ rule_id }}}"/>
+-    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}"/>
+-  </ind:textfilecontent54_test>
+-
+-{{% if product not in [ "ol7", "ol8", "ol9", "rhcos4", "rhel7", "rhel8", "rhel9"] %}}
+-  <ind:textfilecontent54_test id="test_{{{ rule_id }}}_static_{{{ x }}}_usr_lib_sysctld" version="1"
+-                          check="all"
+-                          comment="{{{ SYSCTLVAR }}} static configuration in /usr/lib/sysctl.d/*.conf">
+-    <ind:object object_ref="object_static_usr_lib_sysctld_{{{ rule_id }}}"/>
+-    <ind:state state_ref="state_static_sysctld_{{{ rule_id }}}_{{{ x }}}"/>
+-  </ind:textfilecontent54_test>
+-{{% endif %}}
+-{{% endfor %}}
+-{{% endif %}}
+ 
+ {{% if target_oval_version >= [5, 11] %}}
+   <ind:variable_test check="all" check_existence="all_exist" comment="Check that only one file contains {{{ SYSCTLID }}}"
+
+From d78d946740b0b8bef31c054ad0b5c4ab14159442 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Mon, 25 Jul 2022 15:40:24 +0200
+Subject: [PATCH 16/23] Replace the sysctlval_remediate template parameter
+
+Replace the sysctlval_remediate template parameter by using an XCCDF
+value. The variable would be only used in the remediation and would
+allow users to tailor the value, instead of the current solution where
+the value is hardcoded and can be only changed during build time.
+---
+ docs/templates/template_reference.md          | 21 +++++++++----------
+ .../rule.yml                                  |  1 -
+ products/rhel9/profiles/ospp.profile          |  1 +
+ shared/templates/sysctl/ansible.template      |  6 +++---
+ shared/templates/sysctl/bash.template         | 10 ++++-----
+ shared/templates/sysctl/template.py           | 11 +---------
+ 6 files changed, 20 insertions(+), 30 deletions(-)
+
+diff --git a/docs/templates/template_reference.md b/docs/templates/template_reference.md
+index 7e1fc7049cf..00f991daae7 100644
+--- a/docs/templates/template_reference.md
++++ b/docs/templates/template_reference.md
+@@ -815,17 +815,16 @@ The selected value can be changed in the profile (consult the actual variable fo
+ 
+     -   **datatype** - data type of the sysctl value, eg. `int`.
+ 
+-    -   **sysctlval** - value of the sysctl value. This can be either an atomic
+-        value, eg. `'1'`, or a list of values, eg. `['1','2']`. If this
+-        parameter is not specified, XCCDF Value is used instead.
+-
+-    -   **sysctlval_remediate** - the value that will be used in remediations.
+-        If **sysctlval_remediate** is not specified, the template will use the
+-        value of the **sysctlval** parameter in the remediations.
+-        This parameter is mandatory when the **sysctlval** parameter is a list
+-        because we need to know which of the values in the list the system
+-        should be remedied to. When  the **sysctlval** parameter is not a list
+-        this parameter is optional.
++    -   **sysctlval** - value of the sysctl value. This can be either not
++        specified, or an atomic value, eg. `'1'`, or a list of values,
++        eg. `['1','2']`.
++        -   If this parameter is not specified, an XCCDF Value is used instead
++            in OVAL check and remediations.
++        -   If this parameter is set to an atomic value, this atomic value
++            will be used in OVAL check and remediations.
++        -   If this parameter is set to a list of values, the list will be used
++            in the OVAL check, but won't be used in the remediations.
++            All remediations will use an XCCDF value instead.
+ 
+     -   **sysctlval_wrong** - the value that is always wrong. This will be used
+         only in the test scenarios only if **sysctlval** is a list.
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+index ddff15dff8f..9936ed777c8 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+@@ -77,7 +77,6 @@ template:
+         sysctlval:
+         - '1'
+         - '2'
+-        sysctlval_remediate: "2"
+         sysctlval_wrong: "0"
+         missing_static_pass: "true"
+         datatype: int
+diff --git a/products/rhel9/profiles/ospp.profile b/products/rhel9/profiles/ospp.profile
+index 19e4878c4b0..b47630c62b0 100644
+--- a/products/rhel9/profiles/ospp.profile
++++ b/products/rhel9/profiles/ospp.profile
+@@ -75,6 +75,7 @@ selections:
+     - sysctl_kernel_perf_event_paranoid
+     - sysctl_user_max_user_namespaces
+     - sysctl_kernel_unprivileged_bpf_disabled_accept_default
++    - sysctl_kernel_unprivileged_bpf_disabled_value=2
+     - service_kdump_disabled
+ 
+     ### Audit
+diff --git a/shared/templates/sysctl/ansible.template b/shared/templates/sysctl/ansible.template
+index 7724db5e5ff..edc4d3fb667 100644
+--- a/shared/templates/sysctl/ansible.template
++++ b/shared/templates/sysctl/ansible.template
+@@ -21,7 +21,7 @@
+     replace: '#{{{ SYSCTLVAR }}}'
+   loop: "{{ find_sysctl_d.files }}"
+ 
+-{{%- if SYSCTLVAL_REMEDIATE == "" %}}
++{{%- if SYSCTLVAL == "" or SYSCTLVAL is not string  %}}
+ - (xccdf-var sysctl_{{{ SYSCTLID }}}_value)
+ 
+ - name: Ensure sysctl {{{ SYSCTLVAR }}} is set
+@@ -29,10 +29,10 @@
+     name: "{{{ SYSCTLVAR }}}"
+     value: "{{ sysctl_{{{ SYSCTLID }}}_value }}"
+ {{%- else %}}
+-- name: Ensure sysctl {{{ SYSCTLVAR }}} is set to {{{ SYSCTLVAL_REMEDIATE }}}
++- name: Ensure sysctl {{{ SYSCTLVAR }}} is set to {{{ SYSCTLVAL }}}
+   sysctl:
+     name: "{{{ SYSCTLVAR }}}"
+-    value: "{{{ SYSCTLVAL_REMEDIATE }}}"
++    value: "{{{ SYSCTLVAL }}}"
+ {{%- endif %}}
+     state: present
+     reload: yes
+diff --git a/shared/templates/sysctl/bash.template b/shared/templates/sysctl/bash.template
+index 63948bd5a26..cd3424b0228 100644
+--- a/shared/templates/sysctl/bash.template
++++ b/shared/templates/sysctl/bash.template
+@@ -20,7 +20,7 @@ for f in /etc/sysctl.d/*.conf /run/sysctl.d/*.conf; do
+   fi
+ done
+ 
+-{{%- if SYSCTLVAL_REMEDIATE == "" %}}
++{{%- if SYSCTLVAL == "" or SYSCTLVAL is not string %}}
+ {{{ bash_instantiate_variables("sysctl_" + SYSCTLID + "_value") }}}
+ 
+ #
+@@ -38,11 +38,11 @@ done
+ #
+ # Set runtime for {{{ SYSCTLVAR }}}
+ #
+-/sbin/sysctl -q -n -w {{{ SYSCTLVAR }}}="{{{ SYSCTLVAL_REMEDIATE }}}"
++/sbin/sysctl -q -n -w {{{ SYSCTLVAR }}}="{{{ SYSCTLVAL }}}"
+ 
+ #
+-# If {{{ SYSCTLVAR }}} present in /etc/sysctl.conf, change value to "{{{ SYSCTLVAL_REMEDIATE }}}"
+-#	else, add "{{{ SYSCTLVAR }}} = {{{ SYSCTLVAL_REMEDIATE }}}" to /etc/sysctl.conf
++# If {{{ SYSCTLVAR }}} present in /etc/sysctl.conf, change value to "{{{ SYSCTLVAL }}}"
++#	else, add "{{{ SYSCTLVAR }}} = {{{ SYSCTLVAL }}}" to /etc/sysctl.conf
+ #
+-{{{ bash_replace_or_append('/etc/sysctl.conf', '^' + SYSCTLVAR , SYSCTLVAL_REMEDIATE ) }}}
++{{{ bash_replace_or_append('/etc/sysctl.conf', '^' + SYSCTLVAR , SYSCTLVAL ) }}}
+ {{%- endif %}}
+diff --git a/shared/templates/sysctl/template.py b/shared/templates/sysctl/template.py
+index 96663694997..2b779f99a62 100644
+--- a/shared/templates/sysctl/template.py
++++ b/shared/templates/sysctl/template.py
+@@ -16,15 +16,6 @@ def preprocess(data, lang):
+             "The sysctlval parameter of {0} is an empty list".format(
+                 data["_rule_id"]))
+ 
+-    if not data.get("sysctlval_remediate"):
+-        if isinstance(data["sysctlval"], list):
+-            raise ValueError(
+-                "Problem with rule {0}: the 'sysctlval' parameter is a list "
+-                "but we are missing the 'sysctlval_remediate' parameter, so "
+-                "we don't know how to generate remediation content.".format(
+-                    data["_rule_id"]))
+-        data["sysctlval_remediate"] = data["sysctlval"]
+-
+     # Configure data for test scenarios
+     if data["datatype"] not in ["string", "int"]:
+         raise ValueError(
+@@ -41,7 +32,7 @@ def preprocess(data, lang):
+             data["sysctl_correct_value"] = "correct_value"
+             data["sysctl_wrong_value"] = "wrong_value"
+     elif isinstance(data["sysctlval"], list):
+-        data["sysctl_correct_value"] = data["sysctlval_remediate"]
++        data["sysctl_correct_value"] = data["sysctlval"][0]
+         data["sysctl_wrong_value"] = data["sysctlval_wrong"]
+     else:
+         data["sysctl_correct_value"] = data["sysctlval"]
+
+From 817b47544b4a62aad8153360839bb14dd607d46d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Mon, 25 Jul 2022 15:47:11 +0200
+Subject: [PATCH 17/23] Rename a template parameter
+
+Rename the sysctlval_wrong parameter to wrong_sysctlval_for_testing
+---
+ docs/templates/template_reference.md                          | 4 ++--
+ .../rule.yml                                                  | 2 +-
+ shared/templates/sysctl/template.py                           | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/docs/templates/template_reference.md b/docs/templates/template_reference.md
+index 00f991daae7..4e6357c1579 100644
+--- a/docs/templates/template_reference.md
++++ b/docs/templates/template_reference.md
+@@ -826,8 +826,8 @@ The selected value can be changed in the profile (consult the actual variable fo
+             in the OVAL check, but won't be used in the remediations.
+             All remediations will use an XCCDF value instead.
+ 
+-    -   **sysctlval_wrong** - the value that is always wrong. This will be used
+-        only in the test scenarios only if **sysctlval** is a list.
++    -   **wrong_sysctlval_for_testing** - the value that is always wrong. This will be used
++        only in the templated test scenarios only if **sysctlval** is a list.
+ 
+     -   **missing_static_pass** - if set to `true` the check will pass if the
+         setting for the given **sysctlvar** is not present in sysctl
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+index 9936ed777c8..b8af4f7560d 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+@@ -77,6 +77,6 @@ template:
+         sysctlval:
+         - '1'
+         - '2'
+-        sysctlval_wrong: "0"
++        wrong_sysctlval_for_testing: "0"
+         missing_static_pass: "true"
+         datatype: int
+diff --git a/shared/templates/sysctl/template.py b/shared/templates/sysctl/template.py
+index 2b779f99a62..9083a6a4185 100644
+--- a/shared/templates/sysctl/template.py
++++ b/shared/templates/sysctl/template.py
+@@ -33,7 +33,7 @@ def preprocess(data, lang):
+             data["sysctl_wrong_value"] = "wrong_value"
+     elif isinstance(data["sysctlval"], list):
+         data["sysctl_correct_value"] = data["sysctlval"][0]
+-        data["sysctl_wrong_value"] = data["sysctlval_wrong"]
++        data["sysctl_wrong_value"] = data["wrong_sysctlval_for_testing"]
+     else:
+         data["sysctl_correct_value"] = data["sysctlval"]
+         if data["datatype"] == "int":
+
+From ed48698e95f96891889fa2c2039172015ae9f069 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Mon, 25 Jul 2022 15:56:26 +0200
+Subject: [PATCH 18/23] Rename parameter missing_static_pass
+
+Rename the parameter missing_static_pass to missing_parameter_pass
+to make the naming consistent with other templates where a parameter
+with a similar meaning exist.
+---
+ docs/templates/template_reference.md                        | 2 +-
+ .../rule.yml                                                | 2 +-
+ .../tests/test_config.yml                                   | 2 +-
+ shared/templates/sysctl/oval.template                       | 6 +++---
+ 4 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/docs/templates/template_reference.md b/docs/templates/template_reference.md
+index 4e6357c1579..0fff58c0a23 100644
+--- a/docs/templates/template_reference.md
++++ b/docs/templates/template_reference.md
+@@ -829,7 +829,7 @@ The selected value can be changed in the profile (consult the actual variable fo
+     -   **wrong_sysctlval_for_testing** - the value that is always wrong. This will be used
+         only in the templated test scenarios only if **sysctlval** is a list.
+ 
+-    -   **missing_static_pass** - if set to `true` the check will pass if the
++    -   **missing_parameter_pass** - if set to `true` the check will pass if the
+         setting for the given **sysctlvar** is not present in sysctl
+         configuration files. In other words, the check will pass if the system
+         default isn't overriden by configuration. Default value: `false`.
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+index b8af4f7560d..7d8769a913f 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+@@ -78,5 +78,5 @@ template:
+         - '1'
+         - '2'
+         wrong_sysctlval_for_testing: "0"
+-        missing_static_pass: "true"
++        missing_parameter_pass: "true"
+         datatype: int
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
+index c379680e25c..5cf68074050 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/tests/test_config.yml
+@@ -1,5 +1,5 @@
+ deny_templated_scenarios:
+-  # this rule uses missing_static_pass: true which means the check should pass
++  # this rule uses missing_parameter_pass: true which means the check should pass
+   # if the configuration is missing (or commented out) therefore we disable
+   # line_not_there.fail.sh and comment.fail.sh test scenarios
+   - line_not_there.fail.sh
+diff --git a/shared/templates/sysctl/oval.template b/shared/templates/sysctl/oval.template
+index 8241c391ad2..1a7c4979bbe 100644
+--- a/shared/templates/sysctl/oval.template
++++ b/shared/templates/sysctl/oval.template
+@@ -126,7 +126,7 @@
+ <def-group>
+   <definition class="compliance" id="{{{ rule_id }}}_static" version="3">
+     {{{ oval_metadata("The kernel '" + SYSCTLVAR + "' parameter should be set to " + COMMENT_VALUE + " in the system configuration.") }}}
+-{{% if MISSING_STATIC_PASS == "true" %}}
++{{% if MISSING_PARAMETER_PASS == "true" %}}
+     <criteria operator="OR">
+ {{% endif %}}
+     <criteria operator="AND">
+@@ -147,13 +147,13 @@
+       <criterion comment="Check that {{{ SYSCTLID }}} is defined in only one file" test_ref="test_{{{ rule_id }}}_defined_in_one_file" />
+ {{% endif %}}
+     </criteria>
+-{{% if MISSING_STATIC_PASS == "true" %}}
++{{% if MISSING_PARAMETER_PASS == "true" %}}
+       <criterion comment="Check that {{{ SYSCTLID }}} is not defined in any file" test_ref="test_{{{ rule_id }}}_not_defined" />
+     </criteria>
+ {{% endif %}}
+   </definition>
+ 
+-{{% if MISSING_STATIC_PASS == "true" %}}
++{{% if MISSING_PARAMETER_PASS == "true" %}}
+   <ind:textfilecontent54_test id="test_{{{ rule_id }}}_not_defined" version="1"
+                               check="all" check_existence="none_exist"
+                               comment="{{{ SYSCTLVAR }}} static configuration">
+
+From f022f549c6d0b5bc0d24c5d1b7c606d23efbd6d2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Mon, 25 Jul 2022 16:26:03 +0200
+Subject: [PATCH 19/23] Add a variable
+ sysctl_kernel_unprivileged_bpf_disabled_value
+
+---
+ ..._kernel_unprivileged_bpf_disabled_value.var | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_value.var
+
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_value.var b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_value.var
+new file mode 100644
+index 00000000000..b8bf965a255
+--- /dev/null
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_value.var
+@@ -0,0 +1,18 @@
++documentation_complete: true
++
++title: kernel.unprivileged_bpf_disabled
++
++description: |-
++    Prevent unprivileged processes from using the bpf() syscall.
++
++type: number
++
++operator: equals
++
++interactive: false
++
++options:
++    default: 2
++    0: "0"
++    1: "1"
++    2: "2"
+
+From 4c8ef02cc91c821d56c061f6d8e2ba1675d0c414 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 26 Jul 2022 09:36:09 +0200
+Subject: [PATCH 20/23] Improve documentation of the sysctl template
+
+---
+ docs/templates/template_reference.md | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/docs/templates/template_reference.md b/docs/templates/template_reference.md
+index 0fff58c0a23..e73b95450fe 100644
+--- a/docs/templates/template_reference.md
++++ b/docs/templates/template_reference.md
+@@ -819,15 +819,19 @@ The selected value can be changed in the profile (consult the actual variable fo
+         specified, or an atomic value, eg. `'1'`, or a list of values,
+         eg. `['1','2']`.
+         -   If this parameter is not specified, an XCCDF Value is used instead
+-            in OVAL check and remediations.
++            in OVAL check and remediations. The XCCDF Value should have a file
++            name in the form `"sysctl_" + $escaped_sysctlvar + "_value.var"`,
++            where the `escaped_sysctlvar` is a value of the **sysctlvar**
++            parameter in which all characters that don't match the `\w` regular
++            expression are replaced by an underscore (`_`).
+         -   If this parameter is set to an atomic value, this atomic value
+             will be used in OVAL check and remediations.
+         -   If this parameter is set to a list of values, the list will be used
+             in the OVAL check, but won't be used in the remediations.
+             All remediations will use an XCCDF value instead.
+ 
+-    -   **wrong_sysctlval_for_testing** - the value that is always wrong. This will be used
+-        only in the templated test scenarios only if **sysctlval** is a list.
++    -   **wrong_sysctlval_for_testing** - the value that is always wrong. This
++        will be used in templated test scenarios when **sysctlval** is a list.
+ 
+     -   **missing_parameter_pass** - if set to `true` the check will pass if the
+         setting for the given **sysctlvar** is not present in sysctl
+
+From 0f89cab50807ecf75269acc49e0c290c139beea6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 26 Jul 2022 09:36:34 +0200
+Subject: [PATCH 21/23] Remove RHEL 8 STIG ID
+
+---
+ .../rule.yml                                                    | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+index 7d8769a913f..ec3b5aef82f 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+@@ -33,8 +33,6 @@ references:
+     nist: AC-6,SC-7(10)
+     ospp: FMT_SMF_EXT.1
+     srg: SRG-OS-000132-GPOS-00067,SRG-OS-000480-GPOS-00227
+-    stigid@ol8: OL08-00-040281
+-    stigid@rhel8: RHEL-08-040281
+ 
+ ocil: |-
+     The runtime status of the <code>kernel.unprivileged_bpf_disabled</code>
+
+From 5c2116eb08b84c43d644f6ce51744732a63fb206 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 26 Jul 2022 09:36:47 +0200
+Subject: [PATCH 22/23] Fix a typo
+
+---
+ .../rule.yml                                                    | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+index ec3b5aef82f..589deccb0c7 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+@@ -62,7 +62,7 @@ ocil: |-
+ ocil_clause: "the kernel.unprivileged_bpf_disabled is not set to 1 or 2 or is configured to be 0"
+ 
+ fixtext: |-
+-    Configure {{{ full_name }}} to prevent privilege escalation thru the kernel by disabling access to the bpf syscall.
++    Configure {{{ full_name }}} to prevent privilege escalation through the kernel by disabling access to the bpf syscall.
+ 
+ srg_requirement: '{{{ full_name }}} must disable access to network bpf syscall from unprivileged processes.'
+ 
+
+From 22e5a11f3232234a939dc6a806752b1fa5c69ce4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 27 Jul 2022 10:36:04 +0200
+Subject: [PATCH 23/23] Mention both values 1 and 2 in the rule description
+
+---
+ .../rule.yml                                                  | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+index 589deccb0c7..259d1f901c6 100644
+--- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
++++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_unprivileged_bpf_disabled_accept_default/rule.yml
+@@ -13,11 +13,13 @@ description: |-
+     disabled, calling <code>bpf()</code> without <code>CAP_SYS_ADMIN</code> or <code>CAP_BPF</code> will return <code>-EPERM</code>.
+     Once set to <code>1</code>, this can't be cleared from the running kernel anymore.
+ 
++    {{{ describe_sysctl_option_value(sysctl="kernel.unprivileged_bpf_disabled", value="1") }}}
++
+     Writing <code>2</code> to this entry will also disable unprivileged calls to <code>bpf()</code>,
+     however, an admin can still change this setting later on, if needed, by
+     writing <code>0</code> or <code>1</code> to this entry.
+ 
+-    {{{ describe_sysctl_option_value(sysctl="kernel.unprivileged_bpf_disabled", value="1") }}}
++    {{{ describe_sysctl_option_value(sysctl="kernel.unprivileged_bpf_disabled", value="2") }}}
+ 
+ rationale: |-
+     Loading and accessing the packet filters programs and maps using the bpf()

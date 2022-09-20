@@ -5,65 +5,23 @@
 %global _default_patch_fuzz 2
 
 Name:		scap-security-guide
-Version:	0.1.60
-Release:	6%{?dist}
+Version:	0.1.63
+Release:	2%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
 Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{version}/scap-security-guide-%{version}.tar.bz2
 BuildArch:	noarch
 
-# Patch allows only OSPP, PCI-DSS, E8 and STIG profiles in RHEL8 datastream
-Patch0:		scap-security-guide-0.1.61-file_groupowner-PR_7791.patch
-Patch1:		scap-security-guide-0.1.61-file_owner-PR_7789.patch
-Patch2:		scap-security-guide-0.1.61-file_permissions-PR_7788.patch
-Patch3:		scap-security-guide-0.1.61-update_RHEL_08_010287-PR_8051.patch
-Patch4:		scap-security-guide-0.1.61-add_RHEL_08_010331-PR_8055.patch
-Patch5:		scap-security-guide-0.1.61-rhel8_stig_v1r5-PR_8050.patch
-Patch6:		scap-security-guide-0.1.61-RC_277_245-PR_8069.patch
-Patch7:		scap-security-guide-0.1.61-RC_248_249-PR_8071.patch
-Patch8:		scap-security-guide-0.1.61-RC_251-PR_8072.patch
-Patch9:		scap-security-guide-0.1.61-RC_246_250-PR_8070.patch
-Patch10:	scap-security-guide-0.1.61-RC_247-PR_8114.patch
-Patch11:	scap-security-guide-0.1.61-RC_254-PR_8113.patch
-Patch12:	scap-security-guide-0.1.61-RC_253-PR_8111.patch
-Patch13:	scap-security-guide-0.1.61-RC_255-PR_8112.patch
-Patch14:	scap-security-guide-0.1.61-add_RHEL_08_010359-PR_8131.patch
-Patch15:	scap-security-guide-0.1.61-RC_244-PR_8133.patch
-Patch16:	scap-security-guide-0.1.61-update_RHEL_STIG-PR_8130.patch
-Patch17:	scap-security-guide-0.1.61-update_RHEL_08_STIG-PR_8139.patch
-Patch18:	scap-security-guide-0.1.61-remove_RHEL_08_010560-PR_8145.patch
-Patch19:	scap-security-guide-0.1.61-add_RHEL_08_040321-PR_8169.patch
-Patch20:	scap-security-guide-0.1.61-add_RHEL_08_020221-PR_8173.patch
-Patch21:	scap-security-guide-0.1.61-update_RHEL_08_040320-PR_8170.patch
-Patch22:	scap-security-guide-0.1.61-rhel8_stig_audit_rules-PR_8174.patch
-Patch23:	scap-security-guide-0.1.61-update_RHEL_08_010030-PR_8183.patch
-Patch24:	scap-security-guide-0.1.61-selinux_state_rhel8_anssi_enhanced-PR_8182.patch
-Patch25:	scap-security-guide-0.1.61-update_accounts_password_template-PR_8164.patch
-Patch26:	scap-security-guide-0.1.61-update_RHEL_08_010383-PR_8138.patch
-Patch27:	scap-security-guide-0.1.61-remove_client_alive_max-PR_8197.patch
-Patch28:	scap-security-guide-0.1.61-pwquality-PR_8185.patch
-Patch29:	scap-security-guide-0.1.61-update_RHEL_08_020041-PR_8146.patch
-Patch30:	scap-security-guide-0.1.61-rhel86_ospp_fix_audit_ospp_general-PR_8152.patch
-Patch31:	scap-security-guide-0.1.61-ospp-remove-kernel-disable-rules-PR_8093.patch
-Patch32:	scap-security-guide-0.1.61-ospp-boot-parametersb-PR_8092.patch
-Patch33:	scap-security-guide-0.1.61-ospp-audit.conf-rules-PR_8188.patch
-Patch34:	scap-security-guide-0.1.61-distributed-sshd-rekeylimit-PR_8148.patch
-Patch35:	scap-security-guide-0.1.61-supported-rhel9-PR_8202.patch
-Patch36:	scap-security-guide-0.1.61-chrony_maxpoll-PR_8187.patch
-Patch37:	scap-security-guide-0.1.61-add_missing_srgs-PR_8218.patch
-Patch38:	scap-security-guide-0.1.61-sudoers_timestamp_timeout-PR_8220.patch
-Patch39:	scap-security-guide-0.1.61-grub2_rule_desc_update-PR_8184.patch
-Patch40:	scap-security-guide-0.1.61-grub2_template_fix-PR_8180.patch
-Patch41:	scap-security-guide-0.1.61-rear_not_applicable_aarch64-PR_8221.patch
-Patch42:	scap-security-guide-0.1.61-add_RHEL_08_0103789_include_sudoers-PR_8196.patch
-Patch43:	scap-security-guide-0.1.61-fix-ansible-service-disabled-task-PR_8226.patch
-Patch44:	scap-security-guide-0.1.61-update-ospp-description-PR_8232.patch
-Patch45:	scap-security-guide-0.1.61-add-rule-page_alloc_shuffle_argument-PR_8234.patch
-Patch46:	scap-security-guide-0.1.61-remove_tmux_process_running_check-PR_8246.patch
-Patch47:	scap-security-guide-0.1.61-fix_bug_in_delta_tailering_script-PR_8245.patch
-Patch48:	scap-security-guide-0.1.61-fix_enable_fips_mode-PR_8255.patch
-Patch49:	scap-security-guide-0.1.61-update_rhel9_gpg_key-PR_8411.patch
+Patch0:		scap-security-guide-0.1.64-audit_rules_for_ppc64le-PR_9124.patch
+Patch1:		scap-security-guide-0.1.64-fix_openssl_cryptopolicy_remediation-PR_9194.patch
+Patch2:		scap-security-guide-0.1.64-sysctl_template_extension_and_bpf_rules-PR_9147.patch
+Patch3:		scap-security-guide-0.1.64-fix_require_single_user_description-PR_9256.patch
+Patch4:		scap-security-guide-0.1.64-authselect_minimal_for_ospp-PR_9298.patch
+Patch5:		scap-security-guide-0.1.64-coredump_rules_for_ospp-PR_9285.patch
+Patch6:		scap-security-guide-0.1.64-add_back_rules-PR_9334.patch
+Patch7:		scap-security-guide-0.1.64-put_back_kernel_core_pattern_bin_false-PR_9384.patch
+Patch8:		scap-security-guide-0.1.64-fix_core_pattern_empty_string-PR_9396.patch
 
 BuildRequires:	libxslt
 BuildRequires:	expat
@@ -150,6 +108,12 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Wed Aug 31 2022 Vojtech Polasek <vpolasek@redhat.com> - 0.1.63-2
+- Fix problems with sysctl_kernel_core_pattern_empty_string rule (RHBZ#2117612)
+
+* Thu Aug 11 2022 Vojtech Polasek <vpolasek@redhat.com> - 0.1.63-1
+- rebase to scap-security-guide 0.1.63 (RHBZ#2116350)
+
 * Thu Mar 24 2022 Gabriel Becker <ggasparb@redhat.com> - 0.1.60-6
 - Update RHEL9 auxiliary GPG key references (RHBZ#2067109)
 

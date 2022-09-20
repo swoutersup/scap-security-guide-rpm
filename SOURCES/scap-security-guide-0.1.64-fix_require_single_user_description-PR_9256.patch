@@ -1,0 +1,29 @@
+From eef5cb155b9f820439ca32f993cebf1f68b29e80 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Thu, 28 Jul 2022 15:08:15 +0200
+Subject: [PATCH] Remove a confusing sentence
+
+In the rule description, there are 2 conflicting sentences, they
+both start by "By default ...", but they negate each other.
+In fact, the second of them is true, so the first one could be
+removed.
+
+Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=2092799
+---
+ .../accounts-physical/require_singleuser_auth/rule.yml         | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/rule.yml b/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/rule.yml
+index 932d76c36d9..332712ea1dd 100644
+--- a/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/rule.yml
++++ b/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/rule.yml
+@@ -8,8 +8,7 @@ title: 'Require Authentication for Single User Mode'
+ description: |-
+     Single-user mode is intended as a system recovery
+     method, providing a single user root access to the system by
+-    providing a boot option at startup. By default, no authentication
+-    is performed if single-user mode is selected.
++    providing a boot option at startup.
+     <br /><br />
+     By default, single-user mode is protected by requiring a password and is set
+     in <tt>/usr/lib/systemd/system/rescue.service</tt>.
