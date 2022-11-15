@@ -2,11 +2,11 @@
 # For more details see:
 # https://fedoraproject.org/wiki/Changes/CMake_to_do_out-of-source_builds
 %global _vpath_builddir build
-%global _default_patch_fuzz 2
+# global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
 Version:	0.1.63
-Release:	2%{?dist}
+Release:	5%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
@@ -19,7 +19,7 @@ Patch2:		scap-security-guide-0.1.64-sysctl_template_extension_and_bpf_rules-PR_9
 Patch3:		scap-security-guide-0.1.64-fix_require_single_user_description-PR_9256.patch
 Patch4:		scap-security-guide-0.1.64-authselect_minimal_for_ospp-PR_9298.patch
 Patch5:		scap-security-guide-0.1.64-coredump_rules_for_ospp-PR_9285.patch
-Patch6:		scap-security-guide-0.1.64-add_back_rules-PR_9334.patch
+Patch6:		scap-security-guide-0.1.64-readd_rules-PR_9334.patch
 Patch7:		scap-security-guide-0.1.64-put_back_kernel_core_pattern_bin_false-PR_9384.patch
 Patch8:		scap-security-guide-0.1.64-fix_core_pattern_empty_string-PR_9396.patch
 
@@ -108,14 +108,42 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Wed Aug 31 2022 Vojtech Polasek <vpolasek@redhat.com> - 0.1.63-2
-- Fix problems with sysctl_kernel_core_pattern_empty_string rule (RHBZ#2117612)
+* Thu Aug 25 2022 Gabriel Becker <ggasparb@redhat.com> - 0.1.63-5
+- OSPP: fix rule related to coredump (RHBZ#2081688)
 
-* Thu Aug 11 2022 Vojtech Polasek <vpolasek@redhat.com> - 0.1.63-1
-- rebase to scap-security-guide 0.1.63 (RHBZ#2116350)
+* Tue Aug 23 2022 Vojtech Polasek <vpolasek@redhat.com> - 0.1.63-4
+- use sysctl_kernel_core_pattern rule again in RHEL9 OSPP (RHBZ#2081688)
 
-* Thu Mar 24 2022 Gabriel Becker <ggasparb@redhat.com> - 0.1.60-6
-- Update RHEL9 auxiliary GPG key references (RHBZ#2067109)
+* Thu Aug 11 2022 Matej Tyc <matyc@redhat.com> - 0.1.63-3
+- Readd rules to the benchmark to be compatible across all minor versions of RHEL9 (RHBZ#2117669)
+
+* Wed Aug 10 2022 Vojtech Polasek <vpolasek@redhat.com> - 0.1.63-2
+- OSPP: utilize different audit rule set for different hardware platforms (RHBZ#1998583)
+- OSPP: update rules related to coredumps (RHBZ#2081688)
+- OSPP: update rules related to BPF (RHBZ#2081728)
+- fix description of require_singleuser_mode (RHBZ#2092799)
+- fix remediation of OpenSSL cryptopolicy (RHBZ#2108569)
+- OSPP: use minimal Authselect profile(RHBZ#2114979)
+
+* Mon Aug 01 2022 Vojtech Polasek <vpolasek@redhat.com> - 0.1.63-1
+- Rebase to a new upstream release 0.1.63 (RHBZ#2070563)
+
+* Mon Jul 18 2022 Vojtech Polasek <vpolasek@redhat.com> - 0.1.62-2
+- Remove sysctl_fs_protected_* rules from RHEL9 OSPP (RHBZ#2081719)
+- Make rule audit_access_success_ unenforcing in RHEL9 OSPP (RHBZ#2058154)
+- Drop zipl_vsyscall_argument rule from RHEL9 OSPP profile (RHBZ#2060049)
+- make sysctl_user_max_user_namespaces in RHEL9 OSPP (RHBZ#2083716)
+- Remove some sysctl rules  related to network from RHEL9 OSPP (RHBZ#2081708)
+- Add rule to check if Grub2 recovery is disabled to RHEL9 OSPP (RHBZ#2092809)
+- Add rule grub2_systemd_debug-shell_argument_absent (RHBZ#2092840)
+- Remove rule accounts_password_minlen_login_defs from all profiles (RHBZ#2073040)
+- Remove rules related to remove logging from RHEL9 OSPP (RHBZ#2105016)
+- Remove sshd_enable_strictmodes from OSPP (RHBZ#2105278)
+- Remove rules related to NIS services (RHBZ#2096602)
+- Make rule stricter when checking for FIPS crypto-policies (RHBZ#2057082)
+
+* Wed Jun 01 2022 Matej Tyc <matyc@redhat.com> - 0.1.62-1
+- Rebase to a new upstream release (RHBZ#2070563)
 
 * Mon Feb 21 2022 Gabriel Becker <ggasparb@redhat.com> - 0.1.60-5
 - Remove tmux process runinng check in configure_bashrc_exec_tmux (RHBZ#2056847)
