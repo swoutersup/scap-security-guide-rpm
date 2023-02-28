@@ -80,16 +80,17 @@ index 30f7e8d18..1ff31a0c7 100644
    - id: 1.2.2
      title: Ensure gpgcheck is globally activated (Automated)
 diff --git a/controls/srg_gpos/SRG-OS-000366-GPOS-00153.yml b/controls/srg_gpos/SRG-OS-000366-GPOS-00153.yml
-index ba143b86b..903a00ac5 100644
+index ba143b86b..52b80a324 100644
 --- a/controls/srg_gpos/SRG-OS-000366-GPOS-00153.yml
 +++ b/controls/srg_gpos/SRG-OS-000366-GPOS-00153.yml
-@@ -13,7 +13,7 @@ controls:
+@@ -12,8 +12,6 @@ controls:
+             - ensure_gpgcheck_globally_activated
              - ensure_gpgcheck_local_packages
              - ensure_gpgcheck_never_disabled
-             {{% if 'rhel' in product %}}
+-            {{% if 'rhel' in product %}}
 -            - ensure_redhat_gpgkey_installed
+-            {{% endif %}}
 +            - ensure_almalinux_gpgkey_installed
-             {{% endif %}}
  
          status: automated
 diff --git a/linux_os/guide/services/avahi/disable_avahi_group/service_avahi-daemon_disabled/rule.yml b/linux_os/guide/services/avahi/disable_avahi_group/service_avahi-daemon_disabled/rule.yml
