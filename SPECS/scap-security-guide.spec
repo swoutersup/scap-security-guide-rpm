@@ -5,23 +5,23 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.63
-Release:	5%{?dist}
+Version:	0.1.66
+Release:	1%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
 Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{version}/scap-security-guide-%{version}.tar.bz2
+# Rsyslog files rules remediations
+Patch1:	 scap-security-guide-0.1.67-rsyslog_files_rules_remediations-PR_9789.patch
+# Extends rsyslog_logfiles_attributes_modify template for permissions
+Patch2:	 scap-security-guide-0.1.67-rsyslog_files_permissions_template-PR_10139.patch
+# Change custom zones check in firewalld_sshd_port_enabled
+Patch3:	 scap-security-guide-0.1.67-firewalld_sshd_port_enabled_tests-PR_10162.patch
+# Accept required and requisite control flag for pam_pwhistory
+Patch4:	 scap-security-guide-0.1.67-pwhistory_control-PR_10175.patch
+# remove rule logind_session_timeout and associated variable from profiles
+Patch5:	 scap-security-guide-0.1.67-remove_logind_session_timeout_from_profiles-PR_10202.patch
 BuildArch:	noarch
-
-Patch0:		scap-security-guide-0.1.64-audit_rules_for_ppc64le-PR_9124.patch
-Patch1:		scap-security-guide-0.1.64-fix_openssl_cryptopolicy_remediation-PR_9194.patch
-Patch2:		scap-security-guide-0.1.64-sysctl_template_extension_and_bpf_rules-PR_9147.patch
-Patch3:		scap-security-guide-0.1.64-fix_require_single_user_description-PR_9256.patch
-Patch4:		scap-security-guide-0.1.64-authselect_minimal_for_ospp-PR_9298.patch
-Patch5:		scap-security-guide-0.1.64-coredump_rules_for_ospp-PR_9285.patch
-Patch6:		scap-security-guide-0.1.64-readd_rules-PR_9334.patch
-Patch7:		scap-security-guide-0.1.64-put_back_kernel_core_pattern_bin_false-PR_9384.patch
-Patch8:		scap-security-guide-0.1.64-fix_core_pattern_empty_string-PR_9396.patch
 
 BuildRequires:	libxslt
 BuildRequires:	expat
@@ -108,6 +108,14 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Mon Feb 13 2023 Watson Sato <wsato@redhat.com> - 0.1.66-1
+- Rebase to a new upstream release 0.1.66 (RHBZ#2169443)
+- Fix remediation of audit watch rules (RHBZ#2169441)
+- Fix check firewalld_sshd_port_enabled (RHBZ#2169443)
+- Fix accepted control flags for pam_pwhistory (RHBZ#2169443)
+- Unselect rule logind_session_timeout (RHBZ#2169443)
+- Add support rainer scripts in rsyslog rules (RHBZ#2169445)
+
 * Thu Aug 25 2022 Gabriel Becker <ggasparb@redhat.com> - 0.1.63-5
 - OSPP: fix rule related to coredump (RHBZ#2081688)
 
