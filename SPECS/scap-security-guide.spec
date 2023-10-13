@@ -21,7 +21,7 @@ Patch4: scap-security-guide-0.1.70-remove_secure_mode_insmod_anssi-PR_11001.patc
 BuildArch:	noarch
 
 # AlmaLinux 9
-Patch1000:      scap-security-guide-0.1.66-add-almalinux9-product.patch
+Patch1000:      scap-security-guide-0.1.69-add-almalinux9-product.patch
 
 BuildRequires:	libxslt
 BuildRequires:	expat
