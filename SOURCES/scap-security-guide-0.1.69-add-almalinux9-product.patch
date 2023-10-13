@@ -40,6 +40,18 @@ index ba8fb5d68..8924a3e5c 100755
  	ANOLIS8
  	ANOLIS23
  	CHROMIUM
+diff --git a/components/rpm.yml b/components/rpm.yml
+index 2b00bd908..5c0aa5b1e 100644
+--- a/components/rpm.yml
++++ b/components/rpm.yml
+@@ -17,6 +17,7 @@ rules:
+ - ensure_oracle_gpgkey_installed
+ - ensure_package_repositories_are_configured
+ - ensure_redhat_gpgkey_installed
++- ensure_almalinux_gpgkey_installed
+ - ensure_suse_gpgkey_installed
+ - package_dnf-automatic_installed
+ - package_gnome_software_installed
 diff --git a/controls/anssi.yml b/controls/anssi.yml
 index 35e111d11..6f813c160 100644
 --- a/controls/anssi.yml
@@ -24826,7 +24838,7 @@ index 000000000..3f278237b
 +    - inactivity_timeout_value=10_minutes
 diff --git a/products/almalinux9/profiles/e8.profile b/products/almalinux9/profiles/e8.profile
 new file mode 100644
-index 000000000..24683d254
+index 000000000..79f116d1d
 --- /dev/null
 +++ b/products/almalinux9/profiles/e8.profile
 @@ -0,0 +1,153 @@
@@ -24870,7 +24882,7 @@ index 000000000..24683d254
 +  - service_squid_disabled
 +
 +  ### Software update
-+  - ensure_redhat_gpgkey_installed
++  - ensure_almalinux_gpgkey_installed
 +  - ensure_gpgcheck_never_disabled
 +  - ensure_gpgcheck_local_packages
 +  - ensure_gpgcheck_globally_activated
@@ -24985,7 +24997,7 @@ index 000000000..24683d254
 +  - package_rear_installed
 diff --git a/products/almalinux9/profiles/hipaa.profile b/products/almalinux9/profiles/hipaa.profile
 new file mode 100644
-index 000000000..3eff557b3
+index 000000000..976fc1e72
 --- /dev/null
 +++ b/products/almalinux9/profiles/hipaa.profile
 @@ -0,0 +1,166 @@
@@ -25077,7 +25089,7 @@ index 000000000..3eff557b3
 +    - sysctl_kernel_randomize_va_space
 +    - rpm_verify_hashes
 +    - rpm_verify_permissions
-+    - ensure_redhat_gpgkey_installed
++    - ensure_almalinux_gpgkey_installed
 +    - ensure_gpgcheck_globally_activated
 +    - ensure_gpgcheck_never_disabled
 +    - ensure_gpgcheck_local_packages
@@ -25301,7 +25313,7 @@ index 000000000..3cd0db691
 +  - file_permissions_sshd_private_key
 diff --git a/products/almalinux9/profiles/ospp.profile b/products/almalinux9/profiles/ospp.profile
 new file mode 100644
-index 000000000..d77041404
+index 000000000..9626a82be
 --- /dev/null
 +++ b/products/almalinux9/profiles/ospp.profile
 @@ -0,0 +1,347 @@
@@ -25361,7 +25373,7 @@ index 000000000..d77041404
 +    - grub2_systemd_debug-shell_argument_absent
 +
 +    ### Software update
-+    - ensure_redhat_gpgkey_installed
++    - ensure_almalinux_gpgkey_installed
 +    - ensure_gpgcheck_globally_activated
 +    - ensure_gpgcheck_local_packages
 +    - ensure_gpgcheck_never_disabled
@@ -25654,7 +25666,7 @@ index 000000000..d77041404
 +    - zipl_systemd_debug-shell_argument_absent
 diff --git a/products/almalinux9/profiles/pci-dss.profile b/products/almalinux9/profiles/pci-dss.profile
 new file mode 100644
-index 000000000..1368ffe62
+index 000000000..707424189
 --- /dev/null
 +++ b/products/almalinux9/profiles/pci-dss.profile
 @@ -0,0 +1,149 @@
@@ -25774,7 +25786,7 @@ index 000000000..1368ffe62
 +    - accounts_password_pam_lcredit
 +    - accounts_password_pam_unix_remember
 +    - accounts_maximum_age_login_defs
-+    - ensure_redhat_gpgkey_installed
++    - ensure_almalinux_gpgkey_installed
 +    - ensure_gpgcheck_globally_activated
 +    - ensure_gpgcheck_never_disabled
 +    - security_patches_up_to_date
