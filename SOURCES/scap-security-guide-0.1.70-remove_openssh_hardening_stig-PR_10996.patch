@@ -1,0 +1,21 @@
+From 509c117acea0cc7a8457752cbdb4b8e7a6ca27d7 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Tue, 15 Aug 2023 15:17:16 +0200
+Subject: [PATCH] remove rules not relevant to RHEL 9 from STIG profile
+
+rules have no remediation for RHEL 9, syntax for RHEL 9 is also different than RHEL 8
+---
+ controls/srg_gpos/SRG-OS-000125-GPOS-00065.yml | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/controls/srg_gpos/SRG-OS-000125-GPOS-00065.yml b/controls/srg_gpos/SRG-OS-000125-GPOS-00065.yml
+index d5fe6e1327b..9d9dc579fc4 100644
+--- a/controls/srg_gpos/SRG-OS-000125-GPOS-00065.yml
++++ b/controls/srg_gpos/SRG-OS-000125-GPOS-00065.yml
+@@ -7,6 +7,4 @@ controls:
+         rules:
+             - sshd_enable_pam
+             - sysctl_crypto_fips_enabled
+-            - harden_sshd_ciphers_openssh_conf_crypto_policy
+-            - harden_sshd_macs_openssh_conf_crypto_policy
+         status: automated

@@ -1,0 +1,30 @@
+From 08b9f875630e119d90a5a1fc3694f6168ad19cb9 Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Thu, 17 Aug 2023 10:50:09 +0200
+Subject: [PATCH] remove sebool_secure_mode_insmod from RHEL ANSSI high
+
+---
+ products/rhel8/profiles/anssi_bp28_high.profile | 2 ++
+ products/rhel9/profiles/anssi_bp28_high.profile | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/products/rhel8/profiles/anssi_bp28_high.profile b/products/rhel8/profiles/anssi_bp28_high.profile
+index e2eeabbb78d..204e141b1f5 100644
+--- a/products/rhel8/profiles/anssi_bp28_high.profile
++++ b/products/rhel8/profiles/anssi_bp28_high.profile
+@@ -17,3 +17,5 @@ description: |-
+ 
+ selections:
+     - anssi:all:high
++    # the following rule renders UEFI systems unbootable
++    - '!sebool_secure_mode_insmod'
+diff --git a/products/rhel9/profiles/anssi_bp28_high.profile b/products/rhel9/profiles/anssi_bp28_high.profile
+index e2eeabbb78d..204e141b1f5 100644
+--- a/products/rhel9/profiles/anssi_bp28_high.profile
++++ b/products/rhel9/profiles/anssi_bp28_high.profile
+@@ -17,3 +17,5 @@ description: |-
+ 
+ selections:
+     - anssi:all:high
++    # the following rule renders UEFI systems unbootable
++    - '!sebool_secure_mode_insmod'
