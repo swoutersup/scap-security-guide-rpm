@@ -26198,7 +26198,7 @@ index 061ac2bac..aac521349 100644
      export superusers
  
 diff --git a/shared/references/disa-stig-rhel7-v3r12-xccdf-scap.xml b/shared/references/disa-stig-rhel7-v3r12-xccdf-scap.xml
-index 6aec0d608..54669e9f5 100644
+index 6c1f3f917..726bbd515 100644
 --- a/shared/references/disa-stig-rhel7-v3r12-xccdf-scap.xml
 +++ b/shared/references/disa-stig-rhel7-v3r12-xccdf-scap.xml
 @@ -3228,7 +3228,7 @@ Confirm password:</xccdf:fixtext>
@@ -26468,7 +26468,7 @@ index 6aec0d608..54669e9f5 100644
          <constant_variable datatype="string" comment="other sysctl configuration file locations" id="oval:mil.disa.stig.rhel7:var:14400" version="1">
            <value>/etc/sysctl.d</value>
 diff --git a/shared/references/disa-stig-rhel8-v1r10-xccdf-scap.xml b/shared/references/disa-stig-rhel8-v1r10-xccdf-scap.xml
-index b417e7fec..ebaf26f52 100644
+index a6e6e2c0b..6352e2e24 100644
 --- a/shared/references/disa-stig-rhel8-v1r10-xccdf-scap.xml
 +++ b/shared/references/disa-stig-rhel8-v1r10-xccdf-scap.xml
 @@ -2549,7 +2549,7 @@ SHA_CRYPT_MIN_ROUNDS 5000</xccdf:fixtext>
