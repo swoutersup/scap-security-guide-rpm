@@ -1,0 +1,52 @@
+From 75dd0e76be957e5fd92c98f01f7d672b2549fd3d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 8 Aug 2023 15:15:21 +0200
+Subject: [PATCH] Remove kernel cmdline check
+
+The OVAL in rule enable_fips_mode contains multiple checks. One
+of these checks tests presence of `fips=1` in `/etc/kernel/cmdline`.
+Although this is useful for latest RHEL versions, this file doesn't
+exist on RHEL 8.6 and 9.0. This causes that the rule fails after
+remediation on these RHEL versions.
+
+We want the same OVAL behavior on all minor RHEL releases, therefore
+we will remove this test from the OVAL completely.
+
+Related to: https://github.com/ComplianceAsCode/content/pull/10897
+---
+ .../fips/enable_fips_mode/oval/shared.xml         | 15 ---------------
+ 1 file changed, 15 deletions(-)
+
+diff --git a/linux_os/guide/system/software/integrity/fips/enable_fips_mode/oval/shared.xml b/linux_os/guide/system/software/integrity/fips/enable_fips_mode/oval/shared.xml
+index 88aae7aaab9..3b50e07060e 100644
+--- a/linux_os/guide/system/software/integrity/fips/enable_fips_mode/oval/shared.xml
++++ b/linux_os/guide/system/software/integrity/fips/enable_fips_mode/oval/shared.xml
+@@ -12,8 +12,6 @@
+         comment="system cryptography policy is configured"/>
+       <criterion test_ref="test_system_crypto_policy_value"
+         comment="check if var_system_crypto_policy variable selection is set to FIPS"/>
+-      <criterion test_ref="test_fips_1_argument_in_etc_kernel_cmdline"
+-        comment="check if kernel option fips=1 is present in /etc/kernel/cmdline"/>
+       {{% if "ol" in product or "rhel" in product %}}
+       <criteria operator="OR">
+         <criteria operator="AND">
+@@ -57,19 +55,6 @@
+     <ind:subexpression datatype="string" operation="pattern match">^(?:.*\s)?fips=1(?:\s.*)?$</ind:subexpression>
+   </ind:textfilecontent54_state>
+ 
+-  <ind:textfilecontent54_test id="test_fips_1_argument_in_etc_kernel_cmdline" version="1"
+-    check="all" check_existence="all_exist"
+-    comment="check if kernel option fips=1 is present in /etc/kernel/cmdline">
+-    <ind:object object_ref="object_fips_1_argument_in_etc_kernel_cmdline" />
+-    <ind:state state_ref="state_fips_1_argument_in_captured_group" />
+-  </ind:textfilecontent54_test>
+-
+-  <ind:textfilecontent54_object id="object_fips_1_argument_in_etc_kernel_cmdline" version="1">
+-    <ind:filepath operation="pattern match">^/etc/kernel/cmdline</ind:filepath>
+-    <ind:pattern operation="pattern match">^(.*)$</ind:pattern>
+-    <ind:instance datatype="int" operation="greater than or equal">1</ind:instance>
+-  </ind:textfilecontent54_object>
+-
+   <ind:variable_test id="test_system_crypto_policy_value" version="1"
+     check="at least one" comment="test if var_system_crypto_policy selection is set to FIPS">
+     <ind:object object_ref="obj_system_crypto_policy_value" />

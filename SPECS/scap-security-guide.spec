@@ -5,22 +5,19 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.66
-Release:	1%{?dist}.alma
+Version:	0.1.69
+Release:	2%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
 Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{version}/scap-security-guide-%{version}.tar.bz2
-# Rsyslog files rules remediations
-Patch1:	 scap-security-guide-0.1.67-rsyslog_files_rules_remediations-PR_9789.patch
-# Extends rsyslog_logfiles_attributes_modify template for permissions
-Patch2:	 scap-security-guide-0.1.67-rsyslog_files_permissions_template-PR_10139.patch
-# Change custom zones check in firewalld_sshd_port_enabled
-Patch3:	 scap-security-guide-0.1.67-firewalld_sshd_port_enabled_tests-PR_10162.patch
-# Accept required and requisite control flag for pam_pwhistory
-Patch4:	 scap-security-guide-0.1.67-pwhistory_control-PR_10175.patch
-# remove rule logind_session_timeout and associated variable from profiles
-Patch5:	 scap-security-guide-0.1.67-remove_logind_session_timeout_from_profiles-PR_10202.patch
+# Fix rule enable_fips_mode
+Patch1: scap-security-guide-0.1.70-improve_readability_enable_fips_mode-PR_10911.patch
+Patch2: scap-security-guide-0.1.70-fix_enable_fips_mode-PR_10961.patch
+# remove rules harden_sshd_(macs/ciphers)_openssh_conf_crypto_policy from STIG profile
+Patch3: scap-security-guide-0.1.70-remove_openssh_hardening_stig-PR_10996.patch
+# remove rule sebool_secure_mode_insmod from ANSSI high profile because it prevents UEFI-based systems from booting
+Patch4: scap-security-guide-0.1.70-remove_secure_mode_insmod_anssi-PR_11001.patch
 BuildArch:	noarch
 
 # AlmaLinux 9
@@ -114,8 +111,24 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Tue Feb 28 2023 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.66-1.alma
+* Fri Oct 13 2023 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.69-2.alma.1
 - Add AlmaLinux 9 support
+
+* Thu Aug 17 2023 Jan Černý <jcerny@redhat.com> - 0.1.69-2
+- Remove OpenSSH crypto policy hardening rules from STIG profile (RHBZ#2221697)
+- Fix ANSSI High profile with secure boot (RHBZ#2221697)
+
+* Wed Aug 09 2023 Jan Černý <jcerny@redhat.com> - 0.1.69-1
+- Rebase to a new upstream release 0.1.69 (RHBZ#2221697)
+- Improve CIS benchmark rules related to auditing of kernel module related events (RHBZ#2209657)
+- SSSD configuration files are now created with correct permissions whenever remediating SSSD related rules (RHBZ#2211511)
+- add warning about migration of network configuration files when upgrading from RHEL 8 to RHEL 9 (RHBZ#2172555)
+- Correct URL used to download CVE checks. (RHBZ#2223178)
+- update ANSSI BP-028 profiles to be aligned with version 2.0 (RHBZ#2155790)
+- Fixed excess quotes in journald configuration files (RHBZ#2193169)
+- Change rules checking home directories to apply only to local users (RHBZ#2203791)
+- Change rules checking password age to apply only to local users (RHBZ#2213958)
+- Updated man page (RHBZ#2060028)
 
 * Mon Feb 13 2023 Watson Sato <wsato@redhat.com> - 0.1.66-1
 - Rebase to a new upstream release 0.1.66 (RHBZ#2169443)
