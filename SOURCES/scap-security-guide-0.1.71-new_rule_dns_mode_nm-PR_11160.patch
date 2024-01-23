@@ -1,0 +1,294 @@
+From 6f11431ae6ff21170b11e6777141cbe33a8ffe42 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 5 Dec 2023 16:05:37 +0100
+Subject: [PATCH 08/14] New Rule networkmanager_dns_mode
+
+Patch-name: scap-security-guide-0.1.71-new_rule_dns_mode_nm-PR_11160.patch
+Patch-status: New Rule networkmanager_dns_mode
+---
+ components/networkmanager.yml                 |  5 +++
+ .../srg_gpos/SRG-OS-000480-GPOS-00227.yml     |  4 +++
+ .../system/network/networkmanager/group.yml   |  7 ++++
+ .../ansible/shared.yml                        | 14 ++++++++
+ .../networkmanager_dns_mode/bash/shared.sh    | 11 ++++++
+ .../networkmanager_dns_mode/oval/shared.xml   | 12 +++++++
+ .../policy/stig/shared.yml                    | 15 ++++++++
+ .../networkmanager_dns_mode/rule.yml          | 34 +++++++++++++++++++
+ .../tests/correct.pass.sh                     |  8 +++++
+ .../tests/correct_default.pass.sh             |  8 +++++
+ .../tests/missing.fail.sh                     |  4 +++
+ .../tests/wrong_value.fail.sh                 |  8 +++++
+ .../var_networkmanager_dns_mode.var           | 19 +++++++++++
+ shared/applicability/package.yml              |  2 ++
+ shared/references/cce-redhat-avail.txt        |  1 -
+ 15 files changed, 151 insertions(+), 1 deletion(-)
+ create mode 100644 components/networkmanager.yml
+ create mode 100644 linux_os/guide/system/network/networkmanager/group.yml
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/ansible/shared.yml
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/bash/shared.sh
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/oval/shared.xml
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/policy/stig/shared.yml
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/rule.yml
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/correct.pass.sh
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/correct_default.pass.sh
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/missing.fail.sh
+ create mode 100644 linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/wrong_value.fail.sh
+ create mode 100644 linux_os/guide/system/network/networkmanager/var_networkmanager_dns_mode.var
+
+diff --git a/components/networkmanager.yml b/components/networkmanager.yml
+new file mode 100644
+index 0000000000..75d54b9490
+--- /dev/null
++++ b/components/networkmanager.yml
+@@ -0,0 +1,5 @@
++name: NetworkManager
++packages:
++- NetworkManager
++rules:
++- networkmanager_dns_mode
+diff --git a/controls/srg_gpos/SRG-OS-000480-GPOS-00227.yml b/controls/srg_gpos/SRG-OS-000480-GPOS-00227.yml
+index 1aceb0b187..be60a154c1 100644
+--- a/controls/srg_gpos/SRG-OS-000480-GPOS-00227.yml
++++ b/controls/srg_gpos/SRG-OS-000480-GPOS-00227.yml
+@@ -225,6 +225,10 @@ controls:
+             - set_firewalld_default_zone
+             - firewalld_sshd_port_enabled
+ 
++            # NetworkManger
++            - networkmanager_dns_mode
++            - var_networkmanager_dns_mode=none
++
+             # misc
+             - enable_authselect
+             - no_host_based_files
+diff --git a/linux_os/guide/system/network/networkmanager/group.yml b/linux_os/guide/system/network/networkmanager/group.yml
+new file mode 100644
+index 0000000000..4abf48ed96
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/group.yml
+@@ -0,0 +1,7 @@
++documentation_complete: true
++
++title: 'Network Manager'
++
++description: |-
++    The NetworkManager daemon configures a variety of network connections.
++    This section discusses how to configure NetworkManager.
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/ansible/shared.yml b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/ansible/shared.yml
+new file mode 100644
+index 0000000000..b416038bd9
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/ansible/shared.yml
+@@ -0,0 +1,14 @@
++# platform = multi_platform_all
++# reboot = false
++# strategy = configure
++# complexity = low
++# disruption = low
++
++{{{ ansible_instantiate_variables("var_networkmanager_dns_mode") }}}
++
++{{{ ansible_ini_file_set("/etc/NetworkManager/NetworkManager.conf", "main", "dns", "{{ var_networkmanager_dns_mode }}") }}}
++
++- name: "{{{ rule_title }}} - Ensure Network Manager"
++  ansible.builtin.systemd:
++      name: NetworkManager
++      state: reloaded
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/bash/shared.sh b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/bash/shared.sh
+new file mode 100644
+index 0000000000..88491d288d
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/bash/shared.sh
+@@ -0,0 +1,11 @@
++# platform = multi_platform_all
++# reboot = false
++# strategy = configure
++# complexity = low
++# disruption = medium
++
++{{{ bash_instantiate_variables("var_networkmanager_dns_mode") }}}
++
++{{{ bash_ini_file_set("/etc/NetworkManager/NetworkManager.conf", "main", "dns", "$var_networkmanager_dns_mode") }}}
++
++systemctl reload NetworkManager
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/oval/shared.xml b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/oval/shared.xml
+new file mode 100644
+index 0000000000..cb07c9a9ed
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/oval/shared.xml
+@@ -0,0 +1,12 @@
++{{{
++oval_check_ini_file(
++    path="/etc/NetworkManager/NetworkManager.conf",
++    section="main",
++    parameter="dns",
++    value="default|none",
++    missing_parameter_pass=false,
++    application="NetworkManager",
++    multi_value=false,
++    missing_config_file_fail=true
++)
++}}}
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/policy/stig/shared.yml b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/policy/stig/shared.yml
+new file mode 100644
+index 0000000000..b644587b41
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/policy/stig/shared.yml
+@@ -0,0 +1,15 @@
++checktext: |-
++    [main]
++    dns=none
++
++    If the dns key under main does not exist or is not set to "none" or "default", this is a finding.
++
++fixtext: |-
++    Configure NetworkManager in RHEL 9 to use a DNS mode.
++
++    In "/etc/NetworkManager/NetworkManager.conf" add the following line in the "[main]" section:
++
++    dns = none
++
++srg_requirement: |-
++    {{ full_name }} must configure a DNS processing mode set be Network Manager.
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/rule.yml b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/rule.yml
+new file mode 100644
+index 0000000000..8b703cb2f1
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/rule.yml
+@@ -0,0 +1,34 @@
++documentation_complete: true
++
++prodtype: rhel9
++
++title: 'NetworkManager DNS Mode Must Be Must Configured'
++
++description:
++    The DNS processing mode in NetworkManager describes how DNS is processed on the system.
++    Depending the mode some changes the system's DNS may not be respected.
++
++rationale:
++    To ensure that DNS resolver settings are respected, a DNS mode in NetworkManager must be configured.
++
++severity: medium
++
++identifiers:
++    cce@rhel9: CCE-86805-9
++
++references:
++    disa: CCI-000366
++    nist: CM-6(b)
++    srg: SRG-OS-000480-GPOS-00227
++
++ocil_clause: 'the dns key under main does not exist or is not set to "none" or "default"'
++
++
++ocil: |-
++    Verify that {{{ full_name }}} has a DNS mode configured in Network Manager.
++
++    $ NetworkManager --print-config
++    [main]
++    dns={{{ xccdf_value("var_networkmanager_dns_mode") }}}
++
++platform: package[NetworkManager]
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/correct.pass.sh b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/correct.pass.sh
+new file mode 100644
+index 0000000000..7af3e14fc3
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/correct.pass.sh
+@@ -0,0 +1,8 @@
++#!/bin/bash
++# variables = var_networkmanager_dns_mode = none
++# packages = NetworkManager
++
++cat > /etc/NetworkManager/NetworkManager.conf << EOM
++[main]
++dns=none
++EOM
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/correct_default.pass.sh b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/correct_default.pass.sh
+new file mode 100644
+index 0000000000..a19040e2d5
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/correct_default.pass.sh
+@@ -0,0 +1,8 @@
++#!/bin/bash
++# variables = var_networkmanager_dns_mode = default
++# packages = NetworkManager
++
++cat > /etc/NetworkManager/NetworkManager.conf << EOM
++[main]
++dns=default
++EOM
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/missing.fail.sh b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/missing.fail.sh
+new file mode 100644
+index 0000000000..b81d82c807
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/missing.fail.sh
+@@ -0,0 +1,4 @@
++#!/bin/bash
++# variables = var_networkmanager_dns_mode = default
++
++sed '/^dns=.*$/d' /etc/NetworkManager/NetworkManager.conf
+diff --git a/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/wrong_value.fail.sh b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/wrong_value.fail.sh
+new file mode 100644
+index 0000000000..6de904b372
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/networkmanager_dns_mode/tests/wrong_value.fail.sh
+@@ -0,0 +1,8 @@
++#!/bin/bash
++# variables = var_networkmanager_dns_mode = default
++# packages = NetworkManager
++
++cat > /etc/NetworkManager/NetworkManager.conf << EOM
++[main]
++dns=dnsmasq
++EOM
+diff --git a/linux_os/guide/system/network/networkmanager/var_networkmanager_dns_mode.var b/linux_os/guide/system/network/networkmanager/var_networkmanager_dns_mode.var
+new file mode 100644
+index 0000000000..1be615dff9
+--- /dev/null
++++ b/linux_os/guide/system/network/networkmanager/var_networkmanager_dns_mode.var
+@@ -0,0 +1,19 @@
++documentation_complete: true
++
++title: 'NetoworkManager DNS Mode'
++
++type: string
++
++description: |-
++    This sets how NetworkManager handles DNS.
++
++    none -  NetworkManager will not modify resolv.conf.
++    default - NetworkManager will update /etc/resolv.conf to reflect the nameservers provided by currently active connections.
++
++interactive: true
++
++operator: 'equals'
++
++options:
++    none: none
++    default: default
+diff --git a/shared/applicability/package.yml b/shared/applicability/package.yml
+index ee52a50f1f..4718c7cf71 100644
+--- a/shared/applicability/package.yml
++++ b/shared/applicability/package.yml
+@@ -87,3 +87,5 @@ args:
+     pkgname: zypper
+   openssh:
+     pkgname: openssh
++  networkmanager:
++    pkgname: NetworkManager
+diff --git a/shared/references/cce-redhat-avail.txt b/shared/references/cce-redhat-avail.txt
+index 538d9d488d..60663b117a 100644
+--- a/shared/references/cce-redhat-avail.txt
++++ b/shared/references/cce-redhat-avail.txt
+@@ -459,7 +459,6 @@ CCE-86799-4
+ CCE-86802-6
+ CCE-86803-4
+ CCE-86804-2
+-CCE-86805-9
+ CCE-86806-7
+ CCE-86807-5
+ CCE-86808-3
+-- 
+2.43.0
+

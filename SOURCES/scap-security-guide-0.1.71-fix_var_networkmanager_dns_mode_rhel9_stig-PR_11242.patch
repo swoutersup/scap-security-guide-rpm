@@ -1,0 +1,26 @@
+From 89c7d9f8e9837383047b036c9a42a9986590f307 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 5 Dec 2023 16:22:29 +0100
+Subject: [PATCH 11/14] Add var_networkmanager_dns_mode to RHEL 9 STIG
+
+Patch-name: scap-security-guide-0.1.71-fix_var_networkmanager_dns_mode_rhel9_stig-PR_11242.patch
+Patch-status: Add var_networkmanager_dns_mode to RHEL 9 STIG
+---
+ controls/stig_rhel9.yml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/controls/stig_rhel9.yml b/controls/stig_rhel9.yml
+index 0966ebb6fc..b576ba08c3 100644
+--- a/controls/stig_rhel9.yml
++++ b/controls/stig_rhel9.yml
+@@ -1516,6 +1516,7 @@ controls:
+         title: RHEL 9 must configure a DNS processing mode set be Network Manager.
+         rules:
+             - networkmanager_dns_mode
++            - var_networkmanager_dns_mode=none
+         status: automated
+ 
+     -   id: RHEL-09-252045
+-- 
+2.43.0
+

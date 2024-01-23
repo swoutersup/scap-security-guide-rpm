@@ -1,0 +1,91 @@
+From d98cffdc7ebd3c266e71ead933d401188ef0d66a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 5 Dec 2023 16:05:37 +0100
+Subject: [PATCH 07/14] Add rule `package_s-nail-installed`
+
+Patch-name: scap-security-guide-0.1.70-add_package_smail_installed-PR_11144.patch
+Patch-status: Add rule `package_s-nail-installed`
+---
+ components/s-nail.yml                         |  5 +++
+ .../srg_gpos/SRG-OS-000363-GPOS-00150.yml     |  1 +
+ .../mail/package_s-nail_installed/rule.yml    | 33 +++++++++++++++++++
+ shared/references/cce-redhat-avail.txt        |  1 -
+ 4 files changed, 39 insertions(+), 1 deletion(-)
+ create mode 100644 components/s-nail.yml
+ create mode 100644 linux_os/guide/services/mail/package_s-nail_installed/rule.yml
+
+diff --git a/components/s-nail.yml b/components/s-nail.yml
+new file mode 100644
+index 0000000000..d93f8c52dc
+--- /dev/null
++++ b/components/s-nail.yml
+@@ -0,0 +1,5 @@
++name: s-nail
++packages:
++- s-nail
++rules:
++- package_s-nail_installed
+diff --git a/controls/srg_gpos/SRG-OS-000363-GPOS-00150.yml b/controls/srg_gpos/SRG-OS-000363-GPOS-00150.yml
+index 3ffba82f03..05a10a2304 100644
+--- a/controls/srg_gpos/SRG-OS-000363-GPOS-00150.yml
++++ b/controls/srg_gpos/SRG-OS-000363-GPOS-00150.yml
+@@ -7,4 +7,5 @@ controls:
+         rules:
+             - aide_periodic_cron_checking
+             - package_aide_installed
++            - package_s-nail_installed
+         status: automated
+diff --git a/linux_os/guide/services/mail/package_s-nail_installed/rule.yml b/linux_os/guide/services/mail/package_s-nail_installed/rule.yml
+new file mode 100644
+index 0000000000..e14fbc9f35
+--- /dev/null
++++ b/linux_os/guide/services/mail/package_s-nail_installed/rule.yml
+@@ -0,0 +1,33 @@
++documentation_complete: true
++
++prodtype: rhel9
++
++title: 'The s-nail Package Is Installed'
++
++description: |-
++    A mail server is required for sending emails.
++    {{{ describe_package_install(package="s-nail") }}}
++
++rationale: |-
++    Emails can be used to notify designated personnel about important
++    system events such as failures or warnings.
++
++severity: medium
++
++identifiers:
++    cce@rhel9: CCE-86608-7
++
++references:
++    disa: CCI-001744
++    nist: CM-3(5)
++    srg: SRG-OS-000363-GPOS-00150
++
++ocil_clause: 'the package is not installed'
++
++ocil: '{{{ ocil_package(package="s-nail") }}}'
++
++template:
++    name: package_installed
++    vars:
++        pkgname: s-nail
++
+diff --git a/shared/references/cce-redhat-avail.txt b/shared/references/cce-redhat-avail.txt
+index ef6afd3fbe..538d9d488d 100644
+--- a/shared/references/cce-redhat-avail.txt
++++ b/shared/references/cce-redhat-avail.txt
+@@ -315,7 +315,6 @@ CCE-86604-6
+ CCE-86605-3
+ CCE-86606-1
+ CCE-86607-9
+-CCE-86608-7
+ CCE-86609-5
+ CCE-86610-3
+ CCE-86612-9
+-- 
+2.43.0
+

@@ -6,7 +6,7 @@
 
 Name:		scap-security-guide
 Version:	0.1.69
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
@@ -18,6 +18,26 @@ Patch2: scap-security-guide-0.1.70-fix_enable_fips_mode-PR_10961.patch
 Patch3: scap-security-guide-0.1.70-remove_openssh_hardening_stig-PR_10996.patch
 # remove rule sebool_secure_mode_insmod from ANSSI high profile because it prevents UEFI-based systems from booting
 Patch4: scap-security-guide-0.1.70-remove_secure_mode_insmod_anssi-PR_11001.patch
+# Update sshd_approved_ciphers value for RHEL in STIG profile
+Patch5:	 scap-security-guide-0.1.70-sshd_approved_ciphers_stig-PR_10966.patch
+# Add rule `package_s-nail-installed`
+Patch6:	 scap-security-guide-0.1.70-add_package_smail_installed-PR_11144.patch
+# New Rule networkmanager_dns_mode
+Patch7:	 scap-security-guide-0.1.71-new_rule_dns_mode_nm-PR_11160.patch
+# Add cron.deny Owership Rules
+Patch8:	 scap-security-guide-0.1.71-add_cron_deny_rules-PR_11185.patch
+# Add RHEL 9 STIG
+Patch9:	 scap-security-guide-0.1.71-add_rhel9_stig-PR_11193.patch
+# Add var_networkmanager_dns_mode to RHEL 9 STIG
+Patch10:	scap-security-guide-0.1.71-fix_var_networkmanager_dns_mode_rhel9_stig-PR_11242.patch
+# Add SRG id to `file_owner_grub2_cfg` for RHEL 9 STIG
+Patch11:	scap-security-guide-0.1.71-add_srg_to_file_owner_grub2_cfg-PR_11261.patch
+# Minor modifications to RHEL STIG profiles
+Patch12:	scap-security-guide-0.1.72-remove_stig_ids-PR_11327.patch
+# Add variable support to `auditd_name_format` rule
+Patch13:	scap-security-guide-0.1.70-name_format_variable-PR_11019.patch
+# Update ssh stig HMACS and Ciphers allowed in OL8 STIG
+Patch14:	scap-security-guide-0.1.70-update_ssh_stig_algos-PR_10920.patch
 BuildArch:	noarch
 
 BuildRequires:	libxslt
@@ -105,6 +125,9 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Tue Dec 05 2023 Jan Černý <jcerny@redhat.com> - 0.1.69-3
+- Align STIG profile with official DISA STIG for RHEL 9 (RHEL-1807)
+
 * Thu Aug 17 2023 Jan Černý <jcerny@redhat.com> - 0.1.69-2
 - Remove OpenSSH crypto policy hardening rules from STIG profile (RHBZ#2221697)
 - Fix ANSSI High profile with secure boot (RHBZ#2221697)

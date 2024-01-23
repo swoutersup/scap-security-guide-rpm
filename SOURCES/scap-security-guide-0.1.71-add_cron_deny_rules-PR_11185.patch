@@ -1,0 +1,158 @@
+From 1927922065ba7cab8e389d6b2e4ec014be491bed Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 5 Dec 2023 16:05:37 +0100
+Subject: [PATCH 09/14] Add cron.deny Owership Rules
+
+Patch-name: scap-security-guide-0.1.71-add_cron_deny_rules-PR_11185.patch
+Patch-status: Add cron.deny Owership Rules
+---
+ components/cronie.yml                         |  2 +
+ .../srg_gpos/SRG-OS-000480-GPOS-00227.yml     |  2 +
+ .../file_groupowner_cron_deny/rule.yml        | 39 ++++++++++++++++++
+ .../cron_and_at/file_owner_cron_deny/rule.yml | 41 +++++++++++++++++++
+ shared/references/cce-redhat-avail.txt        |  2 -
+ 5 files changed, 84 insertions(+), 2 deletions(-)
+ create mode 100644 linux_os/guide/services/cron_and_at/file_groupowner_cron_deny/rule.yml
+ create mode 100644 linux_os/guide/services/cron_and_at/file_owner_cron_deny/rule.yml
+
+diff --git a/components/cronie.yml b/components/cronie.yml
+index c11edb518e..b8bf7f264a 100644
+--- a/components/cronie.yml
++++ b/components/cronie.yml
+@@ -8,6 +8,8 @@ rules:
+ - disable_anacron
+ - file_at_deny_not_exist
+ - file_cron_deny_not_exist
++- file_owner_cron_deny
++- file_groupowner_cron_deny
+ - file_groupowner_at_allow
+ - file_groupowner_cron_allow
+ - file_groupowner_cron_d
+diff --git a/controls/srg_gpos/SRG-OS-000480-GPOS-00227.yml b/controls/srg_gpos/SRG-OS-000480-GPOS-00227.yml
+index be60a154c1..d78256777c 100644
+--- a/controls/srg_gpos/SRG-OS-000480-GPOS-00227.yml
++++ b/controls/srg_gpos/SRG-OS-000480-GPOS-00227.yml
+@@ -64,6 +64,8 @@ controls:
+             - file_permissions_ungroupowned
+             - dir_perms_world_writable_root_owned
+             - no_files_unowned_by_user
++            - file_owner_cron_deny
++            - file_groupowner_cron_deny
+ 
+             # service disabled
+             # - service_rngd_enabled - this rule was removed because it does bring questionable value on modern systems
+diff --git a/linux_os/guide/services/cron_and_at/file_groupowner_cron_deny/rule.yml b/linux_os/guide/services/cron_and_at/file_groupowner_cron_deny/rule.yml
+new file mode 100644
+index 0000000000..7cacc3fc7b
+--- /dev/null
++++ b/linux_os/guide/services/cron_and_at/file_groupowner_cron_deny/rule.yml
+@@ -0,0 +1,39 @@
++documentation_complete: true
++
++prodtype: rhel9
++
++title: 'Verify Group Who Owns cron.deny'
++
++description: |-
++    {{{ describe_file_group_owner(file="/etc/cron.deny", group="root") }}}
++
++rationale: |-
++    Service configuration files enable or disable features of their respective services that if configured incorrectly
++    can lead to insecure and vulnerable configurations. Therefore, service configuration files should be owned by the
++    correct group to prevent unauthorized changes.
++
++severity: medium
++
++identifiers:
++    cce@rhel9: CCE-86537-8
++
++
++references:
++    disa: CCI-000366
++    nist: CM-6 b
++    srg: SRG-OS-000480-GPOS-00227
++
++ocil_clause: '{{{ ocil_clause_file_group_owner(file="/etc/cron.deny", group="root") }}}'
++
++ocil: |-
++    {{{ ocil_file_group_owner(file="/etc/cron.deny", group="root") }}}
++
++fixtext: '{{{ fixtext_file_group_owner(file="/etc/cron.deny/", group="root") }}}'
++
++srg_requirement: '{{{ srg_requirement_file_group_owner(file="/etc/cron.deny", group="root") }}}'
++
++template:
++    name: file_groupowner
++    vars:
++        filepath: /etc/cron.deny
++        gid_or_name: '0'
+diff --git a/linux_os/guide/services/cron_and_at/file_owner_cron_deny/rule.yml b/linux_os/guide/services/cron_and_at/file_owner_cron_deny/rule.yml
+new file mode 100644
+index 0000000000..4297313a74
+--- /dev/null
++++ b/linux_os/guide/services/cron_and_at/file_owner_cron_deny/rule.yml
+@@ -0,0 +1,41 @@
++documentation_complete: true
++
++prodtype: rhel9
++
++title: 'Verify Owner on cron.deny'
++
++description: |-
++    {{{ describe_file_owner(file="/etc/cron.deny", owner="root") }}}
++
++rationale: |-
++    Service configuration files enable or disable features of their respective services that if configured incorrectly
++    can lead to insecure and vulnerable configurations. Therefore, service configuration files should be owned by the
++    correct user to prevent unauthorized changes.
++
++
++severity: medium
++
++identifiers:
++    cce@rhel9: CCE-86887-7
++
++references:
++    disa: CCI-000366
++    nist: CM-6 b
++    srg: SRG-OS-000480-GPOS-00227
++
++
++ocil_clause: '{{{ ocil_clause_file_owner(file="/etc/cron.deny", owner="root") }}}'
++
++ocil: |-
++    {{{ ocil_file_owner(file="/etc/cron.deny", owner="root") }}}
++
++fixtext: '{{{ fixtext_file_owner(file="/etc/cron.deny/", owner="root") }}}'
++
++srg_requirement: '{{{ srg_requirement_file_owner(file="/etc/cron.deny", owner="root") }}}'
++
++template:
++    name: file_owner
++    vars:
++        filepath: /etc/cron.deny
++        fileuid: '0'
++
+diff --git a/shared/references/cce-redhat-avail.txt b/shared/references/cce-redhat-avail.txt
+index 60663b117a..8ae1e4186f 100644
+--- a/shared/references/cce-redhat-avail.txt
++++ b/shared/references/cce-redhat-avail.txt
+@@ -259,7 +259,6 @@ CCE-86528-7
+ CCE-86530-3
+ CCE-86535-2
+ CCE-86536-0
+-CCE-86537-8
+ CCE-86538-6
+ CCE-86539-4
+ CCE-86540-2
+@@ -516,7 +515,6 @@ CCE-86880-2
+ CCE-86881-0
+ CCE-86882-8
+ CCE-86886-9
+-CCE-86887-7
+ CCE-86888-5
+ CCE-86889-3
+ CCE-86890-1
+-- 
+2.43.0
+
