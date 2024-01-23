@@ -1,0 +1,263 @@
+From 09b4ceaba513e23ee933349f8a89b9c9b7dc1c26 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 6 Dec 2023 10:02:00 +0100
+Subject: [PATCH 14/14] Add variable support to `auditd_name_format` rule
+
+Patch-name: scap-security-guide-0.1.70-name_format_variable-PR_11019.patch
+Patch-status: Add variable support to `auditd_name_format` rule
+---
+ controls/srg_gpos.yml                         |   1 +
+ .../auditd_name_format/ansible/shared.yml     |   7 +-
+ .../auditd_name_format/bash/shared.sh         |   7 +-
+ .../auditd_name_format/oval/shared.xml        |  49 ++++-
+ .../auditd_name_format/rule.yml               |  23 ++-
+ .../var_auditd_flush.var                      |   2 +-
+ .../var_auditd_name_format.var                |  18 ++
+ products/rhel7/profiles/stig.profile          |   1 +
+ products/rhel8/profiles/stig.profile          |   1 +
+ .../data/profile_stability/rhel8/stig.profile |   1 +
+ .../profile_stability/rhel8/stig_gui.profile  |   1 +
+ 15 files changed, 289 insertions(+), 24 deletions(-)
+ create mode 100644 linux_os/guide/system/auditing/configure_auditd_data_retention/var_auditd_name_format.var
+
+diff --git a/controls/srg_gpos.yml b/controls/srg_gpos.yml
+index 1be70cf332..45fe8635c0 100644
+--- a/controls/srg_gpos.yml
++++ b/controls/srg_gpos.yml
+@@ -29,3 +29,4 @@ controls:
+             - var_auditd_space_left_action=email
+             - login_banner_text=dod_banners
+             - var_authselect_profile=sssd
++            - var_auditd_name_format=stig
+diff --git a/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/ansible/shared.yml b/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/ansible/shared.yml
+index c933228357..015e9d6eff 100644
+--- a/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/ansible/shared.yml
++++ b/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/ansible/shared.yml
+@@ -10,9 +10,14 @@
+   {{%- set auditd_conf_path=audisp_conf_path + "/auditd.conf" %}}
+ {{%- endif %}}
+ 
++{{{ ansible_instantiate_variables("var_auditd_name_format") }}}
++
++- name: "{{{ rule_title }}} - Define Value to Be Used in the Remediation"
++  ansible.builtin.set_fact: auditd_name_format_split="{{ var_auditd_name_format.split('|')[0] }}"
++
+ {{{ ansible_set_config_file(file=auditd_conf_path,
+                   parameter="name_format",
+-                  value="hostname",
++                  value="{{ auditd_name_format_split }}",
+                   create=true,
+                   separator=" = ",
+                   separator_regex="\s*=\s*",
+diff --git a/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/bash/shared.sh b/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/bash/shared.sh
+index 67a1203dd5..a08fddc901 100644
+--- a/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/bash/shared.sh
++++ b/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/bash/shared.sh
+@@ -10,9 +10,14 @@
+   {{%- set auditd_conf_path=audisp_conf_path + "/auditd.conf" %}}
+ {{%- endif %}}
+ 
++
++{{{ bash_instantiate_variables("var_auditd_name_format") }}}
++
++var_auditd_name_format="$(echo $var_auditd_name_format | cut -d \| -f 1)"
++
+ {{{set_config_file(path=auditd_conf_path,
+                   parameter="name_format",
+-                  value="hostname",
++                  value="$var_auditd_name_format",
+                   create=true,
+                   insensitive=true,
+                   separator=" = ",
+diff --git a/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/oval/shared.xml b/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/oval/shared.xml
+index 1bb86958fa..a98a46773b 100644
+--- a/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/oval/shared.xml
++++ b/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/oval/shared.xml
+@@ -3,10 +3,47 @@
+ {{% else %}}
+ {{% set audisp_conf_file = "/auditd.conf" %}}
+ {{% endif %}}
++<def-group>
++  <definition class="compliance" id="auditd_name_format" version="1">
++    <metadata>
++    <title>Set type of computer node name logging in audit logs</title>
++    <affected family="unix">
++    <platform>multi_platform_all</platform>
++    </affected>
++        <description>Ensure 'name_format' is configured with value 'hostname|fdq|numeric' in {{{ audisp_conf_path + audisp_conf_file }}}</description>
++    </metadata>
++    <criteria comment="The respective application or service is configured correctly"
++    operator="OR"><criterion comment="Check the name_format in {{{ audisp_conf_path + audisp_conf_file }}}"
++  test_ref="test_auditd_name_format" />
++    </criteria>
++  </definition>
+ 
+-{{{ oval_check_config_file(
+-    path=audisp_conf_path + audisp_conf_file,
+-    prefix_regex="^[ \\t]*(?i)",
+-    parameter="name_format",
+-    value="(?i)hostname(?-i)",
+-    separator_regex="(?-i)[ \\t]*=[ \\t]*") }}}
++  <ind:textfilecontent54_test check="all" check_existence="all_exist"
++    comment="tests the value of name_format setting in the {{{ audisp_conf_path + audisp_conf_file }}} file"
++    id="test_auditd_name_format" version="1">
++    <ind:object object_ref="obj_auditd_name_format" />
++    <ind:state state_ref="state_auditd_name_format" />
++  </ind:textfilecontent54_test>
++
++  <ind:textfilecontent54_object id="obj_auditd_name_format" version="1">
++    <ind:filepath>{{{ audisp_conf_path + audisp_conf_file }}}</ind:filepath>
++    <ind:pattern operation="pattern match">^[ \t]*(?i)name_format(?-i)[ \t]*=[ \t]*(.+?)[ \t]*(?:$|#)</ind:pattern>
++    <ind:instance operation="greater than or equal" datatype="int">1</ind:instance>
++  </ind:textfilecontent54_object>
++
++  <ind:textfilecontent54_state id="state_auditd_name_format" version="1">
++    <ind:subexpression operation="pattern match" var_ref="var_auditd_name_format_regex" />
++  </ind:textfilecontent54_state>
++
++  <local_variable datatype="string" id="var_auditd_name_format_regex" version="1"
++  comment="Build regex to be case insensitive">
++    <concat>
++      <literal_component>(?i)</literal_component>
++      <variable_component var_ref="var_auditd_name_format"/>
++    </concat>
++  </local_variable>
++
++  <external_variable comment="audit name_format setting" datatype="string"
++  id="var_auditd_name_format" version="1" />
++
++</def-group>
+diff --git a/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/rule.yml b/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/rule.yml
+index 76a908f28f..4ee80e3d07 100644
+--- a/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/rule.yml
++++ b/linux_os/guide/system/auditing/configure_auditd_data_retention/auditd_name_format/rule.yml
+@@ -1,11 +1,11 @@
+ documentation_complete: true
+ 
+-title: 'Set hostname as computer node name in audit logs'
++title: 'Set type of computer node name logging in audit logs'
+ 
+ description: |-
+-    To configure Audit daemon to use value returned by gethostname
+-    syscall as computer node name in the audit events,
+-    set <tt>name_format</tt> to <tt>hostname</tt>
++    To configure Audit daemon to use a unique identifier
++    as computer node name in the audit events,
++    set <tt>name_format</tt> to <tt>{{{ xccdf_value("var_auditd_name_format") }}}</tt>
+     in <tt>/etc/audit/auditd.conf</tt>.
+ 
+ rationale: |-
+@@ -32,17 +32,22 @@ references:
+     stigid@rhel8: RHEL-08-030062
+     stigid@rhel9: RHEL-09-653060
+ 
+-ocil_clause: name_format isn't set to hostname
++ocil_clause: name_format isn't set to {{{ xccdf_value("var_auditd_name_format") }}}
+ 
+ ocil: |-
+-    To verify that Audit Daemon is configured to record the hostname
+-    in audit events, run the following command:
++    To verify that Audit Daemon is configured to record the computer node
++    name in the audit events, run the following command:
+     <pre>$ sudo grep name_format /etc/audit/auditd.conf</pre>
+     The output should return the following:
+-    <pre>name_format = hostname</pre>
++    <pre>name_format = {{{ xccdf_value("var_auditd_name_format") }}}</pre>
++
++warnings:
++    - general: |-
++        Whenever the variable <pre>var_auditd_name_format</pre> uses a multiple value option, for example
++        <pre>A|B|C</pre>, the first value will be used when remediating this rule.
+ 
+ fixtext: |-
+-    {{{ fixtext_audit_configuration(param="name_format", value="hostname") | indent(4) }}}
++    {{{ fixtext_audit_configuration(param="name_format", value=xccdf_value("var_auditd_name_format")) | indent(4) }}}
+ 
+ srg_requirement: |-
+     {{{ full_name }}} must label all off-loaded audit logs before sending them to the central log server.
+diff --git a/linux_os/guide/system/auditing/configure_auditd_data_retention/var_auditd_flush.var b/linux_os/guide/system/auditing/configure_auditd_data_retention/var_auditd_flush.var
+index 3ae67d484a..f7b0bc5b8f 100644
+--- a/linux_os/guide/system/auditing/configure_auditd_data_retention/var_auditd_flush.var
++++ b/linux_os/guide/system/auditing/configure_auditd_data_retention/var_auditd_flush.var
+@@ -13,5 +13,5 @@ options:
+     default: data
+     incremental: incremental
+     incremental_async: incremental_async
+-    none: none
++    none: "none"
+     sync: sync
+diff --git a/linux_os/guide/system/auditing/configure_auditd_data_retention/var_auditd_name_format.var b/linux_os/guide/system/auditing/configure_auditd_data_retention/var_auditd_name_format.var
+new file mode 100644
+index 0000000000..75cc597038
+--- /dev/null
++++ b/linux_os/guide/system/auditing/configure_auditd_data_retention/var_auditd_name_format.var
+@@ -0,0 +1,18 @@
++documentation_complete: true
++
++title: 'Type of hostname to record the audit event'
++
++description: 'Type of hostname to record the audit event'
++
++type: string
++
++interactive: false
++
++options:
++    default: hostname
++    hostname: hostname
++    fqd: fqd
++    numeric: numeric
++    user: user
++    none: "none"
++    stig: hostname|fqd|numeric
+diff --git a/products/rhel7/profiles/stig.profile b/products/rhel7/profiles/stig.profile
+index 6483dfe3da..1e1e50765a 100644
+--- a/products/rhel7/profiles/stig.profile
++++ b/products/rhel7/profiles/stig.profile
+@@ -335,6 +335,7 @@ selections:
+     - accounts_authorized_local_users
+     - auditd_overflow_action
+     - auditd_name_format
++    - var_auditd_name_format=stig
+     - sebool_ssh_sysadm_login
+     - sudoers_default_includedir
+     - package_aide_installed
+diff --git a/products/rhel8/profiles/stig.profile b/products/rhel8/profiles/stig.profile
+index 0e136784a1..3914fae78f 100644
+--- a/products/rhel8/profiles/stig.profile
++++ b/products/rhel8/profiles/stig.profile
+@@ -707,6 +707,7 @@ selections:
+ 
+     # RHEL-08-030062
+     - auditd_name_format
++    - var_auditd_name_format=stig
+ 
+     # RHEL-08-030063
+     - auditd_log_format
+diff --git a/tests/data/profile_stability/rhel8/stig.profile b/tests/data/profile_stability/rhel8/stig.profile
+index 7aabec8694..60dc9d3a50 100644
+--- a/tests/data/profile_stability/rhel8/stig.profile
++++ b/tests/data/profile_stability/rhel8/stig.profile
+@@ -473,6 +473,7 @@ selections:
+ - var_auditd_disk_error_action=rhel8
+ - var_auditd_max_log_file_action=syslog
+ - var_auditd_disk_full_action=rhel8
++- var_auditd_name_format=stig
+ - var_sssd_certificate_verification_digest_function=sha1
+ - login_banner_text=dod_banners
+ - var_authselect_profile=sssd
+diff --git a/tests/data/profile_stability/rhel8/stig_gui.profile b/tests/data/profile_stability/rhel8/stig_gui.profile
+index bef1437536..b77c8eab2f 100644
+--- a/tests/data/profile_stability/rhel8/stig_gui.profile
++++ b/tests/data/profile_stability/rhel8/stig_gui.profile
+@@ -481,6 +481,7 @@ selections:
+ - var_auditd_disk_error_action=rhel8
+ - var_auditd_max_log_file_action=syslog
+ - var_auditd_disk_full_action=rhel8
++- var_auditd_name_format=stig
+ - var_sssd_certificate_verification_digest_function=sha1
+ - login_banner_text=dod_banners
+ - var_authselect_profile=sssd
+-- 
+2.43.0
+

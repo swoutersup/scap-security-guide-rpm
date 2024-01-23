@@ -1,0 +1,104 @@
+From cfbc85e51f15d106dd3cf03ef2fc7cd4f3c5d251 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Tue, 5 Dec 2023 16:05:37 +0100
+Subject: [PATCH 06/14] Update sshd_approved_ciphers value for RHEL in STIG
+ profile
+
+Patch-name: scap-security-guide-0.1.70-sshd_approved_ciphers_stig-PR_10966.patch
+Patch-status: Update sshd_approved_ciphers value for RHEL in STIG profile
+---
+ controls/srg_gpos.yml                               | 2 +-
+ products/rhel8/profiles/stig.profile                | 2 +-
+ tests/data/profile_stability/rhel8/stig.profile     | 6 +++---
+ tests/data/profile_stability/rhel8/stig_gui.profile | 6 +++---
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/controls/srg_gpos.yml b/controls/srg_gpos.yml
+index 65d58d5291..1be70cf332 100644
+--- a/controls/srg_gpos.yml
++++ b/controls/srg_gpos.yml
+@@ -20,7 +20,7 @@ controls:
+             - var_password_hashing_algorithm=SHA512
+             - var_password_pam_dictcheck=1
+             - sshd_approved_macs=stig_extended
+-            - sshd_approved_ciphers=stig
++            - sshd_approved_ciphers=stig_extended
+             - sshd_idle_timeout_value=10_minutes
+             - var_accounts_authorized_local_users_regex=rhel8
+             - var_account_disable_post_pw_expiration=35
+diff --git a/products/rhel8/profiles/stig.profile b/products/rhel8/profiles/stig.profile
+index 5be8fb8127..0e136784a1 100644
+--- a/products/rhel8/profiles/stig.profile
++++ b/products/rhel8/profiles/stig.profile
+@@ -51,7 +51,7 @@ selections:
+     - var_password_pam_minlen=15
+     - var_sshd_set_keepalive=1
+     - sshd_approved_macs=stig_extended
+-    - sshd_approved_ciphers=stig
++    - sshd_approved_ciphers=stig_extended
+     - sshd_idle_timeout_value=10_minutes
+     - var_accounts_authorized_local_users_regex=rhel8
+     - var_accounts_passwords_pam_faillock_deny=3
+diff --git a/tests/data/profile_stability/rhel8/stig.profile b/tests/data/profile_stability/rhel8/stig.profile
+index 3fe7cdf4ea..7aabec8694 100644
+--- a/tests/data/profile_stability/rhel8/stig.profile
++++ b/tests/data/profile_stability/rhel8/stig.profile
+@@ -1,6 +1,6 @@
+ description: 'This profile contains configuration checks that align to the
+ 
+-    DISA STIG for Red Hat Enterprise Linux 8 V1R9.
++    DISA STIG for Red Hat Enterprise Linux 8 V1R11.
+ 
+ 
+     In addition to being applicable to Red Hat Enterprise Linux 8, DISA recognizes
+@@ -22,7 +22,7 @@ description: 'This profile contains configuration checks that align to the
+     - Red Hat Containers with a Red Hat Enterprise Linux 8 image'
+ extends: null
+ metadata:
+-    version: V1R10
++    version: V1R11
+     SMEs:
+     - mab879
+     - ggbecker
+@@ -455,7 +455,7 @@ selections:
+ - var_password_pam_retry=3
+ - var_sshd_set_keepalive=1
+ - sshd_approved_macs=stig_extended
+-- sshd_approved_ciphers=stig
++- sshd_approved_ciphers=stig_extended
+ - sshd_idle_timeout_value=10_minutes
+ - var_accounts_authorized_local_users_regex=rhel8
+ - var_accounts_passwords_pam_faillock_deny=3
+diff --git a/tests/data/profile_stability/rhel8/stig_gui.profile b/tests/data/profile_stability/rhel8/stig_gui.profile
+index 66ada8588f..bef1437536 100644
+--- a/tests/data/profile_stability/rhel8/stig_gui.profile
++++ b/tests/data/profile_stability/rhel8/stig_gui.profile
+@@ -1,6 +1,6 @@
+ description: 'This profile contains configuration checks that align to the
+ 
+-    DISA STIG with GUI for Red Hat Enterprise Linux 8 V1R9.
++    DISA STIG with GUI for Red Hat Enterprise Linux 8 V1R11.
+ 
+ 
+     In addition to being applicable to Red Hat Enterprise Linux 8, DISA recognizes
+@@ -33,7 +33,7 @@ description: 'This profile contains configuration checks that align to the
+     standard DISA STIG for Red Hat Enterprise Linux 8 profile.'
+ extends: null
+ metadata:
+-    version: V1R10
++    version: V1R11
+     SMEs:
+     - mab879
+     - ggbecker
+@@ -463,7 +463,7 @@ selections:
+ - var_password_pam_retry=3
+ - var_sshd_set_keepalive=1
+ - sshd_approved_macs=stig_extended
+-- sshd_approved_ciphers=stig
++- sshd_approved_ciphers=stig_extended
+ - sshd_idle_timeout_value=10_minutes
+ - var_accounts_authorized_local_users_regex=rhel8
+ - var_accounts_passwords_pam_faillock_deny=3
+-- 
+2.43.0
+

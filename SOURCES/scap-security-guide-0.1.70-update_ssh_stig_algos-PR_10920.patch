@@ -1,0 +1,212 @@
+From f0998f93828e756111294eb4c733fad77febd493 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Wed, 6 Dec 2023 10:31:53 +0100
+Subject: [PATCH 15/15] Update ssh stig HMACS and Ciphers allowed in OL8 STIG
+
+Patch-name: scap-security-guide-0.1.70-update_ssh_stig_algos-PR_10920.patch
+Patch-status: Update ssh stig HMACS and Ciphers allowed in OL8 STIG
+---
+ linux_os/guide/services/ssh/sshd_approved_ciphers.var        | 1 +
+ .../tests/rhel8_stig_correct.pass.sh                         | 5 +++--
+ .../tests/rhel8_stig_empty_policy.fail.sh                    | 2 +-
+ .../tests/rhel8_stig_incorrect_policy.fail.sh                | 2 +-
+ .../tests/rhel8_stig_missing_file.fail.sh                    | 2 +-
+ .../harden_sshd_macs_openssh_conf_crypto_policy/rule.yml     | 4 ++--
+ .../tests/stig_correct.pass.sh                               | 5 +++--
+ .../tests/stig_correct_commented.fail.sh                     | 5 +++--
+ .../stig_correct_followed_by_incorrect_commented.pass.sh     | 5 +++--
+ .../stig_incorrect_followed_by_correct_commented.fail.sh     | 5 +++--
+ .../rule.yml                                                 | 4 ++--
+ products/ol8/profiles/stig.profile                           | 4 ++--
+ 12 files changed, 25 insertions(+), 19 deletions(-)
+
+diff --git a/linux_os/guide/services/ssh/sshd_approved_ciphers.var b/linux_os/guide/services/ssh/sshd_approved_ciphers.var
+index 65c3fde987..4ab4d36cef 100644
+--- a/linux_os/guide/services/ssh/sshd_approved_ciphers.var
++++ b/linux_os/guide/services/ssh/sshd_approved_ciphers.var
+@@ -12,6 +12,7 @@ interactive: false
+ 
+ options:
+     stig: aes256-ctr,aes192-ctr,aes128-ctr
++    stig_extended: aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+     default: aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc,rijndael-cbc@lysator.liu.se
+     cis_rhel7: chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc,cast128-cbc,3des-cbc
+     cis_sle12: chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_correct.pass.sh b/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_correct.pass.sh
+index c84e0c1576..34b69406a3 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_correct.pass.sh
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_correct.pass.sh
+@@ -1,8 +1,9 @@
+ #!/bin/bash
+ # platform = Oracle Linux 8,Red Hat Enterprise Linux 8
+-# profiles = xccdf_org.ssgproject.content_profile_stig
++# variables = sshd_approved_ciphers=aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com
++
++sshd_approved_ciphers=aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+ 
+-sshd_approved_ciphers=aes256-ctr,aes192-ctr,aes128-ctr
+ configfile=/etc/crypto-policies/back-ends/opensshserver.config
+ correct_value="-oCiphers=${sshd_approved_ciphers}"
+ 
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_empty_policy.fail.sh b/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_empty_policy.fail.sh
+index 66483e898a..60b4616ce5 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_empty_policy.fail.sh
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_empty_policy.fail.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ # platform = Oracle Linux 8,Red Hat Enterprise Linux 8
+-# profiles = xccdf_org.ssgproject.content_profile_stig
++# variables = sshd_approved_ciphers=aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+ 
+ configfile=/etc/crypto-policies/back-ends/opensshserver.config
+ 
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_incorrect_policy.fail.sh b/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_incorrect_policy.fail.sh
+index e350ce5f0a..3eca150b3f 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_incorrect_policy.fail.sh
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_incorrect_policy.fail.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ # platform = Oracle Linux 8,Red Hat Enterprise Linux 8
+-# profiles = xccdf_org.ssgproject.content_profile_stig
++# variables = sshd_approved_ciphers=aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+ 
+ configfile=/etc/crypto-policies/back-ends/opensshserver.config
+ 
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_missing_file.fail.sh b/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_missing_file.fail.sh
+index 11b194db03..f8659efcf0 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_missing_file.fail.sh
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_ciphers_opensshserver_conf_crypto_policy/tests/rhel8_stig_missing_file.fail.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ # platform = Oracle Linux 8,Red Hat Enterprise Linux 8
+-# profiles = xccdf_org.ssgproject.content_profile_stig
++# variables = sshd_approved_ciphers=aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+ 
+ configfile=/etc/crypto-policies/back-ends/opensshserver.config
+ 
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/rule.yml b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/rule.yml
+index 8736e39afc..547c31545e 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/rule.yml
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/rule.yml
+@@ -12,7 +12,7 @@ description: |-
+     To check that Crypto Policies settings are configured correctly, ensure that
+     <tt>/etc/crypto-policies/back-ends/openssh.config</tt> contains the following
+     line and is not commented out:
+-    <tt>MACs hmac-sha2-512,hmac-sha2-256</tt>
++    <tt>MACs {{{ xccdf_value("sshd_approved_macs") }}}</tt>
+ 
+ rationale: |-
+     Overriding the system crypto policy makes the behavior of the OpenSSH
+@@ -38,7 +38,7 @@ ocil: |-
+     To verify if the OpenSSH client uses defined MACs in the Crypto Policy, run:
+     <pre>$ grep -i macs /etc/crypto-policies/back-ends/openssh.config</pre>
+     and verify that the line matches:
+-    <pre>MACs hmac-sha2-512,hmac-sha2-256</pre>
++    <pre>MACs {{{ xccdf_value("sshd_approved_macs") }}}</pre>
+ 
+ warnings:
+     - general: |-
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct.pass.sh b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct.pass.sh
+index 6edae50924..49d18486f3 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct.pass.sh
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct.pass.sh
+@@ -1,8 +1,9 @@
+ #!/bin/bash
+ # platform = Oracle Linux 8,Red Hat Enterprise Linux 8,multi_platform_fedora
+-# profiles = xccdf_org.ssgproject.content_profile_stig
++# variables = sshd_approved_macs=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
++
++sshd_approved_macs=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+ 
+-sshd_approved_macs=hmac-sha2-512,hmac-sha2-256
+ configfile=/etc/crypto-policies/back-ends/openssh.config
+ 
+ # Ensure directory + file is there
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct_commented.fail.sh b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct_commented.fail.sh
+index 0fec46a5c3..b068e2ea4d 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct_commented.fail.sh
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct_commented.fail.sh
+@@ -1,8 +1,9 @@
+ #!/bin/bash
+ # platform = Oracle Linux 8,Red Hat Enterprise Linux 8,multi_platform_fedora
+-# profiles = xccdf_org.ssgproject.content_profile_stig
++# variables = sshd_approved_macs=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
++
++sshd_approved_macs=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+ 
+-sshd_approved_macs=hmac-sha2-512,hmac-sha2-256
+ configfile=/etc/crypto-policies/back-ends/openssh.config
+ 
+ # Ensure directory + file is there
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct_followed_by_incorrect_commented.pass.sh b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct_followed_by_incorrect_commented.pass.sh
+index 95bf94331c..f57f422701 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct_followed_by_incorrect_commented.pass.sh
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_correct_followed_by_incorrect_commented.pass.sh
+@@ -1,8 +1,9 @@
+ #!/bin/bash
+ # platform = Oracle Linux 8,Red Hat Enterprise Linux 8,multi_platform_fedora
+-# profiles = xccdf_org.ssgproject.content_profile_stig
++# variables = sshd_approved_macs=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
++
++sshd_approved_macs=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+ 
+-sshd_approved_macs=hmac-sha2-512,hmac-sha2-256
+ configfile=/etc/crypto-policies/back-ends/openssh.config
+ 
+ # Ensure directory + file is there
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_incorrect_followed_by_correct_commented.fail.sh b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_incorrect_followed_by_correct_commented.fail.sh
+index 4af43d60e7..999463e1c2 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_incorrect_followed_by_correct_commented.fail.sh
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_openssh_conf_crypto_policy/tests/stig_incorrect_followed_by_correct_commented.fail.sh
+@@ -1,8 +1,9 @@
+ #!/bin/bash
+ # platform = Oracle Linux 8,Red Hat Enterprise Linux 8,multi_platform_fedora
+-# profiles = xccdf_org.ssgproject.content_profile_stig
++# variables = sshd_approved_macs=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
++
++sshd_approved_macs=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+ 
+-sshd_approved_macs=hmac-sha2-512,hmac-sha2-256
+ incorrect_sshd_approved_macs=hmac-sha2-256-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha1,umac-128@openssh.com,hmac-sha2-512
+ configfile=/etc/crypto-policies/back-ends/openssh.config
+ 
+diff --git a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_opensshserver_conf_crypto_policy/rule.yml b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_opensshserver_conf_crypto_policy/rule.yml
+index f08f120f9a..a76cee71d8 100644
+--- a/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_opensshserver_conf_crypto_policy/rule.yml
++++ b/linux_os/guide/system/software/integrity/crypto/harden_sshd_macs_opensshserver_conf_crypto_policy/rule.yml
+@@ -12,7 +12,7 @@ description: |-
+     To check that Crypto Policies settings are configured correctly, ensure that
+     <tt>/etc/crypto-policies/back-ends/opensshserver.config</tt> contains the following
+     text and is not commented out:
+-    <tt>-oMACS=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com</tt>
++    <tt>-oMACS={{{ xccdf_value("sshd_approved_macs") }}}</tt>
+ 
+ rationale: |-
+     Overriding the system crypto policy makes the behavior of the OpenSSH
+@@ -38,7 +38,7 @@ ocil: |-
+     To verify if the OpenSSH server uses defined MACs in the Crypto Policy, run:
+     <pre>$ grep -Po '(-oMACs=\S+)' /etc/crypto-policies/back-ends/opensshserver.config</pre>
+     and verify that the line matches:
+-    <pre>-oMACS=hmac-sha2-512,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com</pre>
++    <pre>-oMACS={{{ xccdf_value("sshd_approved_macs") }}}</pre>
+ 
+ warnings:
+     - general: |-
+diff --git a/products/ol8/profiles/stig.profile b/products/ol8/profiles/stig.profile
+index ae2795c4fb..2be62c59ca 100644
+--- a/products/ol8/profiles/stig.profile
++++ b/products/ol8/profiles/stig.profile
+@@ -38,8 +38,8 @@ selections:
+     - var_password_pam_retry=3
+     - var_password_pam_minlen=15
+     - var_sshd_set_keepalive=0
+-    - sshd_approved_macs=stig
+-    - sshd_approved_ciphers=stig
++    - sshd_approved_macs=stig_extended
++    - sshd_approved_ciphers=stig_extended
+     - sshd_idle_timeout_value=10_minutes
+     - var_accounts_authorized_local_users_regex=ol8
+     - var_accounts_passwords_pam_faillock_deny=3
+-- 
+2.43.0
+
