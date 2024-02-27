@@ -5,39 +5,12 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.69
-Release:	3%{?dist}.alma.1
+Version:	0.1.72
+Release:	1%{?dist}.alma
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
 Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{version}/scap-security-guide-%{version}.tar.bz2
-# Fix rule enable_fips_mode
-Patch1: scap-security-guide-0.1.70-improve_readability_enable_fips_mode-PR_10911.patch
-Patch2: scap-security-guide-0.1.70-fix_enable_fips_mode-PR_10961.patch
-# remove rules harden_sshd_(macs/ciphers)_openssh_conf_crypto_policy from STIG profile
-Patch3: scap-security-guide-0.1.70-remove_openssh_hardening_stig-PR_10996.patch
-# remove rule sebool_secure_mode_insmod from ANSSI high profile because it prevents UEFI-based systems from booting
-Patch4: scap-security-guide-0.1.70-remove_secure_mode_insmod_anssi-PR_11001.patch
-# Update sshd_approved_ciphers value for RHEL in STIG profile
-Patch5:	 scap-security-guide-0.1.70-sshd_approved_ciphers_stig-PR_10966.patch
-# Add rule `package_s-nail-installed`
-Patch6:	 scap-security-guide-0.1.70-add_package_smail_installed-PR_11144.patch
-# New Rule networkmanager_dns_mode
-Patch7:	 scap-security-guide-0.1.71-new_rule_dns_mode_nm-PR_11160.patch
-# Add cron.deny Owership Rules
-Patch8:	 scap-security-guide-0.1.71-add_cron_deny_rules-PR_11185.patch
-# Add RHEL 9 STIG
-Patch9:	 scap-security-guide-0.1.71-add_rhel9_stig-PR_11193.patch
-# Add var_networkmanager_dns_mode to RHEL 9 STIG
-Patch10:	scap-security-guide-0.1.71-fix_var_networkmanager_dns_mode_rhel9_stig-PR_11242.patch
-# Add SRG id to `file_owner_grub2_cfg` for RHEL 9 STIG
-Patch11:	scap-security-guide-0.1.71-add_srg_to_file_owner_grub2_cfg-PR_11261.patch
-# Minor modifications to RHEL STIG profiles
-Patch12:	scap-security-guide-0.1.72-remove_stig_ids-PR_11327.patch
-# Add variable support to `auditd_name_format` rule
-Patch13:	scap-security-guide-0.1.70-name_format_variable-PR_11019.patch
-# Update ssh stig HMACS and Ciphers allowed in OL8 STIG
-Patch14:	scap-security-guide-0.1.70-update_ssh_stig_algos-PR_10920.patch
 BuildArch:	noarch
 
 # AlmaLinux 9
@@ -131,9 +104,17 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Tue Jan 23 2024 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.69-3.alma.1
+* Tue Feb 27 2024 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.72-1.alma
 - Add AlmaLinux 9 support
 
+* Tue Feb 13 2024 Marcus Burghardt <maburgha@redhat.com> - 0.1.72-1
+- Rebase to a new upstream release 0.1.72 (RHEL-21425)
+- Check dropin files in /etc/systemd/journald.conf.d/ (RHEL-14484)
+- Fix remediation to not update comments (RHEL-1484)
+- Fix package check on SCAP tests for dnf settings (RHEL-17417)
+- Update description for audit_rules_kernel_module_loading (RHEL-1489)
+- Disable remediation for /dev/shm options in offline mode (RHEL-16801)
+- Include explanatory comment in the remediation of CCE-83871-4 (RHEL-17418)
 * Tue Dec 05 2023 Jan Černý <jcerny@redhat.com> - 0.1.69-3
 - Align STIG profile with official DISA STIG for RHEL 9 (RHEL-1807)
 
