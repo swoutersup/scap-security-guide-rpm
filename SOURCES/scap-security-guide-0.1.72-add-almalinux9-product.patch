@@ -14509,6 +14509,22 @@ index e5cf1ffba..29e76b97e 100644
  	<platform>multi_platform_rhv</platform>
  	<platform>multi_platform_sle</platform>
      <platform>multi_platform_ubuntu</platform>
+diff --git a/shared/references/disa-stig-almalinux9-v1r0-xccdf-scap.xml b/shared/references/disa-stig-almalinux9-v1r0-xccdf-scap.xml
+new file mode 120000
+index 000000000..4d3a63742
+--- /dev/null
++++ b/shared/references/disa-stig-almalinux9-v1r0-xccdf-scap.xml
+@@ -0,0 +1 @@
++disa-stig-rhel9-v1r0-xccdf-scap.xml
+\ No newline at end of file
+diff --git a/shared/references/disa-stig-almalinux9-v1r2-xccdf-manual.xml b/shared/references/disa-stig-almalinux9-v1r2-xccdf-manual.xml
+new file mode 120000
+index 000000000..d426660b3
+--- /dev/null
++++ b/shared/references/disa-stig-almalinux9-v1r2-xccdf-manual.xml
+@@ -0,0 +1 @@
++disa-stig-rhel9-v1r2-xccdf-manual.xml
+\ No newline at end of file
 diff --git a/shared/references/disa-stig-ol7-v2r14-xccdf-manual.xml b/shared/references/disa-stig-ol7-v2r14-xccdf-manual.xml
 index 1d087be21..306818938 100644
 --- a/shared/references/disa-stig-ol7-v2r14-xccdf-manual.xml
