@@ -6,7 +6,7 @@
 
 Name:		scap-security-guide
 Version:	0.1.72
-Release:	1%{?dist}.alma
+Release:	1%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
@@ -14,7 +14,7 @@ Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{versio
 BuildArch:	noarch
 
 # AlmaLinux 9
-Patch1000:      scap-security-guide-0.1.69-add-almalinux9-product.patch
+Patch1000:      scap-security-guide-0.1.72-add-almalinux9-product.patch
 
 BuildRequires:	libxslt
 BuildRequires:	expat
