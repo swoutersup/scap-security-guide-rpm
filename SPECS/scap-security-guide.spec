@@ -5,7 +5,7 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.72
+Version:	0.1.73
 Release:	1%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
@@ -20,8 +20,7 @@ BuildRequires:	libxslt
 BuildRequires:	expat
 BuildRequires:	openscap-scanner >= 1.2.5
 BuildRequires:	cmake >= 2.8
-# To get python3 inside the buildroot require its path explicitly in BuildRequires
-BuildRequires: /usr/bin/python3
+BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}
 BuildRequires:	python%{python3_pkgversion}-jinja2
 BuildRequires:	python%{python3_pkgversion}-PyYAML
@@ -104,8 +103,17 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Tue Feb 27 2024 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.72-1.alma
+* Fri Jun 07 2024 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.73-1.alma.1
 - Add AlmaLinux 9 support
+
+* Mon May 20 2024 Vojtech Polasek <vpolasek@redhat.com> - 0.1.73-1
+- Rebase to a new upstream release 0.1.73 (RHEL-36663)
+- Correctly parse sudo options even if they are not quoted (RHEL-31976)
+- Ensure that web links within kickstart files are valid (RHEL-30735)
+- Align set of allowed SSH ciphers with STIG requirement (RHEL-29684)
+- Add audit rules on /etc/sysconfig/network-scripts (RHEL-29308)
+- Remove rule restricting user namespaces from stig_gui profile (RHEL-10416)
+- Add rule which enables auditing of files within /etc/sysconfig/network-scripts (RHEL-1093)
 
 * Tue Feb 13 2024 Marcus Burghardt <maburgha@redhat.com> - 0.1.72-1
 - Rebase to a new upstream release 0.1.72 (RHEL-21425)
