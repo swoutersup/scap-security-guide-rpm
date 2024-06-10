@@ -12641,10 +12641,10 @@ index 000000000..bdfb1cbd8
 +</Group>
 diff --git a/products/almalinux9/product.yml b/products/almalinux9/product.yml
 new file mode 100644
-index 000000000..1e5798e91
+index 000000000..e2c08883c
 --- /dev/null
 +++ b/products/almalinux9/product.yml
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,56 @@
 +product: almalinux9
 +full_name: AlmaLinux 9
 +type: platform
@@ -12682,6 +12682,7 @@ index 000000000..1e5798e91
 +pkg_version: "b86b3716"
 +
 +release_key_fingerprint: "BF18AC2876178908D6E71267D36CB86CB86B3716"
++oval_feed_url: "https://security.almalinux.org/oval/org.almalinux.alsa-9.xml.bz2"
 +
 +cpes_root: "../../shared/applicability"
 +cpes:
