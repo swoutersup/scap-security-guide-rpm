@@ -53,7 +53,7 @@ index 2b00bd908..4fc431b04 100644
  - ensure_gpgcheck_globally_activated
  - ensure_gpgcheck_local_packages
 diff --git a/controls/anssi.yml b/controls/anssi.yml
-index d02cd2523..b00619dfa 100644
+index d02cd2523..d9bb3907e 100644
 --- a/controls/anssi.yml
 +++ b/controls/anssi.yml
 @@ -1238,7 +1238,7 @@ controls:
@@ -65,6 +65,25 @@ index d02cd2523..b00619dfa 100644
      - ensure_oracle_gpgkey_installed
  
    - id: R60
+@@ -1356,7 +1356,6 @@ controls:
+       When authentication takes place through a remote application (network),
+       the authentication protocol used by PAM must be secure (flow encryption,
+       remote server authentication, anti-replay mechanisms, ...).
+-    {{% if "rhel" in product %}}
+     notes: |-
+       In RHEL systems, remote authentication is handled through sssd service.
+       PAM delegates requests for remote authentication to this service through a
+@@ -1379,10 +1378,6 @@ controls:
+       {{% endif %}}
+     related_rules:
+       - package_sssd-ipa_installed
+-    {{% else %}}
+-    notes: We cannot automate securing of remote PAM authentication in a general way.
+-    status: manual
+-    {{% endif %}}
+ 
+   - id: R68
+     title: Protecting stored passwords
 diff --git a/controls/cis_rhel8.yml b/controls/cis_rhel8.yml
 index 48406c172..28ae0c5c2 100644
 --- a/controls/cis_rhel8.yml
