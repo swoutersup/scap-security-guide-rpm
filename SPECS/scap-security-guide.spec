@@ -5,7 +5,7 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.73
+Version:	0.1.74
 Release:	1%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
@@ -97,6 +97,17 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Fri Aug 09 2024 Matthew Burket <mburket@redhat.com> - 0.1.74-1
+- Rebase to a new upstream release 0.1.74 (RHEL-53865)
+- Ensure authselect features are preserved by enable_authselect rule (RHEL-39383)
+- Fix check for passwords last changed date (RHEL-47129)
+- Remediations of Journald configuration files now include a correct section (RHEL-38531)
+- Adjust service requirements for CIS profiles (RHEL-23852)
+- Update password hashing settings for ANSSI-BP-028 (RHEL-44983)
+
+* Wed Aug 07 2024 Milan Lysonek <mlysonek@redhat.com> - 0.1.73-2
+- Switch gating to tmt plan (RHEL-43243)
+
 * Mon May 20 2024 Vojtech Polasek <vpolasek@redhat.com> - 0.1.73-1
 - Rebase to a new upstream release 0.1.73 (RHEL-36663)
 - Correctly parse sudo options even if they are not quoted (RHEL-31976)
