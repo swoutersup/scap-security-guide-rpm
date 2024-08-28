@@ -9832,13 +9832,11 @@ index 000000000..f02f04002
 +</def-group>
 diff --git a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/rule.yml b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/rule.yml
 new file mode 100644
-index 000000000..da73ba4c5
+index 000000000..bc0ba8d22
 --- /dev/null
 +++ b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/rule.yml
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,44 @@
 +documentation_complete: true
-+
-+prodtype: almalinux9
 +
 +title: 'Ensure AlmaLinux GPG Key Installed'
 +
