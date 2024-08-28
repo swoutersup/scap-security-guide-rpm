@@ -14,7 +14,7 @@ Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{versio
 BuildArch:	noarch
 
 # AlmaLinux 9
-Patch1000:      scap-security-guide-0.1.73-add-almalinux9-product.patch
+Patch1000:      scap-security-guide-%{version}-add-almalinux9-product.patch
 
 BuildRequires:	libxslt
 BuildRequires:	expat
