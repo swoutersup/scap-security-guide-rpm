@@ -5,7 +5,7 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.75
+Version:	0.1.76
 Release:	1%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
@@ -56,13 +56,13 @@ The %{name}-rule-playbooks package contains individual ansible playbooks per rul
 %prep
 %autosetup -p1
 
-%define cmake_defines_common -DSSG_SEPARATE_SCAP_FILES_ENABLED=OFF -DSSG_BASH_SCRIPTS_ENABLED=OFF -DSSG_BUILD_SCAP_12_DS=OFF
+%define cmake_defines_common -DSSG_SEPARATE_SCAP_FILES_ENABLED=OFF -DSSG_BASH_SCRIPTS_ENABLED=OFF -DSSG_BUILD_SCAP_12_DS=OFF -DSSG_BUILD_DISA_DELTA_FILES:BOOL=OFF
 %define cmake_defines_specific %{nil}
 %if 0%{?rhel}
-%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=FALSE -DSSG_PRODUCT_RHEL%{rhel}:BOOLEAN=TRUE -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_ANSIBLE_PLAYBOOKS_PER_RULE_ENABLED:BOOL=ON
+%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=OFF -DSSG_PRODUCT_RHEL%{rhel}:BOOLEAN=ON -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_ANSIBLE_PLAYBOOKS_PER_RULE_ENABLED:BOOL=ON
 %endif
 %if 0%{?centos}
-%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=FALSE -DSSG_PRODUCT_RHEL%{centos}:BOOLEAN=TRUE -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=ON
+%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=OFF -DSSG_PRODUCT_RHEL%{centos}:BOOLEAN=ON -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=ON
 %endif
 
 mkdir -p build
@@ -96,6 +96,12 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Tue Feb 25 2025 Vojtech Polasek <vpolasek@redhat.com> - 0.1.76-1
+- rebase scap-security-guide to the latest upstream version 0.1.76 (RHEL-74240)
+- modify the rule require_singleuser_auth to honor overriding mechanism offered by Systemd (RHEL-71936)
+- make the rule sysctl_user_max_user_namespaces informational and unscored in RHEL 9 STIG profile (RHEL-40120)
+- align checking of approved SSH ciphers with latest STIG policy (RHEL-65432)
+
 * Fri Nov 15 2024 Matthew Burket <mburket@redhat.com> - 0.1.75-1
 - Rebase to new release (RHEL-66154)
 - the rule sshd_use_priv_separation is no longer used (RHEL-66057)
