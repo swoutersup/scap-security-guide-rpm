@@ -174,7 +174,7 @@ index 39f47c3c3..883f23458 100644
          - ensure_almalinux_gpgkey_installed
          - ensure_gpgcheck_globally_activated
 diff --git a/controls/srg_gpos/SRG-OS-000366-GPOS-00153.yml b/controls/srg_gpos/SRG-OS-000366-GPOS-00153.yml
-index dbec9fe45..5d75a5cdc 100644
+index dbec9fe45..a8ba161c2 100644
 --- a/controls/srg_gpos/SRG-OS-000366-GPOS-00153.yml
 +++ b/controls/srg_gpos/SRG-OS-000366-GPOS-00153.yml
 @@ -18,6 +18,9 @@ controls:
@@ -183,7 +183,7 @@ index dbec9fe45..5d75a5cdc 100644
              {{% endif %}}
 +            {{% if 'almalinux' in product %}}
 +            - ensure_almalinux_gpgkey_installed
-+            {{% endif %}
++            {{% endif %}}
              {{% if 'ol' in product %}}
              - ensure_oracle_gpgkey_installed
              {{% endif %}}
