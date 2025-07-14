@@ -5,16 +5,21 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.76
-Release:	1%{?dist}.alma.1
+Version:	0.1.77
+Release:	3%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
 Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{version}/scap-security-guide-%{version}.tar.bz2
-BuildArch:	noarch
+# fix applicability of grub2_admin_username and grub2_password rules on uefi systems
+Patch0:	scap-security-guide_0_1_78_fix_uefi_applicability.patch
+Patch1:	scap-security-guide_0_1_78_fix_uefi_applicability_jinja.patch
+# fix wrong grub-mkconfig (should be grub2-mkconfig) command in rule descriptions
+Patch2:	scap-security-guide_0_1_78_fix_wrong_grubmkconfig.patch
 
-# AlmaLinux 9
-Patch1000:      scap-security-guide-%{version}-add-almalinux9-product.patch
+# AlmaLinux Patch
+Patch1000: scap-security-guide-add-almalinux9-product.patch
+BuildArch:	noarch
 
 BuildRequires:	libxslt
 BuildRequires:	openscap-scanner >= 1.2.5
@@ -62,13 +67,13 @@ The %{name}-rule-playbooks package contains individual ansible playbooks per rul
 %define cmake_defines_common -DSSG_SEPARATE_SCAP_FILES_ENABLED=OFF -DSSG_BASH_SCRIPTS_ENABLED=OFF -DSSG_BUILD_SCAP_12_DS=OFF -DSSG_BUILD_DISA_DELTA_FILES:BOOL=OFF
 %define cmake_defines_specific %{nil}
 %if 0%{?rhel}
-%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=OFF -DSSG_PRODUCT_RHEL%{rhel}:BOOLEAN=ON -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_ANSIBLE_PLAYBOOKS_PER_RULE_ENABLED:BOOL=ON
+%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=OFF -DSSG_PRODUCT_RHEL%{rhel}:BOOLEAN=ON -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_ANSIBLE_PLAYBOOKS_PER_RULE_ENABLED:BOOL=ON -DSSG_SCE_ENABLED:BOOL=ON
 %endif
 %if 0%{?centos}
-%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=OFF -DSSG_PRODUCT_RHEL%{centos}:BOOLEAN=ON -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=ON
+%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=OFF -DSSG_PRODUCT_RHEL%{centos}:BOOLEAN=ON -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=ON -DSSG_SCE_ENABLED:BOOL=ON
 %endif
 %if 0%{?almalinux}
-%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=FALSE -DSSG_PRODUCT_ALMALINUX%{almalinux}:BOOLEAN=TRUE -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_ANSIBLE_PLAYBOOKS_PER_RULE_ENABLED:BOOL=ON
+%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=OFF -DSSG_PRODUCT_ALMALINUX%{almalinux}:BOOLEAN=ON -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_SCE_ENABLED:BOOL=ON -DSSG_ANSIBLE_PLAYBOOKS_PER_RULE_ENABLED:BOOL=ON
 %endif
 
 mkdir -p build
@@ -102,8 +107,21 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Tue Apr 29 2025 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.76-1.alma.1
+* Mon Jul 14 2025 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.77-3.alma.1
 - Add AlmaLinux 9 support
+
+* Fri Jun 27 2025 Vojtech Polasek <vpolasek@redhat.com> - 0.1.77-3
+- fix incorrect applicability of Grub2 UEFI specific rules
+- replace grub-mkconfig with grub2-mkconfig in rule descriptions
+
+* Fri Jun 06 2025 Matthew Burket <mburket@redhat.com> - 0.1.77-2
+- Turn on SCE for this release (RHEL-94803)
+
+* Tue Jun 03 2025 Matthew Burket <mburket@redhat.com> - 0.1.77-1
+- Rebase to scap-security-guide version 0.1.77 (RHEL-94803)
+- rule networkmanager_dns_mode now checks dropin files and has more resilient regex (RHEL-62843)
+- rsyslog_remote_loghost checks for Rainer Script syntax as well (RHEL-62731)
+- improve checking of Grub2 superuser and password configuration (RHEL-58818)
 
 * Tue Feb 25 2025 Vojtech Polasek <vpolasek@redhat.com> - 0.1.76-1
 - rebase scap-security-guide to the latest upstream version 0.1.76 (RHEL-74240)
@@ -147,6 +165,7 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 - Update description for audit_rules_kernel_module_loading (RHEL-1489)
 - Disable remediation for /dev/shm options in offline mode (RHEL-16801)
 - Include explanatory comment in the remediation of CCE-83871-4 (RHEL-17418)
+
 * Tue Dec 05 2023 Jan Černý <jcerny@redhat.com> - 0.1.69-3
 - Align STIG profile with official DISA STIG for RHEL 9 (RHEL-1807)
 
