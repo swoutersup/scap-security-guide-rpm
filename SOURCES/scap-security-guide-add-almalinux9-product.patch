@@ -1,8 +1,19 @@
 diff --git a/controls/anssi.yml b/controls/anssi.yml
-index 86b84a044..b8cba1949 100644
+index 86b84a044..2d04a7814 100644
 --- a/controls/anssi.yml
 +++ b/controls/anssi.yml
-@@ -1246,7 +1246,7 @@ controls:
+@@ -806,10 +806,8 @@ controls:
+       ANSSI doesn't specify the length of the inactivity period, we are choosing 10 minutes as reasonable number.
+     status: automated
+     rules:
+-    {{% if "rhel" in product or "ol" in families %}}
+     - logind_session_timeout
+     - var_logind_session_timeout=10_minutes
+-    {{% endif %}}
+     - accounts_tmout
+     - var_accounts_tmout=10_min
+ 
+@@ -1246,7 +1244,7 @@ controls:
      - ensure_gpgcheck_never_disabled
      - ensure_gpgcheck_globally_activated
      - ensure_gpgcheck_local_packages
@@ -11,6 +22,17 @@ index 86b84a044..b8cba1949 100644
      - ensure_oracle_gpgkey_installed
      - ensure_almalinux_gpgkey_installed
  
+@@ -1298,10 +1296,6 @@ controls:
+     - package_rsh_removed
+     - package_rsh-server_removed
+     - package_sendmail_removed
+-    {{%- if "rhel" not in product %}}
+-    - package_talk_removed
+-    - package_talk-server_removed
+-    {{%- endif %}}
+     - package_telnet_removed
+     - package_telnet-server_removed
+     - package_tftp_removed
 diff --git a/controls/cis_almalinux9.yml b/controls/cis_almalinux9.yml
 index 4591f52c6..670d0b14f 100644
 --- a/controls/cis_almalinux9.yml
