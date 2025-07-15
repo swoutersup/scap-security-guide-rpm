@@ -1,0 +1,22 @@
+From 56f17c7c5c9544633ac88a54c264ab232268a40d Mon Sep 17 00:00:00 2001
+From: Vojtech Polasek <vpolasek@redhat.com>
+Date: Tue, 25 Feb 2025 17:18:53 +0100
+Subject: prevent ospp profile from being built on rhel10 product
+
+---
+ products/rhel10/profiles/ospp.profile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/products/rhel10/profiles/ospp.profile b/products/rhel10/profiles/ospp.profile
+index 0642cbab2e..bf87808035 100644
+--- a/products/rhel10/profiles/ospp.profile
++++ b/products/rhel10/profiles/ospp.profile
+@@ -1,4 +1,5 @@
+ documentation_complete: true
++hidden: true
+ 
+ metadata:
+     version: 4.3
+-- 
+2.48.1
+

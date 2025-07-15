@@ -1,0 +1,42 @@
+From 884ccb32e27aca7e3a4b0af841ddd5ecba81ae67 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jan=20=C4=8Cern=C3=BD?= <jcerny@redhat.com>
+Date: Thu, 19 Jun 2025 14:40:17 +0200
+Subject: [PATCH] Remove excess dashes in Jinja 2 expression
+
+These dashes consume all surrounding namespaces. As a result,
+the platform key isn't taken as a key but becomes part of the
+description value.
+---
+ linux_os/guide/system/bootloader-grub2/non-uefi/group.yml | 4 ++--
+ linux_os/guide/system/bootloader-grub2/uefi/group.yml     | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/linux_os/guide/system/bootloader-grub2/non-uefi/group.yml b/linux_os/guide/system/bootloader-grub2/non-uefi/group.yml
+index 2a79674b363..67c0612649c 100644
+--- a/linux_os/guide/system/bootloader-grub2/non-uefi/group.yml
++++ b/linux_os/guide/system/bootloader-grub2/non-uefi/group.yml
+@@ -5,6 +5,6 @@ title: 'Non-UEFI GRUB2 bootloader configuration'
+ description: |-
+     Non-UEFI GRUB2 bootloader configuration
+ 
+-{{%- if grub2_boot_path != grub2_uefi_boot_path -%}}
++{{% if grub2_boot_path != grub2_uefi_boot_path -%}}
+ platform: non-uefi
+-{{%- endif -%}}
++{{%- endif %}}
+diff --git a/linux_os/guide/system/bootloader-grub2/uefi/group.yml b/linux_os/guide/system/bootloader-grub2/uefi/group.yml
+index 08f2e4ad9d0..b9516b94403 100644
+--- a/linux_os/guide/system/bootloader-grub2/uefi/group.yml
++++ b/linux_os/guide/system/bootloader-grub2/uefi/group.yml
+@@ -5,9 +5,9 @@ title: 'UEFI GRUB2 bootloader configuration'
+ description: |-
+     UEFI GRUB2 bootloader configuration
+ 
+-{{%- if grub2_boot_path != grub2_uefi_boot_path -%}}
++{{% if grub2_boot_path != grub2_uefi_boot_path -%}}
+ platform: uefi
+-{{%- endif -%}}
++{{%- endif %}}
+ 
+ warnings:
+     - functionality: |-
