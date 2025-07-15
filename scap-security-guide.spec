@@ -5,7 +5,7 @@
 
 Name:		scap-security-guide
 Version:	0.1.77
-Release:	2%{?dist}
+Release:	2%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
@@ -16,6 +16,9 @@ Patch1:	scap-security-guide_0_1_78_fix_uefi_applicability.patch
 Patch2:	scap-security-guide_0_1_78_fix_uefi_applicability_jinja.patch
 # fix wrong grub-mkconfig (should be grub2-mkconfig) command in rule descriptions
 Patch3:	scap-security-guide_0_1_78_fix_wrong_grubmkconfig.patch
+
+# AlmaLinux Patch
+Patch1000: scap-security-guide-add-almalinux10-product.patch
 
 BuildArch:	noarch
 
@@ -72,6 +75,9 @@ The %{name}-rule-playbooks package contains individual ansible playbooks per rul
 %if 0%{?centos}
 %define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=FALSE -DSSG_PRODUCT_RHEL%{centos}:BOOLEAN=TRUE -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=ON -DSSG_SCE_ENABLED:BOOL=ON
 %endif
+%if 0%{?almalinux}
+%define cmake_defines_specific -DSSG_PRODUCT_DEFAULT:BOOLEAN=FALSE -DSSG_PRODUCT_ALMALINUX%{rhel}:BOOLEAN=TRUE -DSSG_SCIENTIFIC_LINUX_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_CENTOS_DERIVATIVES_ENABLED:BOOL=OFF -DSSG_SCE_ENABLED:BOOL=ON
+%endif
 
 mkdir -p build
 %build
@@ -104,6 +110,9 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Tue Jul 15 2025 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.77-2.alma.1
+- Add AlmaLinux 10 support
+
 * Fri Jun 27 2025 Vojtech Polasek <vpolasek@redhat.com> - 0.1.77-2
 - fix incorrect applicability of Grub2 UEFI specific rules
 - replace grub-mkconfig with grub2-mkconfig in rule descriptions
