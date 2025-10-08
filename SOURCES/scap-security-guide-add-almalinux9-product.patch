@@ -9442,7 +9442,7 @@ index 000000000..6dc6d1975
 +    - '!package_talk_removed'
 +    - '!package_talk-server_removed'
 diff --git a/products/almalinux9/profiles/hipaa.profile b/products/almalinux9/profiles/hipaa.profile
-index 9bfea9819..c50bff73c 100644
+index 9bfea9819..5cc5968e1 100644
 --- a/products/almalinux9/profiles/hipaa.profile
 +++ b/products/almalinux9/profiles/hipaa.profile
 @@ -1,8 +1,9 @@
@@ -9456,7 +9456,7 @@ index 9bfea9819..c50bff73c 100644
  
  reference: https://www.hhs.gov/hipaa/for-professionals/index.html
  
-@@ -18,144 +19,75 @@ description: |-
+@@ -18,144 +19,74 @@ description: |-
  
      This profile configures AlmaLinux OS 9 to the HIPAA Security
      Rule identified for securing of electronic protected health information.
@@ -9631,7 +9631,6 @@ index 9bfea9819..c50bff73c 100644
 +    - "!coreos_disable_interactive_boot"
 +    - "!coreos_enable_selinux_kernel_argument"
 +    - "!coreos_nousb_kernel_argument"
-+    - "!ensure_almalinux_gpgkey_installed"
 +    - "!ensure_fedora_gpgkey_installed"
 +    - "!ensure_gpgcheck_repo_metadata"
 +    - "!ensure_suse_gpgkey_installed"
