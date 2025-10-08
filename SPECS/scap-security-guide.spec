@@ -5,20 +5,16 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.77
-Release:	3%{?dist}.alma.1
+Version:	0.1.78
+Release:	1%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
 Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{version}/scap-security-guide-%{version}.tar.bz2
-# fix applicability of grub2_admin_username and grub2_password rules on uefi systems
-Patch0:	scap-security-guide_0_1_78_fix_uefi_applicability.patch
-Patch1:	scap-security-guide_0_1_78_fix_uefi_applicability_jinja.patch
-# fix wrong grub-mkconfig (should be grub2-mkconfig) command in rule descriptions
-Patch2:	scap-security-guide_0_1_78_fix_wrong_grubmkconfig.patch
 
 # AlmaLinux Patch
 Patch1000: scap-security-guide-add-almalinux9-product.patch
+
 BuildArch:	noarch
 
 BuildRequires:	libxslt
@@ -107,8 +103,11 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Mon Jul 14 2025 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.77-3.alma.1
+* Wed Oct 08 2025 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.78-1.alma.1
 - Add AlmaLinux 9 support
+
+* Thu Sep 11 2025 Matthew Burket <mburket@redhat.com> - 0.1.78-1
+- rebase scap-security-guide package to version 0.1.78 (RHEL-118557)
 
 * Fri Jun 27 2025 Vojtech Polasek <vpolasek@redhat.com> - 0.1.77-3
 - fix incorrect applicability of Grub2 UEFI specific rules
