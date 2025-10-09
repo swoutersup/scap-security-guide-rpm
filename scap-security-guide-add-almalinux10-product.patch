@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a31014247..378b66c5a 100644
+index c16a3d91c..cc15856ce 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -90,7 +90,7 @@ option(SSG_PRODUCT_DEFAULT "If enabled, all default release products will be bui
@@ -11,7 +11,7 @@ index a31014247..378b66c5a 100644
  option(SSG_PRODUCT_ANOLIS8 "If enabled, the Anolis OS 8 SCAP content will be built" ${SSG_PRODUCT_DEFAULT})
  option(SSG_PRODUCT_ANOLIS23 "If enabled, the Anolis OS 23 SCAP content will be built" ${SSG_PRODUCT_DEFAULT})
  option(SSG_PRODUCT_CHROMIUM "If enabled, the Chromium SCAP content will be built" ${SSG_PRODUCT_DEFAULT})
-@@ -328,7 +328,7 @@ message(STATUS "Products:")
+@@ -331,7 +331,7 @@ message(STATUS "Products:")
  message(STATUS "Amazon Linux 2023: ${SSG_PRODUCT_AL2023}")
  message(STATUS "Alibaba Cloud Linux 2: ${SSG_PRODUCT_ALINUX2}")
  message(STATUS "Alibaba Cloud Linux 3: ${SSG_PRODUCT_ALINUX3}")
@@ -20,7 +20,7 @@ index a31014247..378b66c5a 100644
  message(STATUS "Anolis OS 8: ${SSG_PRODUCT_ANOLIS8}")
  message(STATUS "Anolis OS 23: ${SSG_PRODUCT_ANOLIS23}")
  message(STATUS "Chromium: ${SSG_PRODUCT_CHROMIUM}")
-@@ -394,8 +394,8 @@ endif()
+@@ -396,8 +396,8 @@ endif()
  if(SSG_PRODUCT_ALINUX3)
      add_subdirectory("products/alinux3" "alinux3")
  endif()
@@ -32,10 +32,10 @@ index a31014247..378b66c5a 100644
  if(SSG_PRODUCT_ANOLIS8)
      add_subdirectory("products/anolis8" "anolis8")
 diff --git a/build_product b/build_product
-index 90b25237e..4e4ffe3d9 100755
+index 567375462..e5d3c3e0e 100755
 --- a/build_product
 +++ b/build_product
-@@ -364,7 +364,7 @@ all_cmake_products=(
+@@ -356,7 +356,7 @@ all_cmake_products=(
  	AL2023
  	ALINUX2
  	ALINUX3
@@ -45,202 +45,193 @@ index 90b25237e..4e4ffe3d9 100755
  	ANOLIS8
  	CHROMIUM
 diff --git a/controls/anssi.yml b/controls/anssi.yml
-index 86b84a044..2d04a7814 100644
+index dfd95d3c8..936e30d0c 100644
 --- a/controls/anssi.yml
 +++ b/controls/anssi.yml
-@@ -806,10 +806,8 @@ controls:
-       ANSSI doesn't specify the length of the inactivity period, we are choosing 10 minutes as reasonable number.
-     status: automated
-     rules:
--    {{% if "rhel" in product or "ol" in families %}}
-     - logind_session_timeout
-     - var_logind_session_timeout=10_minutes
--    {{% endif %}}
-     - accounts_tmout
-     - var_accounts_tmout=10_min
+@@ -1254,7 +1254,7 @@ controls:
+           - ensure_gpgcheck_never_disabled
+           - ensure_gpgcheck_globally_activated
+           - ensure_gpgcheck_local_packages
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+           - ensure_oracle_gpgkey_installed
+           - ensure_almalinux_gpgkey_installed
  
-@@ -1246,7 +1244,7 @@ controls:
-     - ensure_gpgcheck_never_disabled
-     - ensure_gpgcheck_globally_activated
-     - ensure_gpgcheck_local_packages
--    - ensure_redhat_gpgkey_installed
-+    - ensure_almalinux_gpgkey_installed
-     - ensure_oracle_gpgkey_installed
-     - ensure_almalinux_gpgkey_installed
- 
-@@ -1298,10 +1296,6 @@ controls:
-     - package_rsh_removed
-     - package_rsh-server_removed
-     - package_sendmail_removed
--    {{%- if "rhel" not in product %}}
--    - package_talk_removed
--    - package_talk-server_removed
--    {{%- endif %}}
-     - package_telnet_removed
-     - package_telnet-server_removed
-     - package_tftp_removed
 diff --git a/controls/cis_almalinux9.yml b/controls/cis_almalinux9.yml
-index 4591f52c6..670d0b14f 100644
+index 73d3a0474..836bb6b3c 100644
 --- a/controls/cis_almalinux9.yml
 +++ b/controls/cis_almalinux9.yml
-@@ -360,7 +360,7 @@ controls:
-       - l1_workstation
-     status: manual
-     related_rules:
--      - ensure_redhat_gpgkey_installed
-+      - ensure_almalinux_gpgkey_installed
+@@ -363,7 +363,7 @@ controls:
+           - l1_workstation
+       status: manual
+       related_rules:
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
  
-   - id: 1.2.1.2
-     title: Ensure gpgcheck is globally activated (Automated)
+     - id: 1.2.1.2
+       title: Ensure gpgcheck is globally activated (Automated)
 diff --git a/controls/cis_rhel10.yml b/controls/cis_rhel10.yml
-index 8a3fd6b86..e1a46a905 100644
+index e0b5a9530..89ab69a5d 100644
 --- a/controls/cis_rhel10.yml
 +++ b/controls/cis_rhel10.yml
-@@ -303,7 +303,7 @@ controls:
-       - l1_workstation
-     status: manual
-     related_rules:
--      - ensure_redhat_gpgkey_installed
-+      - ensure_almalinux_gpgkey_installed
+@@ -305,7 +305,7 @@ controls:
+           - l1_workstation
+       status: manual
+       related_rules:
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
  
-   - id: 1.2.1.2
-     title: Ensure gpgcheck is globally activated (Automated)
+     - id: 1.2.1.2
+       title: Ensure gpgcheck is globally activated (Automated)
 diff --git a/controls/cis_rhel8.yml b/controls/cis_rhel8.yml
-index 05152b5b8..fa73354e0 100644
+index a3365c4ea..12ab44ac0 100644
 --- a/controls/cis_rhel8.yml
 +++ b/controls/cis_rhel8.yml
-@@ -353,7 +353,7 @@ controls:
-       - l1_workstation
-     status: manual
-     related_rules:
--      - ensure_redhat_gpgkey_installed
-+      - ensure_almalinux_gpgkey_installed
+@@ -356,7 +356,7 @@ controls:
+           - l1_workstation
+       status: manual
+       related_rules:
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
  
-   - id: 1.2.2
-     title: Ensure gpgcheck is globally activated (Automated)
+     - id: 1.2.2
+       title: Ensure gpgcheck is globally activated (Automated)
 diff --git a/controls/cis_rhel9.yml b/controls/cis_rhel9.yml
-index 017acb8d4..d97bb7c0b 100644
+index 7a200b8b8..c94146de5 100644
 --- a/controls/cis_rhel9.yml
 +++ b/controls/cis_rhel9.yml
-@@ -360,7 +360,7 @@ controls:
-       - l1_workstation
-     status: manual
-     related_rules:
--      - ensure_redhat_gpgkey_installed
-+      - ensure_almalinux_gpgkey_installed
+@@ -363,7 +363,7 @@ controls:
+           - l1_workstation
+       status: manual
+       related_rules:
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
  
-   - id: 1.2.1.2
-     title: Ensure gpgcheck is globally activated (Automated)
+     - id: 1.2.1.2
+       title: Ensure gpgcheck is globally activated (Automated)
 diff --git a/controls/e8.yml b/controls/e8.yml
-index dac6a8c85..640cd37c0 100644
+index eecf857ad..4000844eb 100644
 --- a/controls/e8.yml
 +++ b/controls/e8.yml
 @@ -24,7 +24,7 @@ controls:
-             - service_avahi-daemon_disabled
-             - package_squid_removed
-             - service_squid_disabled
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-             - ensure_gpgcheck_never_disabled
-             - ensure_gpgcheck_local_packages
-             - ensure_gpgcheck_globally_activated
+           - service_avahi-daemon_disabled
+           - package_squid_removed
+           - service_squid_disabled
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+           - ensure_gpgcheck_never_disabled
+           - ensure_gpgcheck_local_packages
+           - ensure_gpgcheck_globally_activated
 diff --git a/controls/hipaa.yml b/controls/hipaa.yml
-index 27895b700..a34683373 100644
+index 0f5470740..f0b1b567a 100644
 --- a/controls/hipaa.yml
 +++ b/controls/hipaa.yml
-@@ -167,7 +167,7 @@ controls:
-             - ensure_gpgcheck_local_packages
-             - ensure_gpgcheck_never_disabled
-             - ensure_gpgcheck_repo_metadata
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-             - ensure_suse_gpgkey_installed
-             - ensure_almalinux_gpgkey_installed
-         status: automated
+@@ -170,7 +170,7 @@ controls:
+           - ensure_gpgcheck_local_packages
+           - ensure_gpgcheck_never_disabled
+           - ensure_gpgcheck_repo_metadata
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+           - ensure_suse_gpgkey_installed
+           - ensure_almalinux_gpgkey_installed
+       status: automated
 @@ -1388,7 +1388,7 @@ controls:
-             - ensure_gpgcheck_local_packages
-             - ensure_gpgcheck_never_disabled
-             - ensure_gpgcheck_repo_metadata
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-             - ensure_suse_gpgkey_installed
-             - ensure_almalinux_gpgkey_installed
-         status: automated
+           - ensure_gpgcheck_local_packages
+           - ensure_gpgcheck_never_disabled
+           - ensure_gpgcheck_repo_metadata
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+           - ensure_suse_gpgkey_installed
+           - ensure_almalinux_gpgkey_installed
+       status: automated
 @@ -1419,7 +1419,7 @@ controls:
-             - ensure_gpgcheck_local_packages
-             - ensure_gpgcheck_never_disabled
-             - ensure_gpgcheck_repo_metadata
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-             - ensure_suse_gpgkey_installed
-             - ensure_almalinux_gpgkey_installed
-         status: automated
+           - ensure_gpgcheck_local_packages
+           - ensure_gpgcheck_never_disabled
+           - ensure_gpgcheck_repo_metadata
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+           - ensure_suse_gpgkey_installed
+           - ensure_almalinux_gpgkey_installed
+       status: automated
 @@ -1439,7 +1439,7 @@ controls:
-             - ensure_gpgcheck_local_packages
-             - ensure_gpgcheck_never_disabled
-             - ensure_gpgcheck_repo_metadata
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-             - ensure_suse_gpgkey_installed
-             - ensure_almalinux_gpgkey_installed
-         status: automated
+           - ensure_gpgcheck_local_packages
+           - ensure_gpgcheck_never_disabled
+           - ensure_gpgcheck_repo_metadata
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+           - ensure_suse_gpgkey_installed
+           - ensure_almalinux_gpgkey_installed
+       status: automated
 @@ -1720,7 +1720,7 @@ controls:
-             - ensure_gpgcheck_local_packages
-             - ensure_gpgcheck_never_disabled
-             - ensure_gpgcheck_repo_metadata
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-             - ensure_suse_gpgkey_installed
-             - ensure_almalinux_gpgkey_installed
-         status: automated
+           - ensure_gpgcheck_local_packages
+           - ensure_gpgcheck_never_disabled
+           - ensure_gpgcheck_repo_metadata
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+           - ensure_suse_gpgkey_installed
+           - ensure_almalinux_gpgkey_installed
+       status: automated
 diff --git a/controls/ospp.yml b/controls/ospp.yml
-index 505f7b2a7..e67bf76d1 100644
+index e89695d35..2b7ca819f 100644
 --- a/controls/ospp.yml
 +++ b/controls/ospp.yml
-@@ -447,7 +447,7 @@ controls:
-             - ensure_gpgcheck_globally_activated
-             - ensure_gpgcheck_local_packages
-             - ensure_gpgcheck_never_disabled
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-         status: automated
+@@ -446,7 +446,7 @@ controls:
+           - ensure_gpgcheck_globally_activated
+           - ensure_gpgcheck_local_packages
+           - ensure_gpgcheck_never_disabled
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+       status: automated
  
-     -   id: FPT_TUD_EXT.2
-@@ -461,7 +461,7 @@ controls:
-             - ensure_gpgcheck_globally_activated
-             - ensure_gpgcheck_local_packages
-             - ensure_gpgcheck_never_disabled
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-         status: automated
+     - id: FPT_TUD_EXT.2
+@@ -460,7 +460,7 @@ controls:
+           - ensure_gpgcheck_globally_activated
+           - ensure_gpgcheck_local_packages
+           - ensure_gpgcheck_never_disabled
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+       status: automated
  
-     -   id: FPT_TST_EXT.1
+     - id: FPT_TST_EXT.1
 diff --git a/controls/pcidss_4.yml b/controls/pcidss_4.yml
-index 1bdd27a73..111e3a773 100644
+index 93fd91189..eb1661cf7 100644
 --- a/controls/pcidss_4.yml
 +++ b/controls/pcidss_4.yml
 @@ -1555,7 +1555,7 @@ controls:
-         - base
-       status: automated
+                 - base
+             status: automated
+             rules:
+-                - ensure_redhat_gpgkey_installed
++                - ensure_almalinux_gpgkey_installed
+                 - ensure_suse_gpgkey_installed
+                 - ensure_almalinux_gpgkey_installed
+                 - ensure_gpgcheck_globally_activated
+diff --git a/controls/stig_rhel8.yml b/controls/stig_rhel8.yml
+index f2a86329b..c34f4155e 100644
+--- a/controls/stig_rhel8.yml
++++ b/controls/stig_rhel8.yml
+@@ -3171,7 +3171,7 @@ controls:
+           - medium
+       title: RHEL 8 must ensure cryptographic verification of vendor software packages.
        rules:
--        - ensure_redhat_gpgkey_installed
-+        - ensure_almalinux_gpgkey_installed
-         - ensure_suse_gpgkey_installed
-         - ensure_almalinux_gpgkey_installed
-         - ensure_gpgcheck_globally_activated
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+       status: automated
+ 
+     - id: RHEL-08-010358
 diff --git a/controls/stig_rhel9.yml b/controls/stig_rhel9.yml
-index f66299e6f..5448dee70 100644
+index b250bbd3b..dc81aa6bb 100644
 --- a/controls/stig_rhel9.yml
 +++ b/controls/stig_rhel9.yml
-@@ -382,7 +382,7 @@ controls:
-             - medium
-         title: RHEL 9 must ensure cryptographic verification of vendor software packages.
-         rules:
--            - ensure_redhat_gpgkey_installed
-+            - ensure_almalinux_gpgkey_installed
-         status: automated
+@@ -362,7 +362,7 @@ controls:
+           - medium
+       title: RHEL 9 must ensure cryptographic verification of vendor software packages.
+       rules:
+-          - ensure_redhat_gpgkey_installed
++          - ensure_almalinux_gpgkey_installed
+       status: automated
  
-     -   id: RHEL-09-214015
+     - id: RHEL-09-214015
 diff --git a/linux_os/guide/auditing/auditd_configure_rules/audit_kernel_module_loading/audit_rules_kernel_module_loading_create/kubernetes/shared.yml b/linux_os/guide/auditing/auditd_configure_rules/audit_kernel_module_loading/audit_rules_kernel_module_loading_create/kubernetes/shared.yml
 index bdf3015c4..658327033 100644
 --- a/linux_os/guide/auditing/auditd_configure_rules/audit_kernel_module_loading/audit_rules_kernel_module_loading_create/kubernetes/shared.yml
@@ -642,7 +633,7 @@ index 2dba37605..c9684121a 100644
  
  ./generate_privileged_commands_rule.sh {{{ uid_min }}} own_key /etc/audit/rules.d/privileged.rules
 diff --git a/linux_os/guide/auditing/auditd_configure_rules/audit_privileged_commands/audit_rules_privileged_commands_insmod/ansible/shared.yml b/linux_os/guide/auditing/auditd_configure_rules/audit_privileged_commands/audit_rules_privileged_commands_insmod/ansible/shared.yml
-index 6c114c13c..5c5f7185c 100644
+index f0ea21841..6f744d05b 100644
 --- a/linux_os/guide/auditing/auditd_configure_rules/audit_privileged_commands/audit_rules_privileged_commands_insmod/ansible/shared.yml
 +++ b/linux_os/guide/auditing/auditd_configure_rules/audit_privileged_commands/audit_rules_privileged_commands_insmod/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -705,12 +696,12 @@ index 9c5b7d2eb..cae43ea29 100644
  # strategy = restrict
  # complexity = low
 diff --git a/linux_os/guide/auditing/auditd_configure_rules/audit_rules_suid_auid_privilege_function/bash/shared.sh b/linux_os/guide/auditing/auditd_configure_rules/audit_rules_suid_auid_privilege_function/bash/shared.sh
-index d0626b7aa..71cc2ea03 100644
+index dd0efe72d..c3e8fc990 100644
 --- a/linux_os/guide/auditing/auditd_configure_rules/audit_rules_suid_auid_privilege_function/bash/shared.sh
 +++ b/linux_os/guide/auditing/auditd_configure_rules/audit_rules_suid_auid_privilege_function/bash/shared.sh
 @@ -1,4 +1,4 @@
--# platform = multi_platform_rhel,multi_platform_ubuntu
-+# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_ubuntu
+-# platform = multi_platform_rhel,multi_platform_ubuntu,multi_platform_debian
++# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_ubuntu,multi_platform_debian
  
  # First perform the remediation of the syscall rule
  # Retrieve hardware architecture of the underlying system
@@ -1481,7 +1472,7 @@ index 166a20b8e..1d95807b6 100644
  kdump disable
  service disable kdump
 diff --git a/linux_os/guide/services/cron_and_at/package_cron_installed/rule.yml b/linux_os/guide/services/cron_and_at/package_cron_installed/rule.yml
-index 1e53d881f..a73066e7d 100644
+index 1e575a03c..1c27c61b2 100644
 --- a/linux_os/guide/services/cron_and_at/package_cron_installed/rule.yml
 +++ b/linux_os/guide/services/cron_and_at/package_cron_installed/rule.yml
 @@ -1,4 +1,4 @@
@@ -1491,7 +1482,7 @@ index 1e53d881f..a73066e7d 100644
  {{% else %}}
  {{% set package_name = "cron" %}}
 diff --git a/linux_os/guide/services/cron_and_at/service_cron_enabled/rule.yml b/linux_os/guide/services/cron_and_at/service_cron_enabled/rule.yml
-index 7977cba9f..2eb30f0d2 100644
+index d54589c84..883befbc6 100644
 --- a/linux_os/guide/services/cron_and_at/service_cron_enabled/rule.yml
 +++ b/linux_os/guide/services/cron_and_at/service_cron_enabled/rule.yml
 @@ -1,4 +1,4 @@
@@ -1501,7 +1492,7 @@ index 7977cba9f..2eb30f0d2 100644
  {{% else %}}
  {{% set service_name = "cron" %}}
 diff --git a/linux_os/guide/services/mail/postfix_client/postfix_client_configure_mail_alias/ansible/shared.yml b/linux_os/guide/services/mail/postfix_client/postfix_client_configure_mail_alias/ansible/shared.yml
-index a0330236a..89efc61e4 100644
+index 697e200ec..7c55af618 100644
 --- a/linux_os/guide/services/mail/postfix_client/postfix_client_configure_mail_alias/ansible/shared.yml
 +++ b/linux_os/guide/services/mail/postfix_client/postfix_client_configure_mail_alias/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -1511,7 +1502,7 @@ index a0330236a..89efc61e4 100644
  # strategy = configure
  # complexity = low
 diff --git a/linux_os/guide/services/mail/postfix_client/postfix_client_configure_mail_alias/bash/shared.sh b/linux_os/guide/services/mail/postfix_client/postfix_client_configure_mail_alias/bash/shared.sh
-index 001ead7d6..1fc220d8a 100644
+index 43e16c187..b2af04b32 100644
 --- a/linux_os/guide/services/mail/postfix_client/postfix_client_configure_mail_alias/bash/shared.sh
 +++ b/linux_os/guide/services/mail/postfix_client/postfix_client_configure_mail_alias/bash/shared.sh
 @@ -1,4 +1,4 @@
@@ -1626,7 +1617,7 @@ index c435df983..b80ffbf7b 100644
  # strategy = restrict
  # complexity = low
 diff --git a/linux_os/guide/services/smb/configuring_samba/require_smb_client_signing/ansible/shared.yml b/linux_os/guide/services/smb/configuring_samba/require_smb_client_signing/ansible/shared.yml
-index a66068605..f25b95045 100644
+index a10c4daa1..bfb3121f4 100644
 --- a/linux_os/guide/services/smb/configuring_samba/require_smb_client_signing/ansible/shared.yml
 +++ b/linux_os/guide/services/smb/configuring_samba/require_smb_client_signing/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -1646,7 +1637,7 @@ index 9e1f01f53..d7d4c2651 100644
  #By Luke "Brisk-OH" Brisk
  #luke.brisk@boeing.com or luke.brisk@gmail.com
 diff --git a/linux_os/guide/services/snmp/snmp_configure_server/snmpd_not_default_password/ansible/shared.yml b/linux_os/guide/services/snmp/snmp_configure_server/snmpd_not_default_password/ansible/shared.yml
-index ca07eef0e..9a56d0833 100644
+index 2ea6b4821..e9398b913 100644
 --- a/linux_os/guide/services/snmp/snmp_configure_server/snmpd_not_default_password/ansible/shared.yml
 +++ b/linux_os/guide/services/snmp/snmp_configure_server/snmpd_not_default_password/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -1688,7 +1679,7 @@ index 31c4683c8..b03ae1453 100644
  
  mkdir -p /etc/ssh/sshd_config.d
 diff --git a/linux_os/guide/services/sssd/sssd_enable_smartcards/rule.yml b/linux_os/guide/services/sssd/sssd_enable_smartcards/rule.yml
-index 261bbb8ff..b66ad7305 100644
+index 11f858d7c..ce75077c1 100644
 --- a/linux_os/guide/services/sssd/sssd_enable_smartcards/rule.yml
 +++ b/linux_os/guide/services/sssd/sssd_enable_smartcards/rule.yml
 @@ -19,7 +19,7 @@ description: |-
@@ -1809,43 +1800,43 @@ index 456f06484..e6fb4c857 100644
  SSSD_FILE="/etc/sssd/sssd.conf"
  rm -f $SSSD_FILE
 diff --git a/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/correct_target.pass.sh b/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/correct_target.pass.sh
-index e0bdca6be..9ce5132f6 100644
+index 780c4d1a5..ccec13d45 100644
 --- a/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/correct_target.pass.sh
 +++ b/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/correct_target.pass.sh
 @@ -1,4 +1,4 @@
  #!/bin/bash
--# platform = Oracle Linux 8,multi_platform_fedora,multi_platform_rhv,multi_platform_rhel,multi_platform_sle
-+# platform = Oracle Linux 8,multi_platform_fedora,multi_platform_rhv,multi_platform_rhel,multi_platform_almalinux,multi_platform_sle
+-# platform = multi_platform_ol,multi_platform_fedora,multi_platform_rhv,multi_platform_rhel,multi_platform_sle
++# platform = multi_platform_ol,multi_platform_fedora,multi_platform_rhv,multi_platform_rhel,multi_platform_almalinux,multi_platform_sle
  
  systemctl set-default multi-user.target
 diff --git a/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/correct_target_under_lib.pass.sh b/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/correct_target_under_lib.pass.sh
-index 9ec0cae93..4487412e5 100644
+index fd3c4a48d..c79a3a43f 100644
 --- a/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/correct_target_under_lib.pass.sh
 +++ b/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/correct_target_under_lib.pass.sh
 @@ -1,4 +1,4 @@
  #!/bin/bash
--# platform = Oracle Linux 8,multi_platform_fedora,multi_platform_rhv,multi_platform_rhel,multi_platform_sle
-+# platform = Oracle Linux 8,multi_platform_fedora,multi_platform_rhv,multi_platform_rhel,multi_platform_almalinux,multi_platform_sle
+-# platform = multi_platform_ol,multi_platform_fedora,multi_platform_rhv,multi_platform_rhel,multi_platform_sle
++# platform = multi_platform_ol,multi_platform_fedora,multi_platform_rhv,multi_platform_rhel,multi_platform_almalinux,multi_platform_sle
  
  ln -sf /lib/systemd/system/multi-user.target /etc/systemd/system/default.target
 diff --git a/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/wrong_target.fail.sh b/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/wrong_target.fail.sh
-index 3df966d45..25eb0ca24 100644
+index 5ffb26956..f1af96866 100644
 --- a/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/wrong_target.fail.sh
 +++ b/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/wrong_target.fail.sh
 @@ -1,4 +1,4 @@
  #!/bin/bash
--# platform = Oracle Linux 8,multi_platform_fedora,multi_platform_rhel,multi_platform_rhv,multi_platform_sle
-+# platform = Oracle Linux 8,multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,multi_platform_rhv,multi_platform_sle
+-# platform = multi_platform_ol,multi_platform_fedora,multi_platform_rhel,multi_platform_rhv,multi_platform_sle
++# platform = multi_platform_ol,multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,multi_platform_rhv,multi_platform_sle
  
  systemctl set-default graphical.target
 diff --git a/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/wrong_target_under_lib.fail.sh b/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/wrong_target_under_lib.fail.sh
-index d3da2f113..a90d73d4b 100644
+index 99a85d26d..33cdca2f3 100644
 --- a/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/wrong_target_under_lib.fail.sh
 +++ b/linux_os/guide/services/xwindows/disabling_xwindows/xwindows_runlevel_target/tests/wrong_target_under_lib.fail.sh
 @@ -1,4 +1,4 @@
  #!/bin/bash
--# platform = Oracle Linux 8,multi_platform_fedora,multi_platform_rhel,multi_platform_rhv,multi_platform_sle
-+# platform = Oracle Linux 8,multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,multi_platform_rhv,multi_platform_sle
+-# platform = multi_platform_ol,multi_platform_fedora,multi_platform_rhel,multi_platform_rhv,multi_platform_sle
++# platform = multi_platform_ol,multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,multi_platform_rhv,multi_platform_sle
  
  ln -sf /lib/systemd/system/graphical.target /etc/systemd/system/default.target
 diff --git a/linux_os/guide/system/accounts/accounts-banners/banner_etc_issue/kubernetes/shared.yml b/linux_os/guide/system/accounts/accounts-banners/banner_etc_issue/kubernetes/shared.yml
@@ -2225,56 +2216,56 @@ index 517c83c6e..041e9a29c 100644
  # strategy = restrict
  # complexity = low
 diff --git a/linux_os/guide/system/accounts/accounts-physical/disable_ctrlaltdel_reboot/tests/masked.pass.sh b/linux_os/guide/system/accounts/accounts-physical/disable_ctrlaltdel_reboot/tests/masked.pass.sh
-index f8c47e96a..d0aaabaf7 100644
+index ed94337e6..318ed9da3 100644
 --- a/linux_os/guide/system/accounts/accounts-physical/disable_ctrlaltdel_reboot/tests/masked.pass.sh
 +++ b/linux_os/guide/system/accounts/accounts-physical/disable_ctrlaltdel_reboot/tests/masked.pass.sh
 @@ -1,5 +1,5 @@
  #!/bin/bash
--# platform = Oracle Linux 7,Oracle Linux 8,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
-+# platform = Oracle Linux 7,Oracle Linux 8,multi_platform_rhel,multi_platform_almalinux,multi_platform_fedora,multi_platform_ubuntu
+-# platform = multi_platform_ol,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
++# platform = multi_platform_ol,multi_platform_rhel,multi_platform_almalinux,multi_platform_fedora,multi_platform_ubuntu
  
  systemctl disable --now ctrl-alt-del.target
  systemctl mask --now ctrl-alt-del.target
 diff --git a/linux_os/guide/system/accounts/accounts-physical/disable_ctrlaltdel_reboot/tests/not_masked.fail.sh b/linux_os/guide/system/accounts/accounts-physical/disable_ctrlaltdel_reboot/tests/not_masked.fail.sh
-index 41eed9737..992dc2304 100644
+index 3e37419e8..029e44c9d 100644
 --- a/linux_os/guide/system/accounts/accounts-physical/disable_ctrlaltdel_reboot/tests/not_masked.fail.sh
 +++ b/linux_os/guide/system/accounts/accounts-physical/disable_ctrlaltdel_reboot/tests/not_masked.fail.sh
 @@ -1,4 +1,4 @@
  #!/bin/bash
--# platform = Oracle Linux 7,Oracle Linux 8,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
-+# platform = Oracle Linux 7,Oracle Linux 8,multi_platform_rhel,multi_platform_almalinux,multi_platform_fedora,multi_platform_ubuntu
+-# platform = multi_platform_ol,multi_platform_rhel,multi_platform_fedora,multi_platform_ubuntu
++# platform = multi_platform_ol,multi_platform_rhel,multi_platform_almalinux,multi_platform_fedora,multi_platform_ubuntu
  
  systemctl unmask ctrl-alt-del.target
 diff --git a/linux_os/guide/system/accounts/accounts-physical/require_emergency_target_auth/tests/correct_value_dropin.pass.sh b/linux_os/guide/system/accounts/accounts-physical/require_emergency_target_auth/tests/correct_value_dropin.pass.sh
-index 19345cfcf..374e76ec6 100644
+index 31c41fba2..c1729abbc 100644
 --- a/linux_os/guide/system/accounts/accounts-physical/require_emergency_target_auth/tests/correct_value_dropin.pass.sh
 +++ b/linux_os/guide/system/accounts/accounts-physical/require_emergency_target_auth/tests/correct_value_dropin.pass.sh
 @@ -1,5 +1,5 @@
  #!/bin/bash
--# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_sle,multi_platform_slmicro
-+# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,multi_platform_sle,multi_platform_slmicro
+-# platform = multi_platform_fedora,multi_platform_ol,multi_platform_rhel,multi_platform_sle,multi_platform_slmicro
++# platform = multi_platform_fedora,multi_platform_ol,multi_platform_rhel,multi_platform_almalinux,multi_platform_sle,multi_platform_slmicro
  rm -f /etc/systemd/system/emergency.service
  mkdir -p /etc/systemd/system/emergency.service.d/
  cat << EOF > /etc/systemd/system/emergency.service.d/10-automatus.conf
 diff --git a/linux_os/guide/system/accounts/accounts-physical/require_emergency_target_auth/tests/wrong_value_dropin.fail.sh b/linux_os/guide/system/accounts/accounts-physical/require_emergency_target_auth/tests/wrong_value_dropin.fail.sh
-index da0d857f6..a7d75247c 100644
+index 8fb2960e0..57568d8cb 100644
 --- a/linux_os/guide/system/accounts/accounts-physical/require_emergency_target_auth/tests/wrong_value_dropin.fail.sh
 +++ b/linux_os/guide/system/accounts/accounts-physical/require_emergency_target_auth/tests/wrong_value_dropin.fail.sh
 @@ -1,5 +1,5 @@
  #!/bin/bash
--# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_sle,multi_platform_slmicro
-+# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,multi_platform_sle,multi_platform_slmicro
+-# platform = multi_platform_fedora,multi_platform_ol,multi_platform_rhel,multi_platform_sle,multi_platform_slmicro
++# platform = multi_platform_fedora,multi_platform_ol,multi_platform_rhel,multi_platform_almalinux,multi_platform_sle,multi_platform_slmicro
  rm -f /etc/systemd/system/emergency.service
  mkdir -p /etc/systemd/system/emergency.service.d/
  cat << EOF > /etc/systemd/system/emergency.service.d/10-oscap.conf
 diff --git a/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/tests/correct_dropin.pass.sh b/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/tests/correct_dropin.pass.sh
-index 07b8e331a..850cd60d9 100644
+index c15034231..01fbc0695 100644
 --- a/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/tests/correct_dropin.pass.sh
 +++ b/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/tests/correct_dropin.pass.sh
 @@ -1,5 +1,5 @@
  #!/bin/bash
--# platform = multi_platform_fedora,multi_platform_rhel
-+# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+-# platform = multi_platform_fedora,multi_platform_ol,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_ol,multi_platform_rhel,multi_platform_almalinux
  rm -rf /etc/systemd/system/rescue.service.d
  mkdir -p /etc/systemd/system/rescue.service.d
  cat << EOF > /etc/systemd/system/rescue.service.d/10-automatus.conf
@@ -2290,13 +2281,13 @@ index f735f3270..027fbbe3d 100644
  service_file="/usr/lib/systemd/system/rescue.service"
  sulogin="/usr/lib/systemd/systemd-sulogin-shell"
 diff --git a/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/tests/wrong_dropin.fail.sh b/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/tests/wrong_dropin.fail.sh
-index 4557b0512..043753f03 100644
+index 01701eefb..a3b846c14 100644
 --- a/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/tests/wrong_dropin.fail.sh
 +++ b/linux_os/guide/system/accounts/accounts-physical/require_singleuser_auth/tests/wrong_dropin.fail.sh
 @@ -1,5 +1,5 @@
  #!/bin/bash
--# platform = multi_platform_fedora,multi_platform_rhel
-+# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+-# platform = multi_platform_fedora,multi_platform_ol,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_ol,multi_platform_rhel,multi_platform_almalinux
  
  rm -rf /etc/systemd/system/rescue.service.d
  mkdir -p /etc/systemd/system/rescue.service.d
@@ -2321,7 +2312,7 @@ index f47326940..42d591752 100644
  # strategy = configure
  # complexity = low
 diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_tmux_lock_after_time/ansible/shared.yml b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_tmux_lock_after_time/ansible/shared.yml
-index dc63eb653..dc6931307 100644
+index 6eb24c8ef..718f8cb2e 100644
 --- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_tmux_lock_after_time/ansible/shared.yml
 +++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/console_screen_locking/configure_tmux_lock_after_time/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -2397,7 +2388,7 @@ index 6b2d6cd5e..c20712c9f 100644
  kind: MachineConfig
  spec:
 diff --git a/linux_os/guide/system/accounts/accounts-physical/screen_locking/smart_card_login/smartcard_configure_cert_checking/ansible/shared.yml b/linux_os/guide/system/accounts/accounts-physical/screen_locking/smart_card_login/smartcard_configure_cert_checking/ansible/shared.yml
-index 08b89bf8f..cea27ab4d 100644
+index 2cbb501f6..27700c4b4 100644
 --- a/linux_os/guide/system/accounts/accounts-physical/screen_locking/smart_card_login/smartcard_configure_cert_checking/ansible/shared.yml
 +++ b/linux_os/guide/system/accounts/accounts-physical/screen_locking/smart_card_login/smartcard_configure_cert_checking/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -2459,12 +2450,12 @@ index 987fb5d8b..8b5d81151 100644
  # strategy = restrict
  # complexity = low
 diff --git a/linux_os/guide/system/accounts/accounts-restrictions/root_logins/ensure_pam_wheel_group_empty/bash/shared.sh b/linux_os/guide/system/accounts/accounts-restrictions/root_logins/ensure_pam_wheel_group_empty/bash/shared.sh
-index df4c8338b..481ceb571 100644
+index b4e23e24b..944921420 100644
 --- a/linux_os/guide/system/accounts/accounts-restrictions/root_logins/ensure_pam_wheel_group_empty/bash/shared.sh
 +++ b/linux_os/guide/system/accounts/accounts-restrictions/root_logins/ensure_pam_wheel_group_empty/bash/shared.sh
 @@ -1,4 +1,4 @@
--# platform = multi_platform_rhel,multi_platform_sle,multi_platform_slmicro,multi_platform_ubuntu
-+# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_sle,multi_platform_slmicro,multi_platform_ubuntu
+-# platform = multi_platform_rhel,multi_platform_sle,multi_platform_slmicro,multi_platform_ubuntu,multi_platform_debian
++# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_sle,multi_platform_slmicro,multi_platform_ubuntu,multi_platform_debian
  
  {{{ bash_instantiate_variables("var_pam_wheel_group_for_su") }}}
  
@@ -2490,17 +2481,17 @@ index 9bbbb9585..766df9993 100644
  # strategy = restrict
  # complexity = low
 diff --git a/linux_os/guide/system/accounts/accounts-restrictions/root_logins/use_pam_wheel_group_for_su/bash/shared.sh b/linux_os/guide/system/accounts/accounts-restrictions/root_logins/use_pam_wheel_group_for_su/bash/shared.sh
-index cb7530b38..c33fd385c 100644
+index 981e15a27..95e86e821 100644
 --- a/linux_os/guide/system/accounts/accounts-restrictions/root_logins/use_pam_wheel_group_for_su/bash/shared.sh
 +++ b/linux_os/guide/system/accounts/accounts-restrictions/root_logins/use_pam_wheel_group_for_su/bash/shared.sh
 @@ -1,4 +1,4 @@
--# platform = multi_platform_rhel,multi_platform_sle,multi_platform_slmicro,multi_platform_ubuntu
-+# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_sle,multi_platform_slmicro,multi_platform_ubuntu
+-# platform = multi_platform_rhel,multi_platform_sle,multi_platform_slmicro,multi_platform_ubuntu,multi_platform_debian
++# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_sle,multi_platform_slmicro,multi_platform_ubuntu,multi_platform_debian
  {{{ bash_instantiate_variables("var_pam_wheel_group_for_su") }}}
  
  PAM_CONF=/etc/pam.d/su
 diff --git a/linux_os/guide/system/accounts/accounts-session/accounts_polyinstantiated_tmp/ansible/shared.yml b/linux_os/guide/system/accounts/accounts-session/accounts_polyinstantiated_tmp/ansible/shared.yml
-index d3798de62..19761e09d 100644
+index 4d08bb696..febed69bb 100644
 --- a/linux_os/guide/system/accounts/accounts-session/accounts_polyinstantiated_tmp/ansible/shared.yml
 +++ b/linux_os/guide/system/accounts/accounts-session/accounts_polyinstantiated_tmp/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -2510,7 +2501,7 @@ index d3798de62..19761e09d 100644
  # strategy = restrict
  # complexity = low
 diff --git a/linux_os/guide/system/accounts/accounts-session/accounts_polyinstantiated_var_tmp/ansible/shared.yml b/linux_os/guide/system/accounts/accounts-session/accounts_polyinstantiated_var_tmp/ansible/shared.yml
-index da628bc5e..90f23cb90 100644
+index 12a861bb1..d16d24b51 100644
 --- a/linux_os/guide/system/accounts/accounts-session/accounts_polyinstantiated_var_tmp/ansible/shared.yml
 +++ b/linux_os/guide/system/accounts/accounts-session/accounts_polyinstantiated_var_tmp/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -2544,7 +2535,7 @@ index 892523fc4..9fbba1ccb 100644
  # strategy = restrict
  # complexity = low
 diff --git a/linux_os/guide/system/logging/log_rotation/ensure_logrotate_activated/oval/shared.xml b/linux_os/guide/system/logging/log_rotation/ensure_logrotate_activated/oval/shared.xml
-index 82b0d0651..e1c9ecdd5 100644
+index 907b69cc3..bc2426c0c 100644
 --- a/linux_os/guide/system/logging/log_rotation/ensure_logrotate_activated/oval/shared.xml
 +++ b/linux_os/guide/system/logging/log_rotation/ensure_logrotate_activated/oval/shared.xml
 @@ -11,7 +11,7 @@
@@ -2862,6 +2853,127 @@ index 89d344c4f..1a926adaa 100644
  # check-import = stdout
  
  tbl_output=$(nft list tables | grep inet)
+diff --git a/linux_os/guide/system/network/network_nmcli_permissions/tests/missing_compat_package.fail.sh b/linux_os/guide/system/network/network_nmcli_permissions/tests/missing_compat_package.fail.sh
+index 2dc3f4431..24c971141 100644
+--- a/linux_os/guide/system/network/network_nmcli_permissions/tests/missing_compat_package.fail.sh
++++ b/linux_os/guide/system/network/network_nmcli_permissions/tests/missing_compat_package.fail.sh
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+ # packages = polkit
+-# platform = Red Hat Enterprise Linux 9, Red Hat Enterprise Linux 10
++# platform = Red Hat Enterprise Linux 9, Red Hat Enterprise Linux 10,AlmaLinux OS 10
+ # This TS is a regression test for https://issues.redhat.com/browse/RHEL-87606
+ dnf remove -y --noautoremove polkit-pkla-compat
+diff --git a/linux_os/guide/system/permissions/files/dir_perms_world_writable_sticky_bits/sce/shared.sh b/linux_os/guide/system/permissions/files/dir_perms_world_writable_sticky_bits/sce/shared.sh
+index 0eee598bf..c3aa51320 100644
+--- a/linux_os/guide/system/permissions/files/dir_perms_world_writable_sticky_bits/sce/shared.sh
++++ b/linux_os/guide/system/permissions/files/dir_perms_world_writable_sticky_bits/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+ # check-import = stdout
+ 
+ {{{ find_directories(find_parameters="\( -perm -0002 -a ! -perm -1000 \)", fail_message="Found directories with writable sticky bits") }}}
+diff --git a/linux_os/guide/system/permissions/files/dir_perms_world_writable_system_owned/sce/shared.sh b/linux_os/guide/system/permissions/files/dir_perms_world_writable_system_owned/sce/shared.sh
+index facc0ad8d..f19540f78 100644
+--- a/linux_os/guide/system/permissions/files/dir_perms_world_writable_system_owned/sce/shared.sh
++++ b/linux_os/guide/system/permissions/files/dir_perms_world_writable_system_owned/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+ # check-import = stdout
+ 
+ {{{ find_directories(find_parameters="-perm -0002 -uid +"~uid_min, fail_message="Found world-writable directories that are not owned by a system account") }}}
+diff --git a/linux_os/guide/system/permissions/files/file_permissions_unauthorized_sgid/sce/shared.sh b/linux_os/guide/system/permissions/files/file_permissions_unauthorized_sgid/sce/shared.sh
+index a6fb2064a..4d8f7030f 100644
+--- a/linux_os/guide/system/permissions/files/file_permissions_unauthorized_sgid/sce/shared.sh
++++ b/linux_os/guide/system/permissions/files/file_permissions_unauthorized_sgid/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+ # check-import = stdout
+ 
+ {{{ find_files(find_parameters="-perm -2000", fail_message="Found SGID executables that are unauthorized", skip_rpm_owned_files=True) }}}
+diff --git a/linux_os/guide/system/permissions/files/file_permissions_unauthorized_suid/sce/shared.sh b/linux_os/guide/system/permissions/files/file_permissions_unauthorized_suid/sce/shared.sh
+index d7bb76269..08156544b 100644
+--- a/linux_os/guide/system/permissions/files/file_permissions_unauthorized_suid/sce/shared.sh
++++ b/linux_os/guide/system/permissions/files/file_permissions_unauthorized_suid/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+ # check-import = stdout
+ 
+ {{{ find_files(find_parameters="-perm -4000", fail_message="Found SUID executables that are unauthorized", skip_rpm_owned_files=True) }}}
+diff --git a/linux_os/guide/system/permissions/files/file_permissions_unauthorized_world_writable/sce/shared.sh b/linux_os/guide/system/permissions/files/file_permissions_unauthorized_world_writable/sce/shared.sh
+index bca90c8ba..4ed275284 100644
+--- a/linux_os/guide/system/permissions/files/file_permissions_unauthorized_world_writable/sce/shared.sh
++++ b/linux_os/guide/system/permissions/files/file_permissions_unauthorized_world_writable/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel,Ubuntu 24.04
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,Ubuntu 24.04
+ # check-import = stdout
+ 
+ {{{ find_files(find_parameters="-perm -002", fail_message="Found world-writable files") }}}
+diff --git a/linux_os/guide/system/permissions/files/file_permissions_unauthorized_world_writable/tests/world_writable_tmp.fail.sh b/linux_os/guide/system/permissions/files/file_permissions_unauthorized_world_writable/tests/world_writable_tmp.fail.sh
+index c6b866ea6..392196483 100644
+--- a/linux_os/guide/system/permissions/files/file_permissions_unauthorized_world_writable/tests/world_writable_tmp.fail.sh
++++ b/linux_os/guide/system/permissions/files/file_permissions_unauthorized_world_writable/tests/world_writable_tmp.fail.sh
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+-# platform = multi_platform_rhel,multi_platform_ubuntu
++# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_ubuntu
+ 
+ find / -xdev -type f -perm -002 -exec chmod o-w {} \;
+ 
+diff --git a/linux_os/guide/system/permissions/files/file_permissions_ungroupowned/sce/shared.sh b/linux_os/guide/system/permissions/files/file_permissions_ungroupowned/sce/shared.sh
+index 02e5cd08e..104d1371a 100644
+--- a/linux_os/guide/system/permissions/files/file_permissions_ungroupowned/sce/shared.sh
++++ b/linux_os/guide/system/permissions/files/file_permissions_ungroupowned/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel,Ubuntu 24.04
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,Ubuntu 24.04
+ # check-import = stdout
+ 
+ {{{ find_files(find_parameters="-nogroup", fail_message="Found ungroupowned files", exclude_directories="sysroot") }}}
+diff --git a/linux_os/guide/system/permissions/files/file_permissions_ungroupowned/tests/unowned_file_tmp.fail.sh b/linux_os/guide/system/permissions/files/file_permissions_ungroupowned/tests/unowned_file_tmp.fail.sh
+index 44f6c84dd..b37b68810 100644
+--- a/linux_os/guide/system/permissions/files/file_permissions_ungroupowned/tests/unowned_file_tmp.fail.sh
++++ b/linux_os/guide/system/permissions/files/file_permissions_ungroupowned/tests/unowned_file_tmp.fail.sh
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+-# platform = multi_platform_rhel,multi_platform_ubuntu
++# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_ubuntu
+ # remediation = none
+ 
+ mount tmpfs /tmp -t tmpfs
+diff --git a/linux_os/guide/system/permissions/files/no_files_unowned_by_user/sce/shared.sh b/linux_os/guide/system/permissions/files/no_files_unowned_by_user/sce/shared.sh
+index 1a134c3c2..2cd9dc9f0 100644
+--- a/linux_os/guide/system/permissions/files/no_files_unowned_by_user/sce/shared.sh
++++ b/linux_os/guide/system/permissions/files/no_files_unowned_by_user/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel,Ubuntu 24.04
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux,Ubuntu 24.04
+ # check-import = stdout
+ 
+ {{{ find_files(find_parameters="-nouser", fail_message="Found unowned files") }}}
+diff --git a/linux_os/guide/system/permissions/files/no_files_unowned_by_user/tests/unowned_file_tmp.fail.sh b/linux_os/guide/system/permissions/files/no_files_unowned_by_user/tests/unowned_file_tmp.fail.sh
+index 44f6c84dd..b37b68810 100644
+--- a/linux_os/guide/system/permissions/files/no_files_unowned_by_user/tests/unowned_file_tmp.fail.sh
++++ b/linux_os/guide/system/permissions/files/no_files_unowned_by_user/tests/unowned_file_tmp.fail.sh
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+-# platform = multi_platform_rhel,multi_platform_ubuntu
++# platform = multi_platform_rhel,multi_platform_almalinux,multi_platform_ubuntu
+ # remediation = none
+ 
+ mount tmpfs /tmp -t tmpfs
 diff --git a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/correct_groupowner.pass.sh b/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/correct_groupowner.pass.sh
 index af967f535..4847d0c3c 100644
 --- a/linux_os/guide/system/permissions/files/permissions_within_important_dirs/root_permissions_syslibrary_files/tests/correct_groupowner.pass.sh
@@ -2983,7 +3095,7 @@ index 88c683445..fa9b2020d 100644
  kind: MachineConfig
  spec:
 diff --git a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_core_pattern/rule.yml b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_core_pattern/rule.yml
-index a94218c1b..95b2046e0 100644
+index a15c44348..9ed957ad9 100644
 --- a/linux_os/guide/system/permissions/restrictions/sysctl_kernel_core_pattern/rule.yml
 +++ b/linux_os/guide/system/permissions/restrictions/sysctl_kernel_core_pattern/rule.yml
 @@ -12,7 +12,7 @@ rationale: |-
@@ -3128,12 +3240,12 @@ index 9558acad7..52cc0a789 100644
  # Package libselinux cannot be uninstalled normally
  # as it would cause removal of sudo package which is
 diff --git a/linux_os/guide/system/software/integrity/certified-vendor/installed_OS_is_vendor_supported/oval/shared.xml b/linux_os/guide/system/software/integrity/certified-vendor/installed_OS_is_vendor_supported/oval/shared.xml
-index 24223598f..5503047c7 100644
+index 98cd1fdfb..3ff79fe11 100644
 --- a/linux_os/guide/system/software/integrity/certified-vendor/installed_OS_is_vendor_supported/oval/shared.xml
 +++ b/linux_os/guide/system/software/integrity/certified-vendor/installed_OS_is_vendor_supported/oval/shared.xml
 @@ -4,7 +4,7 @@
          The operating system installed on the system is supported by a vendor that provides security patches.
-       ") }}}
+       ", rule_title=rule_title) }}}
      <criteria comment="Installed operating system is supported by a vendor" operator="OR">
 -      <extend_definition comment="Installed OS is ALMALINUX9" definition_ref="installed_OS_is_almalinux9" />
 +      <extend_definition comment="Installed OS is ALMALINUX10" definition_ref="installed_OS_is_almalinux10" />
@@ -3241,6 +3353,52 @@ index b92e82236..138d2c997 100644
  
  fips-mode-setup --enable
  FIPS_CONF="/etc/dracut.conf.d/40-fips.conf"
+diff --git a/linux_os/guide/system/software/integrity/fips/enable_fips_mode/oval/shared.xml b/linux_os/guide/system/software/integrity/fips/enable_fips_mode/oval/shared.xml
+index dcf3ef58f..bed8e7460 100644
+--- a/linux_os/guide/system/software/integrity/fips/enable_fips_mode/oval/shared.xml
++++ b/linux_os/guide/system/software/integrity/fips/enable_fips_mode/oval/shared.xml
+@@ -119,7 +119,7 @@
+   <ind:variable_state id="ste_system_crypto_policy_value" version="2"
+     comment="variable value is set to 'FIPS' or 'FIPS:modifier', where the modifier corresponds
+ to a crypto policy module that further restricts the modified crypto policy.">
+-  {{% if product in ["ol9","rhel9","rhel10","fedora"] -%}}
++  {{% if product in ["ol9","rhel9","rhel10", "almalinux10","fedora"] -%}}
+     <ind:value operation="pattern match" datatype="string">^FIPS(:(OSPP|STIG))?$</ind:value>
+   {{%- else %}}
+   {{# Legacy and more relaxed list of crypto policies that were historically considered
+diff --git a/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_hashes/sce/shared.sh b/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_hashes/sce/shared.sh
+index df1317b6b..b3c62cf8c 100644
+--- a/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_hashes/sce/shared.sh
++++ b/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_hashes/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+ # check-import = stdout
+ 
+ readarray -t FILES_WITH_INCORRECT_HASHES < <(rpm -Va --noconfig | grep -E '^..5' | awk '{print $NF}' )
+diff --git a/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_ownership/sce/shared.sh b/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_ownership/sce/shared.sh
+index 30e53fd4c..88bbc9f5a 100644
+--- a/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_ownership/sce/shared.sh
++++ b/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_ownership/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+ # check-import = stdout
+ 
+ readarray -t FILES_WITH_INCORRECT_OWNERSHIP < <(rpm -Va --nofiledigest | awk '{ if (substr($0,6,1)=="U" || substr($0,7,1)=="G") print $NF }')
+diff --git a/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_permissions/sce/shared.sh b/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_permissions/sce/shared.sh
+index a2cee384f..5c01dd1d6 100644
+--- a/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_permissions/sce/shared.sh
++++ b/linux_os/guide/system/software/integrity/software-integrity/rpm_verification/rpm_verify_permissions/sce/shared.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# platform = multi_platform_fedora,multi_platform_rhel
++# platform = multi_platform_fedora,multi_platform_rhel,multi_platform_almalinux
+ # check-import = stdout
+ 
+ readarray -t FILES_WITH_INCORRECT_PERMS < <(rpm -Va --nofiledigest | awk '{ if (substr($0,2,1)=="M") print $NF }')
 diff --git a/linux_os/guide/system/software/sudo/package_sudo_installed/tests/custom-package-removed.fail.sh b/linux_os/guide/system/software/sudo/package_sudo_installed/tests/custom-package-removed.fail.sh
 index f8b112e1a..33a266be6 100644
 --- a/linux_os/guide/system/software/sudo/package_sudo_installed/tests/custom-package-removed.fail.sh
@@ -3273,7 +3431,7 @@ index 1c68a6ec3..fa8f50b84 100644
  # strategy = unknown
  # complexity = low
 diff --git a/linux_os/guide/system/software/updating/enable_gpgcheck_for_all_repositories/ansible/shared.yml b/linux_os/guide/system/software/updating/enable_gpgcheck_for_all_repositories/ansible/shared.yml
-index af72a7d18..8f5a02c51 100644
+index 015c5b029..508241c9f 100644
 --- a/linux_os/guide/system/software/updating/enable_gpgcheck_for_all_repositories/ansible/shared.yml
 +++ b/linux_os/guide/system/software/updating/enable_gpgcheck_for_all_repositories/ansible/shared.yml
 @@ -1,4 +1,4 @@
@@ -3639,10 +3797,11 @@ index 000000000..a428a42ec
 +rsyslog_cafile: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
 diff --git a/products/almalinux10/profiles/anssi_bp28_enhanced.profile b/products/almalinux10/profiles/anssi_bp28_enhanced.profile
 new file mode 100644
-index 000000000..1a013f1de
+index 000000000..b3ac67e4f
 --- /dev/null
 +++ b/products/almalinux10/profiles/anssi_bp28_enhanced.profile
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,89 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -3668,6 +3827,7 @@ index 000000000..1a013f1de
 +selections:
 +    - anssi:all:enhanced
 +    - var_password_hashing_algorithm_pam=yescrypt
++    - var_authselect_profile=local
 +    # Following rules are incompatible with rhel10 product
 +    - '!enable_authselect'
 +    # tally2 is deprecated, replaced by faillock
@@ -3732,10 +3892,11 @@ index 000000000..1a013f1de
 +    - '!prefer_64bit_os'
 diff --git a/products/almalinux10/profiles/anssi_bp28_high.profile b/products/almalinux10/profiles/anssi_bp28_high.profile
 new file mode 100644
-index 000000000..d769a2284
+index 000000000..c85f396d2
 --- /dev/null
 +++ b/products/almalinux10/profiles/anssi_bp28_high.profile
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,101 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -3761,6 +3922,7 @@ index 000000000..d769a2284
 +selections:
 +    - anssi:all:high
 +    - var_password_hashing_algorithm_pam=yescrypt
++    - var_authselect_profile=local
 +    # the following rule renders UEFI systems unbootable
 +    - '!sebool_secure_mode_insmod'
 +    # Following rules are incompatible with rhel10 product
@@ -3837,10 +3999,11 @@ index 000000000..d769a2284
 +    - '!kernel_config_security_writable_hooks'
 diff --git a/products/almalinux10/profiles/anssi_bp28_intermediary.profile b/products/almalinux10/profiles/anssi_bp28_intermediary.profile
 new file mode 100644
-index 000000000..11a10d1e0
+index 000000000..03b118e98
 --- /dev/null
 +++ b/products/almalinux10/profiles/anssi_bp28_intermediary.profile
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,64 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -3866,6 +4029,7 @@ index 000000000..11a10d1e0
 +selections:
 +    - anssi:all:intermediary
 +    - var_password_hashing_algorithm_pam=yescrypt
++    - var_authselect_profile=local
 +    # Following rules are incompatible with rhel10 product
 +    - '!enable_authselect'
 +    # tally2 is deprecated, replaced by faillock
@@ -3905,10 +4069,11 @@ index 000000000..11a10d1e0
 +    - '!grub2_uefi_password'
 diff --git a/products/almalinux10/profiles/anssi_bp28_minimal.profile b/products/almalinux10/profiles/anssi_bp28_minimal.profile
 new file mode 100644
-index 000000000..5833a0cce
+index 000000000..ed2fa647d
 --- /dev/null
 +++ b/products/almalinux10/profiles/anssi_bp28_minimal.profile
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,56 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -3934,6 +4099,7 @@ index 000000000..5833a0cce
 +selections:
 +    - anssi:all:minimal
 +    - var_password_hashing_algorithm_pam=yescrypt
++    - var_authselect_profile=local
 +    # Following rules are incompatible with rhel10 product
 +    - '!enable_authselect'
 +    # tally2 is deprecated, replaced by faillock
@@ -3965,10 +4131,11 @@ index 000000000..5833a0cce
 +    - '!accounts_password_pam_retry'
 diff --git a/products/almalinux10/profiles/cis.profile b/products/almalinux10/profiles/cis.profile
 new file mode 100644
-index 000000000..32ccfff1f
+index 000000000..f7bd6da60
 --- /dev/null
 +++ b/products/almalinux10/profiles/cis.profile
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,19 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -3986,12 +4153,14 @@ index 000000000..32ccfff1f
 +
 +selections:
 +    - cis_rhel10:all:l2_server
++    - var_authselect_profile=local
 diff --git a/products/almalinux10/profiles/cis_server_l1.profile b/products/almalinux10/profiles/cis_server_l1.profile
 new file mode 100644
-index 000000000..d43ea6ea1
+index 000000000..16165c074
 --- /dev/null
 +++ b/products/almalinux10/profiles/cis_server_l1.profile
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,19 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4009,12 +4178,14 @@ index 000000000..d43ea6ea1
 +
 +selections:
 +    - cis_rhel10:all:l1_server
++    - var_authselect_profile=local
 diff --git a/products/almalinux10/profiles/cis_workstation_l1.profile b/products/almalinux10/profiles/cis_workstation_l1.profile
 new file mode 100644
-index 000000000..27096ea00
+index 000000000..fe07dd4f3
 --- /dev/null
 +++ b/products/almalinux10/profiles/cis_workstation_l1.profile
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,19 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4032,12 +4203,14 @@ index 000000000..27096ea00
 +
 +selections:
 +    - cis_rhel10:all:l1_workstation
++    - var_authselect_profile=local
 diff --git a/products/almalinux10/profiles/cis_workstation_l2.profile b/products/almalinux10/profiles/cis_workstation_l2.profile
 new file mode 100644
-index 000000000..7d905f749
+index 000000000..c70b861f1
 --- /dev/null
 +++ b/products/almalinux10/profiles/cis_workstation_l2.profile
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,19 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4055,12 +4228,14 @@ index 000000000..7d905f749
 +
 +selections:
 +    - cis_rhel10:all:l2_workstation
++    - var_authselect_profile=local
 diff --git a/products/almalinux10/profiles/default.profile b/products/almalinux10/profiles/default.profile
 new file mode 100644
-index 000000000..1616e1bbe
+index 000000000..c882eaf0b
 --- /dev/null
 +++ b/products/almalinux10/profiles/default.profile
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,36 @@
++---
 +documentation_complete: true
 +
 +hidden: true
@@ -4068,38 +4243,41 @@ index 000000000..1616e1bbe
 +title: Default Profile for AlmaLinux OS 10
 +
 +description: |-
-+  This profile contains all the rules that once belonged to the rhel10
-+  product. This profile won't be rendered into an XCCDF Profile entity,
-+  nor it will select any of these rules by default. The only purpose of
-+  this profile is to keep a rule in the product's XCCDF Benchmark.
++    This profile contains all the rules that once belonged to the rhel10
++    product. This profile won't be rendered into an XCCDF Profile entity,
++    nor it will select any of these rules by default. The only purpose of
++    this profile is to keep a rule in the product's XCCDF Benchmark.
 +
 +selections:
-+  - grub2_nousb_argument
-+  - audit_rules_kernel_module_loading_create
-+  - grub2_uefi_admin_username
-+  - grub2_uefi_password
-+  - no_tmux_in_shells
-+  - package_tmux_installed
-+  - configure_tmux_lock_after_time
-+  - configure_tmux_lock_command
-+  - configure_tmux_lock_keybinding
-+  - audit_rules_session_events
-+  - enable_authselect
-+  - audit_rules_login_events
-+  - audit_rules_unsuccessful_file_modification
-+  - configure_openssl_tls_crypto_policy
-+  - audit_rules_privileged_commands_pt_chown
-+  - package_iprutils_removed
-+  - service_rlogin_disabled
-+  - service_rsh_disabled
-+  - service_rexec_disabled
-+  - package_scap-security-guide_installed
++    - grub2_nousb_argument
++    - audit_rules_kernel_module_loading_create
++    - grub2_uefi_admin_username
++    - grub2_uefi_password
++    - no_tmux_in_shells
++    - package_tmux_installed
++    - configure_tmux_lock_after_time
++    - configure_tmux_lock_command
++    - configure_tmux_lock_keybinding
++    - audit_rules_session_events
++    - enable_authselect
++    - audit_rules_login_events
++    - audit_rules_unsuccessful_file_modification
++    - configure_openssl_tls_crypto_policy
++    - audit_rules_privileged_commands_pt_chown
++    - package_iprutils_removed
++    - service_rlogin_disabled
++    - service_rsh_disabled
++    - service_rexec_disabled
++    - package_scap-security-guide_installed
++    - set_password_hashing_yescrypt_cost_factor_logindefs
++    - var_authselect_profile=local
 diff --git a/products/almalinux10/profiles/e8.profile b/products/almalinux10/profiles/e8.profile
 new file mode 100644
-index 000000000..e70330c0d
+index 000000000..2f2c957a8
 --- /dev/null
 +++ b/products/almalinux10/profiles/e8.profile
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,40 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4141,10 +4319,11 @@ index 000000000..e70330c0d
 +    - '!security_patches_up_to_date'
 diff --git a/products/almalinux10/profiles/hipaa.profile b/products/almalinux10/profiles/hipaa.profile
 new file mode 100644
-index 000000000..ee39fc73f
+index 000000000..344dcad9e
 --- /dev/null
 +++ b/products/almalinux10/profiles/hipaa.profile
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,69 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4215,10 +4394,11 @@ index 000000000..ee39fc73f
 +    - '!service_rexec_disabled'
 diff --git a/products/almalinux10/profiles/ism_o.profile b/products/almalinux10/profiles/ism_o.profile
 new file mode 100644
-index 000000000..9021df832
+index 000000000..0fc5f9f34
 --- /dev/null
 +++ b/products/almalinux10/profiles/ism_o.profile
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,52 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4249,6 +4429,7 @@ index 000000000..9021df832
 +
 +selections:
 +    - ism_o:all:base
++
 +    # these rules do not work properly on RHEL 10 for now
 +    - '!enable_authselect'
 +    - '!enable_dracut_fips_module'
@@ -4271,10 +4452,11 @@ index 000000000..9021df832
 +    - '!service_chronyd_or_ntpd_enabled'
 diff --git a/products/almalinux10/profiles/ism_o_secret.profile b/products/almalinux10/profiles/ism_o_secret.profile
 new file mode 100644
-index 000000000..a1ea6e884
+index 000000000..44ee99e56
 --- /dev/null
 +++ b/products/almalinux10/profiles/ism_o_secret.profile
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,54 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4307,6 +4489,7 @@ index 000000000..a1ea6e884
 +
 +selections:
 +    - ism_o:all:secret
++
 +    # these rules do not work properly on RHEL 10 for now
 +    - '!enable_authselect'
 +    - '!enable_dracut_fips_module'
@@ -4329,10 +4512,11 @@ index 000000000..a1ea6e884
 +    - '!service_chronyd_or_ntpd_enabled'
 diff --git a/products/almalinux10/profiles/ism_o_top_secret.profile b/products/almalinux10/profiles/ism_o_top_secret.profile
 new file mode 100644
-index 000000000..8c77e37d9
+index 000000000..0b2fc0e26
 --- /dev/null
 +++ b/products/almalinux10/profiles/ism_o_top_secret.profile
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,52 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4363,6 +4547,7 @@ index 000000000..8c77e37d9
 +
 +selections:
 +    - ism_o:all:top_secret
++
 +    # these rules do not work properly on RHEL 10 for now
 +    - '!enable_authselect'
 +    - '!enable_dracut_fips_module'
@@ -4385,10 +4570,11 @@ index 000000000..8c77e37d9
 +    - '!service_chronyd_or_ntpd_enabled'
 diff --git a/products/almalinux10/profiles/ospp.profile b/products/almalinux10/profiles/ospp.profile
 new file mode 100644
-index 000000000..fce0fd011
+index 000000000..d3b46bc35
 --- /dev/null
 +++ b/products/almalinux10/profiles/ospp.profile
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,30 @@
++---
 +documentation_complete: true
 +hidden: true
 +
@@ -4406,24 +4592,25 @@ index 000000000..fce0fd011
 +    This is draft profile is based on the Red Hat Enterprise Linux 9 Common Criteria Guidance as
 +    guidance for Red Hat Enterprise Linux 10 was not available at the time of release.
 +
-+
 +    Where appropriate, CNSSI 1253 or DoD-specific values are used for
 +    configuration, based on Configuration Annex to the OSPP.
 +
 +selections:
 +    - ospp:all
++    - var_authselect_profile=local
++
 +    - '!package_screen_installed'
 +    - '!package_dnf-plugin-subscription-manager_installed'
 +    - '!package_scap-security-guide_installed'
 +    # Currently not working RHEL 10, changes are being made to FIPS mode. Investigation is recommended.
 +    - '!enable_dracut_fips_module'
-+    - '!enable_authselect'
 diff --git a/products/almalinux10/profiles/pci-dss.profile b/products/almalinux10/profiles/pci-dss.profile
 new file mode 100644
-index 000000000..b7a8eba3e
+index 000000000..3bdb6a93f
 --- /dev/null
 +++ b/products/almalinux10/profiles/pci-dss.profile
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,86 @@
++---
 +documentation_complete: true
 +
 +metadata:
@@ -4511,18 +4698,18 @@ index 000000000..b7a8eba3e
 +    - '!kernel_module_dccp_disabled'
 diff --git a/products/almalinux10/profiles/stig.profile b/products/almalinux10/profiles/stig.profile
 new file mode 100644
-index 000000000..68cfac18e
+index 000000000..3c1b0ee2b
 --- /dev/null
 +++ b/products/almalinux10/profiles/stig.profile
 @@ -0,0 +1,25 @@
++---
 +documentation_complete: true
 +
 +metadata:
 +    SMEs:
 +        - mab879
 +
-+
-+reference: https://public.cyber.mil/stigs/downloads/?_dl_facet_stigs=operating-systems%2Cunix-linux
++reference: https://www.cyber.mil/stigs/downloads/?_dl_facet_stigs=operating-systems%2Cunix-linux
 +
 +title: 'Red Hat STIG for Red Hat Enterprise Linux 10'
 +
@@ -4542,18 +4729,18 @@ index 000000000..68cfac18e
 +    - '!enable_dracut_fips_module'
 diff --git a/products/almalinux10/profiles/stig_gui.profile b/products/almalinux10/profiles/stig_gui.profile
 new file mode 100644
-index 000000000..a7d4a1877
+index 000000000..9cb82f5fd
 --- /dev/null
 +++ b/products/almalinux10/profiles/stig_gui.profile
 @@ -0,0 +1,40 @@
++---
 +documentation_complete: true
 +
 +metadata:
 +    SMEs:
 +        - mab879
 +
-+
-+reference: https://public.cyber.mil/stigs/downloads/?_dl_facet_stigs=operating-systems%2Cunix-linux
++reference: https://www.cyber.mil/stigs/downloads/?_dl_facet_stigs=operating-systems%2Cunix-linux
 +
 +title: 'Red Hat STIG for Red Hat Enterprise Linux 10'
 +
@@ -4647,12 +4834,12 @@ index 000000000..f156a6695
 +</xsl:stylesheet>
 diff --git a/products/almalinux10/transforms/xccdf2table-profileccirefs.xslt b/products/almalinux10/transforms/xccdf2table-profileccirefs.xslt
 new file mode 100644
-index 000000000..30419e92b
+index 000000000..9d8d3e5fa
 --- /dev/null
 +++ b/products/almalinux10/transforms/xccdf2table-profileccirefs.xslt
 @@ -0,0 +1,9 @@
 +<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cdf="http://checklists.nist.gov/xccdf/1.1" xmlns:cci="https://public.cyber.mil/stigs/cci" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:ovalns="http://oval.mitre.org/XMLSchema/oval-definitions-5">
++<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cdf="http://checklists.nist.gov/xccdf/1.1" xmlns:cci="https://www.cyber.mil/stigs/cci" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:ovalns="http://oval.mitre.org/XMLSchema/oval-definitions-5">
 +
 +<xsl:import href="../../../shared/transforms/shared_xccdf2table-profileccirefs.xslt"/>
 +
@@ -4701,7 +4888,7 @@ index 000000000..34f942d90
 +
 +</def-group>
 diff --git a/shared/checks/oval/sysctl_kernel_ipv6_disable.xml b/shared/checks/oval/sysctl_kernel_ipv6_disable.xml
-index 42b866d3b..8560a7220 100644
+index b718ded26..7f42310de 100644
 --- a/shared/checks/oval/sysctl_kernel_ipv6_disable.xml
 +++ b/shared/checks/oval/sysctl_kernel_ipv6_disable.xml
 @@ -16,6 +16,7 @@
@@ -4711,7 +4898,7 @@ index 42b866d3b..8560a7220 100644
 +<platform>multi_platform_almalinux</platform>
  	<platform>multi_platform_rhv</platform>
  	<platform>multi_platform_sle</platform>
-     <platform>multi_platform_slmicro5</platform>
+     <platform>multi_platform_slmicro</platform>
 diff --git a/shared/references/disa-stig-ol7-v3r1-xccdf-manual.xml b/shared/references/disa-stig-ol7-v3r1-xccdf-manual.xml
 index e83699662..1efabcf62 100644
 --- a/shared/references/disa-stig-ol7-v3r1-xccdf-manual.xml
@@ -4885,63 +5072,10 @@ index 3e1d42930..ec0e423c3 100644
            <pattern operation="pattern match">^\s*GRUB2_PASSWORD=(\S+)\b</pattern>
            <instance datatype="int" operation="greater than or equal">1</instance>
          </textfilecontent54_object>
-diff --git a/shared/references/disa-stig-rhel8-v2r2-xccdf-scap.xml b/shared/references/disa-stig-rhel8-v2r2-xccdf-scap.xml
-index bbc44024b..ef94e40fa 100644
---- a/shared/references/disa-stig-rhel8-v2r2-xccdf-scap.xml
-+++ b/shared/references/disa-stig-rhel8-v2r2-xccdf-scap.xml
-@@ -3134,7 +3134,7 @@ SHA_CRYPT_MIN_ROUNDS 100000</xccdf:fixtext>
-           </xccdf:reference>
-           <xccdf:platform idref="#xccdf_mil.disa.stig_platform_LinuxUEFI" />
-           <xccdf:ident system="http://cyber.mil/cci">CCI-000213</xccdf:ident>
--          <xccdf:fixtext fixref="F-32878r743921_fix">Configure the system to require a grub bootloader password for the grub superusers account with the grub2-setpassword command, which creates/overwrites the /boot/efi/EFI/redhat/user.cfg file.
-+          <xccdf:fixtext fixref="F-32878r743921_fix">Configure the system to require a grub bootloader password for the grub superusers account with the grub2-setpassword command, which creates/overwrites the /boot/efi/EFI/almalinux/user.cfg file.
- 
- Generate an encrypted grub2 password for the grub superusers account with the following command:
- 
-@@ -12106,8 +12106,8 @@ $ sudo systemctl restart systemd-logind</xccdf:fixtext>
-             <description />
-           </metadata>
-           <criteria>
--            <criterion test_ref="oval:mil.disa.stig.ind:tst:23023400" comment="/boot/efi/EFI/redhat/grub.cfg:superusers exists and has a name." />
--            <criterion test_ref="oval:mil.disa.stig.ind:tst:23023401" comment="/boot/efi/EFI/redhat/user.cfg:GRUB2_PASSWORD exists and has a PBKDF2/SHA512 password assigned." />
-+            <criterion test_ref="oval:mil.disa.stig.ind:tst:23023400" comment="/boot/efi/EFI/almalinux/grub.cfg:superusers exists and has a name." />
-+            <criterion test_ref="oval:mil.disa.stig.ind:tst:23023401" comment="/boot/efi/EFI/almalinux/user.cfg:GRUB2_PASSWORD exists and has a PBKDF2/SHA512 password assigned." />
-           </criteria>
-         </definition>
-         <definition id="oval:mil.disa.stig.defs:def:230235" version="1" class="compliance">
-@@ -19802,11 +19802,11 @@ RHEL 8 uses "pwquality" as a mechanism to enforce password complexity. This is s
-         <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023303" version="1" check="all" comment="/etc/login.defs: SHA_CRYPT_MAX_ROUNDS is set">
-           <object object_ref="oval:mil.disa.stig.ind:obj:23023301" />
-         </textfilecontent54_test>
--        <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023400" version="1" check_existence="all_exist" check="all" comment="/boot/efi/EFI/redhat/grub.cfg:superusers exists and has a name.">
-+        <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023400" version="1" check_existence="all_exist" check="all" comment="/boot/efi/EFI/almalinux/grub.cfg:superusers exists and has a name.">
-           <object object_ref="oval:mil.disa.stig.ind:obj:23023400" />
-           <state state_ref="oval:mil.disa.stig.ind:ste:23023400" />
-         </textfilecontent54_test>
--        <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023401" version="1" check_existence="all_exist" check="all" comment="/boot/efi/EFI/redhat/user.cfg:GRUB2_PASSWORD exists and has a PBKDF2/SHA512 password assigned.">
-+        <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023401" version="1" check_existence="all_exist" check="all" comment="/boot/efi/EFI/almalinux/user.cfg:GRUB2_PASSWORD exists and has a PBKDF2/SHA512 password assigned.">
-           <object object_ref="oval:mil.disa.stig.ind:obj:23023401" />
-           <state state_ref="oval:mil.disa.stig.ind:ste:23023401" />
-         </textfilecontent54_test>
-@@ -21745,12 +21745,12 @@ RHEL 8 uses "pwquality" as a mechanism to enforce password complexity. This is s
-           <instance datatype="int" operation="greater than or equal">1</instance>
-         </textfilecontent54_object>
-         <textfilecontent54_object xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:obj:23023400" version="1">
--          <filepath datatype="string">/boot/efi/EFI/redhat/grub.cfg</filepath>
-+          <filepath datatype="string">/boot/efi/EFI/almalinux/grub.cfg</filepath>
-           <pattern operation="pattern match">^\s*set\s+superusers\s*=\s*"(\w+)"\s*$</pattern>
-           <instance datatype="int" operation="greater than or equal">1</instance>
-         </textfilecontent54_object>
-         <textfilecontent54_object xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:obj:23023401" version="1">
--          <filepath datatype="string">/boot/efi/EFI/redhat/user.cfg</filepath>
-+          <filepath datatype="string">/boot/efi/EFI/almalinux/user.cfg</filepath>
-           <pattern operation="pattern match">^\s*GRUB2_PASSWORD=(\S+)\b</pattern>
-           <instance datatype="int" operation="greater than or equal">1</instance>
-         </textfilecontent54_object>
-diff --git a/shared/references/disa-stig-rhel8-v2r3-xccdf-manual.xml b/shared/references/disa-stig-rhel8-v2r3-xccdf-manual.xml
-index 7fa5cfb17..4024119f2 100644
---- a/shared/references/disa-stig-rhel8-v2r3-xccdf-manual.xml
-+++ b/shared/references/disa-stig-rhel8-v2r3-xccdf-manual.xml
+diff --git a/shared/references/disa-stig-rhel8-v2r4-xccdf-manual.xml b/shared/references/disa-stig-rhel8-v2r4-xccdf-manual.xml
+index ea46d8343..ae0897b61 100644
+--- a/shared/references/disa-stig-rhel8-v2r4-xccdf-manual.xml
++++ b/shared/references/disa-stig-rhel8-v2r4-xccdf-manual.xml
 @@ -370,7 +370,7 @@ SHA_CRYPT_MIN_ROUNDS 100000</fixtext><fix id="F-32877r1044789_fix" /><check syst
  
  If only one of "SHA_CRYPT_MIN_ROUNDS" or "SHA_CRYPT_MAX_ROUNDS" is set, and this value is below "100000", this is a finding.
@@ -4960,7 +5094,7 @@ index 7fa5cfb17..4024119f2 100644
  
  GRUB2_PASSWORD=grub.pbkdf2.sha512.[password_hash]
  
-@@ -6334,11 +6334,11 @@ password_pbkdf2 [someuniquestringhere] ${GRUB2_PASSWORD}
+@@ -6337,11 +6337,11 @@ password_pbkdf2 [someuniquestringhere] ${GRUB2_PASSWORD}
  
  Generate a new grub.cfg file with the following command:
  
@@ -4974,27 +5108,80 @@ index 7fa5cfb17..4024119f2 100644
  set superusers="[someuniquestringhere]"
  export superusers
  
+diff --git a/shared/references/disa-stig-rhel8-v2r4-xccdf-scap.xml b/shared/references/disa-stig-rhel8-v2r4-xccdf-scap.xml
+index d03d69ff0..006ef4f40 100644
+--- a/shared/references/disa-stig-rhel8-v2r4-xccdf-scap.xml
++++ b/shared/references/disa-stig-rhel8-v2r4-xccdf-scap.xml
+@@ -3123,7 +3123,7 @@ SHA_CRYPT_MIN_ROUNDS 100000</xccdf:fixtext>
+           </xccdf:reference>
+           <xccdf:platform idref="#xccdf_mil.disa.stig_platform_LinuxUEFI" />
+           <xccdf:ident system="http://cyber.mil/cci">CCI-000213</xccdf:ident>
+-          <xccdf:fixtext fixref="F-32878r743921_fix">Configure the system to require a grub bootloader password for the grub superusers account with the grub2-setpassword command, which creates/overwrites the /boot/efi/EFI/redhat/user.cfg file.
++          <xccdf:fixtext fixref="F-32878r743921_fix">Configure the system to require a grub bootloader password for the grub superusers account with the grub2-setpassword command, which creates/overwrites the /boot/efi/EFI/almalinux/user.cfg file.
+ 
+ Generate an encrypted grub2 password for the grub superusers account with the following command:
+ 
+@@ -12049,8 +12049,8 @@ $ sudo systemctl restart systemd-logind</xccdf:fixtext>
+             <description />
+           </metadata>
+           <criteria>
+-            <criterion test_ref="oval:mil.disa.stig.ind:tst:23023400" comment="/boot/efi/EFI/redhat/grub.cfg:superusers exists and has a name." />
+-            <criterion test_ref="oval:mil.disa.stig.ind:tst:23023401" comment="/boot/efi/EFI/redhat/user.cfg:GRUB2_PASSWORD exists and has a PBKDF2/SHA512 password assigned." />
++            <criterion test_ref="oval:mil.disa.stig.ind:tst:23023400" comment="/boot/efi/EFI/almalinux/grub.cfg:superusers exists and has a name." />
++            <criterion test_ref="oval:mil.disa.stig.ind:tst:23023401" comment="/boot/efi/EFI/almalinux/user.cfg:GRUB2_PASSWORD exists and has a PBKDF2/SHA512 password assigned." />
+           </criteria>
+         </definition>
+         <definition id="oval:mil.disa.stig.defs:def:230235" version="1" class="compliance">
+@@ -19662,11 +19662,11 @@ RHEL 8 uses "pwquality" as a mechanism to enforce password complexity. This is s
+         <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023303" version="1" check="all" comment="/etc/login.defs: SHA_CRYPT_MAX_ROUNDS is set">
+           <object object_ref="oval:mil.disa.stig.ind:obj:23023301" />
+         </textfilecontent54_test>
+-        <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023400" version="1" check_existence="all_exist" check="all" comment="/boot/efi/EFI/redhat/grub.cfg:superusers exists and has a name.">
++        <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023400" version="1" check_existence="all_exist" check="all" comment="/boot/efi/EFI/almalinux/grub.cfg:superusers exists and has a name.">
+           <object object_ref="oval:mil.disa.stig.ind:obj:23023400" />
+           <state state_ref="oval:mil.disa.stig.ind:ste:23023400" />
+         </textfilecontent54_test>
+-        <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023401" version="1" check_existence="all_exist" check="all" comment="/boot/efi/EFI/redhat/user.cfg:GRUB2_PASSWORD exists and has a PBKDF2/SHA512 password assigned.">
++        <textfilecontent54_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:tst:23023401" version="1" check_existence="all_exist" check="all" comment="/boot/efi/EFI/almalinux/user.cfg:GRUB2_PASSWORD exists and has a PBKDF2/SHA512 password assigned.">
+           <object object_ref="oval:mil.disa.stig.ind:obj:23023401" />
+           <state state_ref="oval:mil.disa.stig.ind:ste:23023401" />
+         </textfilecontent54_test>
+@@ -21551,12 +21551,12 @@ RHEL 8 uses "pwquality" as a mechanism to enforce password complexity. This is s
+           <instance datatype="int" operation="greater than or equal">1</instance>
+         </textfilecontent54_object>
+         <textfilecontent54_object xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:obj:23023400" version="1">
+-          <filepath datatype="string">/boot/efi/EFI/redhat/grub.cfg</filepath>
++          <filepath datatype="string">/boot/efi/EFI/almalinux/grub.cfg</filepath>
+           <pattern operation="pattern match">^\s*set\s+superusers\s*=\s*"(\w+)"\s*$</pattern>
+           <instance datatype="int" operation="greater than or equal">1</instance>
+         </textfilecontent54_object>
+         <textfilecontent54_object xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" id="oval:mil.disa.stig.ind:obj:23023401" version="1">
+-          <filepath datatype="string">/boot/efi/EFI/redhat/user.cfg</filepath>
++          <filepath datatype="string">/boot/efi/EFI/almalinux/user.cfg</filepath>
+           <pattern operation="pattern match">^\s*GRUB2_PASSWORD=(\S+)\b</pattern>
+           <instance datatype="int" operation="greater than or equal">1</instance>
+         </textfilecontent54_object>
 diff --git a/shared/templates/accounts_password/tests/conflicting_values_directory.fail.sh b/shared/templates/accounts_password/tests/conflicting_values_directory.fail.sh
-index 8c002663d..c8d3ff1a4 100644
+index 17a1bd387..18b84aa2d 100644
 --- a/shared/templates/accounts_password/tests/conflicting_values_directory.fail.sh
 +++ b/shared/templates/accounts_password/tests/conflicting_values_directory.fail.sh
 @@ -1,6 +1,6 @@
  #!/bin/bash
  # This test only applies to platforms that check the pwquality.conf.d directory
--# platform = Oracle Linux 8,multi_platform_rhel
-+# platform = Oracle Linux 8,multi_platform_rhel,multi_platform_almalinux
+-# platform = Oracle Linux 8,Oracle Linux 9,multi_platform_rhel
++# platform = Oracle Linux 8,Oracle Linux 9,multi_platform_rhel,multi_platform_almalinux
  # variables = var_password_pam_{{{ VARIABLE }}}={{{ TEST_VAR_VALUE }}}
  
  truncate -s 0 /etc/security/pwquality.conf
 diff --git a/shared/templates/accounts_password/tests/correct_value_directory.pass.sh b/shared/templates/accounts_password/tests/correct_value_directory.pass.sh
-index 689093008..c25c13332 100644
+index 5f3be9f6c..9eea57b2e 100644
 --- a/shared/templates/accounts_password/tests/correct_value_directory.pass.sh
 +++ b/shared/templates/accounts_password/tests/correct_value_directory.pass.sh
 @@ -1,6 +1,6 @@
  #!/bin/bash
  # This test only applies to platforms that check the pwquality.conf.d directory
--# platform = Oracle Linux 8,multi_platform_rhel
-+# platform = Oracle Linux 8,multi_platform_rhel,multi_platform_almalinux
+-# platform = Oracle Linux 8,Oracle Linux 9,multi_platform_rhel
++# platform = Oracle Linux 8,Oracle Linux 9,multi_platform_rhel,multi_platform_almalinux
  # variables = var_password_pam_{{{ VARIABLE }}}={{{ TEST_VAR_VALUE }}}
  
  # This test will ensure that OVAL also checks the configuration in
@@ -5032,7 +5219,7 @@ index c5051bcf7..846c0e661 100644
  # strategy = restrict
  # complexity = medium
 diff --git a/shared/templates/grub2_bootloader_argument/tests/arg_not_in_entries.fail.sh b/shared/templates/grub2_bootloader_argument/tests/arg_not_in_entries.fail.sh
-index 4cc696340..7dcfe8e61 100644
+index f36c7d8bc..c465a15a3 100644
 --- a/shared/templates/grub2_bootloader_argument/tests/arg_not_in_entries.fail.sh
 +++ b/shared/templates/grub2_bootloader_argument/tests/arg_not_in_entries.fail.sh
 @@ -1,6 +1,6 @@
@@ -5056,7 +5243,7 @@ index c6d5b6b1b..0557b2f03 100644
  {{%- if ARG_VARIABLE %}}
  # variables = {{{ ARG_VARIABLE }}}=correct_value
 diff --git a/shared/templates/grub2_bootloader_argument/tests/wrong_value_entries.fail.sh b/shared/templates/grub2_bootloader_argument/tests/wrong_value_entries.fail.sh
-index b875737f2..9685f6abd 100644
+index 788f128b3..44fa8621e 100644
 --- a/shared/templates/grub2_bootloader_argument/tests/wrong_value_entries.fail.sh
 +++ b/shared/templates/grub2_bootloader_argument/tests/wrong_value_entries.fail.sh
 @@ -1,6 +1,6 @@
@@ -5173,7 +5360,7 @@ index 99f5e33b9..a0b930444 100644
  # strategy = disable
  # complexity = low
 diff --git a/shared/templates/pam_account_password_faillock/tests/conflicting_settings_authselect.fail.sh b/shared/templates/pam_account_password_faillock/tests/conflicting_settings_authselect.fail.sh
-index 1e4ab26a7..88a935f88 100644
+index 805d70a75..75b375d26 100644
 --- a/shared/templates/pam_account_password_faillock/tests/conflicting_settings_authselect.fail.sh
 +++ b/shared/templates/pam_account_password_faillock/tests/conflicting_settings_authselect.fail.sh
 @@ -1,6 +1,6 @@
@@ -5182,7 +5369,7 @@ index 1e4ab26a7..88a935f88 100644
 -# platform = Oracle Linux 8,Oracle Linux 9,multi_platform_rhel
 +# platform = Oracle Linux 8,Oracle Linux 9,multi_platform_rhel,multi_platform_almalinux
  
- {{{ tests_init_faillock_vars("correct") }}}
+ {{{ tests_init_faillock_vars("correct", prm_name=PRM_NAME, ext_variable=EXT_VARIABLE, variable_lower_bound=VARIABLE_LOWER_BOUND, variable_upper_bound=VARIABLE_UPPER_BOUND) }}}
  
 diff --git a/shared/templates/service_disabled/kickstart.template b/shared/templates/service_disabled/kickstart.template
 index d1e39ae29..7ecd5523e 100644
@@ -5225,7 +5412,7 @@ index 451af774a..27ac615a2 100644
  # strategy = disable
  # complexity = low
 diff --git a/shared/templates/sshd_lineinfile/tests/correct_value_directory.pass.sh b/shared/templates/sshd_lineinfile/tests/correct_value_directory.pass.sh
-index ab3f45c20..04b4f8cf8 100644
+index 3114b75fe..be92408dc 100644
 --- a/shared/templates/sshd_lineinfile/tests/correct_value_directory.pass.sh
 +++ b/shared/templates/sshd_lineinfile/tests/correct_value_directory.pass.sh
 @@ -1,6 +1,6 @@
@@ -5237,7 +5424,7 @@ index ab3f45c20..04b4f8cf8 100644
  # variables = {{{ XCCDF_VARIABLE }}}={{{ CORRECT_VALUE }}}
  {{%- endif %}}
 diff --git a/shared/templates/sshd_lineinfile/tests/duplicated_param_directory.pass.sh b/shared/templates/sshd_lineinfile/tests/duplicated_param_directory.pass.sh
-index c5390ff13..9f596cf48 100644
+index b05adb222..1530e343c 100644
 --- a/shared/templates/sshd_lineinfile/tests/duplicated_param_directory.pass.sh
 +++ b/shared/templates/sshd_lineinfile/tests/duplicated_param_directory.pass.sh
 @@ -1,6 +1,6 @@
@@ -5249,7 +5436,7 @@ index c5390ff13..9f596cf48 100644
  mkdir -p /etc/ssh/sshd_config.d
  touch /etc/ssh/sshd_config.d/nothing
 diff --git a/shared/templates/sshd_lineinfile/tests/param_conflict_directory.fail.sh b/shared/templates/sshd_lineinfile/tests/param_conflict_directory.fail.sh
-index 7d55e3d0d..f8ea20e04 100644
+index d91244f7a..047e5513a 100644
 --- a/shared/templates/sshd_lineinfile/tests/param_conflict_directory.fail.sh
 +++ b/shared/templates/sshd_lineinfile/tests/param_conflict_directory.fail.sh
 @@ -1,6 +1,6 @@
@@ -5261,7 +5448,7 @@ index 7d55e3d0d..f8ea20e04 100644
  
  {{% if XCCDF_VARIABLE %}}
 diff --git a/shared/templates/sshd_lineinfile/tests/param_conflict_file_with_directory.fail.sh b/shared/templates/sshd_lineinfile/tests/param_conflict_file_with_directory.fail.sh
-index c68680483..6c35a7465 100644
+index 15eb1d870..ab8ea90d7 100644
 --- a/shared/templates/sshd_lineinfile/tests/param_conflict_file_with_directory.fail.sh
 +++ b/shared/templates/sshd_lineinfile/tests/param_conflict_file_with_directory.fail.sh
 @@ -1,6 +1,6 @@
@@ -5273,7 +5460,7 @@ index c68680483..6c35a7465 100644
  {{% if XCCDF_VARIABLE %}}
  # variables = {{{ XCCDF_VARIABLE }}}={{{ CORRECT_VALUE }}}
 diff --git a/shared/templates/sshd_lineinfile/tests/wrong_value_directory.fail.sh b/shared/templates/sshd_lineinfile/tests/wrong_value_directory.fail.sh
-index 983eb3fda..176f386e7 100644
+index c5f2c41e8..a76757970 100644
 --- a/shared/templates/sshd_lineinfile/tests/wrong_value_directory.fail.sh
 +++ b/shared/templates/sshd_lineinfile/tests/wrong_value_directory.fail.sh
 @@ -1,6 +1,6 @@
@@ -5285,7 +5472,7 @@ index 983eb3fda..176f386e7 100644
  {{% if XCCDF_VARIABLE %}}
  # variables = {{{ XCCDF_VARIABLE }}}={{{ CORRECT_VALUE }}}
 diff --git a/shared/templates/zipl_bls_entries_option/ansible.template b/shared/templates/zipl_bls_entries_option/ansible.template
-index 73810f216..54434bb42 100644
+index feb74e3c4..b82bc305a 100644
 --- a/shared/templates/zipl_bls_entries_option/ansible.template
 +++ b/shared/templates/zipl_bls_entries_option/ansible.template
 @@ -1,4 +1,4 @@
@@ -5305,7 +5492,7 @@ index e14d59dfc..1b236a130 100644
  # Correct BLS option using grubby, which is a thin wrapper around BLS operations
  grubby --update-kernel=ALL --args="{{{ ARG_NAME }}}={{{ ARG_VALUE }}}"
 diff --git a/ssg/constants.py b/ssg/constants.py
-index a0265a9d9..ebc8165aa 100644
+index 0dd3752b3..8b3011311 100644
 --- a/ssg/constants.py
 +++ b/ssg/constants.py
 @@ -40,7 +40,7 @@ SSG_REF_URIS = {
@@ -5326,17 +5513,17 @@ index a0265a9d9..ebc8165aa 100644
      "Anolis OS 8": "anolis8",
      "Anolis OS 23": "anolis23",
      "Amazon Linux 2023": "al2023",
-@@ -302,7 +302,7 @@ MULTI_PLATFORM_LIST = ["rhel", "fedora", "rhv", "debian", "ubuntu",
+@@ -301,7 +301,7 @@ MULTI_PLATFORM_LIST = ["rhel", "fedora", "rhv", "debian", "ubuntu",
  
  MULTI_PLATFORM_MAPPING = {
      "multi_platform_alinux": ["alinux2", "alinux3"],
 -    "multi_platform_almalinux": ["almalinux9"],
 +    "multi_platform_almalinux": ["almalinux10"],
      "multi_platform_anolis": ["anolis8", "anolis23"],
-     "multi_platform_debian": ["debian11", "debian12"],
+     "multi_platform_debian": ["debian11", "debian12", "debian13"],
      "multi_platform_example": ["example"],
 diff --git a/tests/data/product_stability/ol7.yml b/tests/data/product_stability/ol7.yml
-index 27cf93dcc..16fc52311 100644
+index 097d7964e..54206c5be 100644
 --- a/tests/data/product_stability/ol7.yml
 +++ b/tests/data/product_stability/ol7.yml
 @@ -30,7 +30,7 @@ groups:
@@ -5347,9 +5534,9 @@ index 27cf93dcc..16fc52311 100644
 +grub2_uefi_boot_path: /boot/efi/EFI/almalinux
  grub_helper_executable: grubby
  init_system: systemd
- major_version_ordinal: 7
+ login_defs_path: /etc/login.defs
 diff --git a/tests/data/product_stability/ol8.yml b/tests/data/product_stability/ol8.yml
-index 169cd1991..f694d28f5 100644
+index 3654b55f4..c8fe2a455 100644
 --- a/tests/data/product_stability/ol8.yml
 +++ b/tests/data/product_stability/ol8.yml
 @@ -30,7 +30,7 @@ groups:
@@ -5360,9 +5547,9 @@ index 169cd1991..f694d28f5 100644
 +grub2_uefi_boot_path: /boot/efi/EFI/almalinux
  grub_helper_executable: grubby
  init_system: systemd
- major_version_ordinal: 8
+ login_defs_path: /etc/login.defs
 diff --git a/tests/data/product_stability/rhel8.yml b/tests/data/product_stability/rhel8.yml
-index 8f764c4d1..0cc1d40ec 100644
+index 0c44b19d7..2f9f356f9 100644
 --- a/tests/data/product_stability/rhel8.yml
 +++ b/tests/data/product_stability/rhel8.yml
 @@ -81,7 +81,7 @@ groups:
@@ -5411,7 +5598,7 @@ index 849ab06f6..1a4927eec 100644
  export superusers
  
 diff --git a/tests/shared/grub2.sh b/tests/shared/grub2.sh
-index 42abeb78e..fb99e71f2 100644
+index e89de2f39..49b41db1a 100644
 --- a/tests/shared/grub2.sh
 +++ b/tests/shared/grub2.sh
 @@ -11,10 +11,10 @@ function set_grub_uefi_root {
