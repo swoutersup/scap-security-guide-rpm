@@ -5,7 +5,7 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.78
+Version:	0.1.79
 Release:	1%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
@@ -97,6 +97,9 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Mon Dec 15 2025 Jan Černý <jcerny@redhat.com> - 0.1.79-1
+- Update to the latest upstream release (RHEL-135773)
+
 * Thu Sep 11 2025 Matthew Burket <mburket@redhat.com> - 0.1.78-1
 - rebase scap-security-guide package to version 0.1.78 (RHEL-118557)
 
