@@ -4,7 +4,7 @@
 %global _vpath_builddir build
 
 Name:		scap-security-guide
-Version:	0.1.78
+Version:	0.1.79
 Release:	1%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
@@ -105,8 +105,11 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Thu Oct 09 2025 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.78-1.alma.1
+* Mon Dec 22 2025 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.79-1.alma.1
 - Add AlmaLinux 10 support
+
+* Mon Dec 15 2025 Jan Černý <jcerny@redhat.com> - 0.1.79-1
+- Update to the latest upstream release (RHEL-135774)
 
 * Mon Sep 15 2025 Vojtech Polasek <vpolasek@redhat.com> - 0.1.78-1
 - rebase scap-security-guide to the latest version 0.1.78 (RHEL-120076)
