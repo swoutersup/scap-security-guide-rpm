@@ -5,7 +5,7 @@
 
 Name:		scap-security-guide
 Version:	0.1.79
-Release:	1%{?dist}.alma.1
+Release:	2%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
@@ -105,8 +105,11 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Mon Dec 22 2025 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.79-1.alma.1
+* Wed Jan 14 2026 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.79-2.alma.1
 - Add AlmaLinux 10 support
+
+* Mon Jan 05 2026 Jan Černý <jcerny@redhat.com> - 0.1.79-2
+- Bump version and rebuild
 
 * Mon Dec 15 2025 Jan Černý <jcerny@redhat.com> - 0.1.79-1
 - Update to the latest upstream release (RHEL-135774)
