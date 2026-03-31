@@ -1,0 +1,26 @@
+From 2011f053dac69527a78ad8dff692cea8a53dce9c Mon Sep 17 00:00:00 2001
+From: Andrew Lukoshko <alukoshko@cloudlinux.com>
+Date: Mon, 14 Jul 2025 13:26:40 +0000
+Subject: [PATCH] Add almalinux8,9,10 to ansible's PRODUCT_WHITELIST
+
+---
+ utils/ansible_playbook_to_role.py | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/utils/ansible_playbook_to_role.py b/utils/ansible_playbook_to_role.py
+index 3eede4fcb..a7c03e1e7 100755
+--- a/utils/ansible_playbook_to_role.py
++++ b/utils/ansible_playbook_to_role.py
+@@ -65,6 +65,9 @@ PRODUCT_ALLOWLIST = set([
+     "rhel8",
+     "rhel9",
+     "rhel10",
++    "almalinux8",
++    "almalinux9",
++    "almalinux10",
+ ])
+ 
+ PROFILE_DENYLIST = set([
+-- 
+2.43.7
+
