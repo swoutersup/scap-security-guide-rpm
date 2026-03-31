@@ -5,7 +5,7 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.79
+Version:	0.1.80
 Release:	1%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
@@ -97,6 +97,15 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Wed Mar 11 2026 Vojtech Polasek <vpolasek@redhat.com> - 0.1.80-1
+- Fix inconsistent and missing audit keys in some audit rules (RHEL-141394)
+- Modify shipped kickstart files so that the size of boot partition aligns with official recommended size (RHEL-145201)
+- Disable SHA-1 for the RPM component in RHEL 9 CIS profiles (RHEL-138448)
+- Use correct permissions and consider the log_group option in rules file_permissions_var_log_audit and directory_permissions_var_log_audit (RHEL-138549)
+- Rule configure_ssh_crypto_policy has been removed from RHEL 9 and RHEL 10 profiles. (RHEL-65737)
+- Rules of type sshd_use_strong_kex have been removed from RHEL CIS profiles in favor of system wide crypto policies usage. (RHEL-62941)
+- Rebase scap-security-guide to the latest upstream version 0.1.80 (RHEL-136121)
+
 * Mon Dec 15 2025 Jan Černý <jcerny@redhat.com> - 0.1.79-1
 - Update to the latest upstream release (RHEL-135773)
 
