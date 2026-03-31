@@ -4,16 +4,21 @@
 %global _vpath_builddir build
 
 Name:		scap-security-guide
-Version:	0.1.79
-Release:	2%{?dist}.alma.1
+Version:	0.1.80
+Release:	1%{?dist}.alma.1
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
 Source0:	https://github.com/ComplianceAsCode/content/releases/download/v%{version}/scap-security-guide-%{version}.tar.bz2
+
+# AlmaLinux Source
+Source9001: add-almalinux10-support.sh
 Patch0: disable_ospp.patch
 
 # AlmaLinux Patch
-Patch1000: scap-security-guide-add-almalinux10-product.patch
+Patch1001: 1001-add-almalinux10-os-detection.patch
+Patch1002: 1002-update-ensure-almalinux-gpgkey-installed-for-10.patch
+Patch1003: 1003-exclude-almalinux-from-pqc-gpgkey-check.patch
 
 BuildArch:	noarch
 
@@ -61,6 +66,7 @@ The %{name}-rule-playbooks package contains individual ansible playbooks per rul
 
 %prep
 %autosetup -p1
+bash %{SOURCE9001}
 
 %define cmake_defines_common -DSSG_SEPARATE_SCAP_FILES_ENABLED=OFF -DSSG_BASH_SCRIPTS_ENABLED=OFF -DSSG_BUILD_SCAP_12_DS=OFF
 %define cmake_defines_specific %{nil}
@@ -105,8 +111,16 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
-* Wed Jan 14 2026 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.79-2.alma.1
+* Tue Mar 31 2026 Andrew Lukoshko <alukoshko@almalinux.org> - 0.1.80-1.alma.1
 - Add AlmaLinux 10 support
+
+* Tue Mar 10 2026 Vojtech Polasek <vpolasek@redhat.com> - 0.1.80-1
+- Import Red Hat quantum-resistant keys using sequoia commands (RHEL-127300)
+- Rule audit_rules_privileged_commands adds architecture filters in audit rules (RHEL-142647)
+- Use correct permissions and consider the log_group option in rules file_permissions_var_log_audit and directory_permissions_var_log_audit (RHEL-138549)
+- Add a new BSI profile to RHEL 10 that aligns to the BSI (Federal Office for Security Information in Germany) IT-Grundschutz Basic-Protection. (RHEL-134722)
+- Corrected version in the description of CIS profiles (RHEL-143955)
+- Rebase scap-security-guide to the latest upstream version 0.1.80 (RHEL-152059)
 
 * Mon Jan 05 2026 Jan Černý <jcerny@redhat.com> - 0.1.79-2
 - Bump version and rebuild

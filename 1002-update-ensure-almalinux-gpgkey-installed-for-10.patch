@@ -1,0 +1,89 @@
+From b2c41a173e769e3540d080a0fabe6ee52a7e60ec Mon Sep 17 00:00:00 2001
+From: Andrew Lukoshko <alukoshko@cloudlinux.com>
+Date: Tue, 27 May 2025 08:04:50 +0000
+Subject: [PATCH] Update ensure_almalinux_gpgkey_installed for 10
+
+---
+ .../ensure_almalinux_gpgkey_installed/ansible/shared.yml    | 6 +++---
+ .../ensure_almalinux_gpgkey_installed/bash/shared.sh        | 2 +-
+ .../updating/ensure_almalinux_gpgkey_installed/rule.yml     | 6 +++---
+ .../tests/key_installed.pass.sh                             | 4 ++--
+ 4 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/ansible/shared.yml b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/ansible/shared.yml
+index add0cd7dd..1cf05952d 100644
+--- a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/ansible/shared.yml
++++ b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/ansible/shared.yml
+@@ -13,7 +13,7 @@
+ 
+ - name: Read signatures in GPG key
+   # According to /usr/share/doc/gnupg2/DETAILS fingerprints are in "fpr" record in field 10
+-  ansible.builtin.command: gpg --show-keys --with-fingerprint --with-colons "/etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9"
++  ansible.builtin.command: gpg --show-keys --with-fingerprint --with-colons "/etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-10"
+   changed_when: False
+   register: gpg_fingerprints
+   check_mode: no
+@@ -30,9 +30,9 @@
+ - name: Import AlmaLinux GPG key
+   ansible.builtin.rpm_key:
+     state: present
+-    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
++    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-10
+   when:
+    - gpg_key_directory_permission.stat.mode <= '0755'
+    - (gpg_installed_fingerprints | difference(gpg_valid_fingerprints)) | length == 0
+    - gpg_installed_fingerprints | length > 0
+-   - ansible_distribution == "AlmaLinux" and ansible_distribution_version == "9"
++   - ansible_distribution == "AlmaLinux" and ansible_distribution_version == "10"
+diff --git a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/bash/shared.sh b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/bash/shared.sh
+index f78a6fb82..10b7819c4 100644
+--- a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/bash/shared.sh
++++ b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/bash/shared.sh
+@@ -2,7 +2,7 @@
+ readonly ALMALINUX_RELEASE_FINGERPRINT="{{{ release_key_fingerprint }}}"
+ 
+ # Location of the key we would like to import (once it's integrity verified)
+-readonly ALMALINUX_RELEASE_KEY="/etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9"
++readonly ALMALINUX_RELEASE_KEY="/etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-10"
+ 
+ RPM_GPG_DIR_PERMS=$(stat -c %a "$(dirname "$ALMALINUX_RELEASE_KEY")")
+ 
+diff --git a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/rule.yml b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/rule.yml
+index e9c73de58..c60a1b027 100644
+--- a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/rule.yml
++++ b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/rule.yml
+@@ -8,7 +8,7 @@ description: |-
+     come from AlmaLinux (and to connect to the AlmaLinux repositories to 
+     receive them), the AlmaLinux GPG key must be properly installed. To install 
+     the AlmaLinux GPG key, run:
+-    <pre>$ sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9</pre>
++    <pre>$ sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-10</pre>
+ 
+ rationale: |-
+     Changes to software components can have significant effects on the overall
+@@ -41,8 +41,8 @@ ocil: |-
+     To ensure that the GPG key is installed, run:
+     <pre>$ rpm -q --queryformat "%{SUMMARY}\n" gpg-pubkey</pre>
+     The command should return the string below:
+-    <pre>AlmaLinux OS 9 &lt;packager@almalinux.org&gt; public key</pre>
++    <pre>AlmaLinux OS 10 &lt;packager@almalinux.org&gt; public key</pre>
+ 
+ fixtext: |-
+     Install {{{ full_name }}} GPG key. Run the following command:
+-    $ sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
++    $ sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-10
+diff --git a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/tests/key_installed.pass.sh b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/tests/key_installed.pass.sh
+index 87b82cb01..ba588f308 100644
+--- a/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/tests/key_installed.pass.sh
++++ b/linux_os/guide/system/software/updating/ensure_almalinux_gpgkey_installed/tests/key_installed.pass.sh
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+ #
+-# platform = AlmaLinux OS 9
++# platform = AlmaLinux OS 10
+ 
+-rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
++rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-10
+-- 
+2.43.7
+

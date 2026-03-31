@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Lukoshko <alukoshko@almalinux.org>
+Date: Mon, 31 Mar 2026 00:00:00 +0000
+Subject: [PATCH] Exclude AlmaLinux from PQC GPG key check
+
+AlmaLinux does not have PQC keys. Exclude it from the PQC key
+conditionals in ensure_redhat_gpgkey_installed to prevent duplicate
+OVAL entity IDs when pqc_pkg_version/pqc_pkg_release are empty.
+
+---
+ .../ensure_redhat_gpgkey_installed/ansible/shared.yml | 4 ++--
+ .../ensure_redhat_gpgkey_installed/oval/shared.xml    | 6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/linux_os/guide/system/software/updating/ensure_redhat_gpgkey_installed/ansible/shared.yml b/linux_os/guide/system/software/updating/ensure_redhat_gpgkey_installed/ansible/shared.yml
+index 1111111..2222222 100644
+--- a/linux_os/guide/system/software/updating/ensure_redhat_gpgkey_installed/ansible/shared.yml
++++ b/linux_os/guide/system/software/updating/ensure_redhat_gpgkey_installed/ansible/shared.yml
+@@ -11,7 +11,7 @@
+ 
+ # It should fail if it doesn't find any fingerprints in file - maybe file was not parsed well.
+ 
+-{{% if "rhel" in families  and major_version_ordinal >= 10 %}}
++{{% if "rhel" in families and major_version_ordinal >= 10 and "almalinux" not in product %}}
+ # RHEL >= 10: Use sq command from sequoia-sq package
+ - name: "{{{ rule_title }}}:  Read signatures in GPG key using sq"
+   ansible.builtin.command: sq inspect /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+@@ -40,7 +40,7 @@
+ 
+ {{% endif %}}
+ 
+-{{% if "rhel" in families and major_version_ordinal >= 10 %}}
++{{% if "rhel" in families and major_version_ordinal >= 10 and "almalinux" not in product %}}
+ - name: "{{{ rule_title }}}: Set Fact - Valid fingerprints (without PQC)"
+   ansible.builtin.set_fact:
+     gpg_valid_fingerprints:
+diff --git a/linux_os/guide/system/software/updating/ensure_redhat_gpgkey_installed/oval/shared.xml b/linux_os/guide/system/software/updating/ensure_redhat_gpgkey_installed/oval/shared.xml
+index 3333333..4444444 100644
+--- a/linux_os/guide/system/software/updating/ensure_redhat_gpgkey_installed/oval/shared.xml
++++ b/linux_os/guide/system/software/updating/ensure_redhat_gpgkey_installed/oval/shared.xml
+@@ -12,7 +12,7 @@
+         test_ref="test_redhat_package_gpgkey-{{{ pkg_version }}}-{{{ pkg_release }}}_installed" />
+           <criterion comment="package gpg-pubkey-{{{ aux_pkg_version }}}-{{{ aux_pkg_release }}} is installed"
+           test_ref="test_redhat_package_gpgkey-{{{ aux_pkg_version }}}-{{{ aux_pkg_release }}}_installed" />
+-{{% if "rhel" in families  and major_version_ordinal >= 10 %}}
++{{% if "rhel" in families and major_version_ordinal >= 10 and "almalinux" not in product %}}
+           <criteria comment="If RHEL is 10.1 or newer then PQC key must be installed" operator="OR">
+             <criterion comment="RHEL is older than 10.1" test_ref="test_{{{ rule_id }}}_rhel_is_10_1_or_newer" negate="true" />
+             <criteria comment="RHEL is 10.1 or newer AND PQC is installed" operator="AND">
+@@ -64,7 +64,7 @@
+     <linux:version>{{{ aux_pkg_version }}}</linux:version>
+   </linux:rpminfo_state>
+ 
+-{{% if "rhel" in families  and major_version_ordinal >= 10 %}}
++{{% if "rhel" in families and major_version_ordinal >= 10 and "almalinux" not in product %}}
+   <!-- Test for Red Hat post quantum cryptography key -->
+   <linux:rpminfo_test check="only one" check_existence="at_least_one_exists"
+   id="test_redhat_package_gpgkey-{{{ pqc_pkg_version }}}-{{{ pqc_pkg_release }}}_installed" version="1"
+@@ -93,7 +93,7 @@
+   </linux:rpminfo_state>
+   {{%- endif %}}
+ 
+-{{% if "rhel" in families and major_version_ordinal >= 10 %}}
++{{% if "rhel" in families and major_version_ordinal >= 10 and "almalinux" not in product %}}
+   <ind:textfilecontent54_test check="all" comment="VERSION_ID in os-release is greater than or equal 10.1" id="test_{{{ rule_id }}}_rhel_is_10_1_or_newer" version="1">
+     <ind:object object_ref="obj_{{{ rule_id }}}_rhel_is_10_1_or_newer" />
+     <ind:state state_ref="state_{{{ rule_id }}}_rhel_is_10_1_or_newer" />
+-- 
+2.43.7
+
