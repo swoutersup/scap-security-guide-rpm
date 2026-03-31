@@ -4,8 +4,8 @@
 %global _vpath_builddir build
 
 Name:		scap-security-guide
-Version:	0.1.79
-Release:	2%{?dist}
+Version:	0.1.80
+Release:	1%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
 URL:		https://github.com/ComplianceAsCode/content/
@@ -99,6 +99,14 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Tue Mar 10 2026 Vojtech Polasek <vpolasek@redhat.com> - 0.1.80-1
+- Import Red Hat quantum-resistant keys using sequoia commands (RHEL-127300)
+- Rule audit_rules_privileged_commands adds architecture filters in audit rules (RHEL-142647)
+- Use correct permissions and consider the log_group option in rules file_permissions_var_log_audit and directory_permissions_var_log_audit (RHEL-138549)
+- Add a new BSI profile to RHEL 10 that aligns to the BSI (Federal Office for Security Information in Germany) IT-Grundschutz Basic-Protection. (RHEL-134722)
+- Corrected version in the description of CIS profiles (RHEL-143955)
+- Rebase scap-security-guide to the latest upstream version 0.1.80 (RHEL-152059)
+
 * Mon Jan 05 2026 Jan Černý <jcerny@redhat.com> - 0.1.79-2
 - Bump version and rebuild
 
