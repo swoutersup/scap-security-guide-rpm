@@ -29,8 +29,19 @@ find ./shared -type f -exec sed -i \
     -e 's|<platform>multi_platform_rhel</platform>|<platform>multi_platform_rhel</platform>\n<platform>multi_platform_almalinux</platform>|g' {} \;
 
 # 4. Improve Ansible support in conditionals
+#    Two product-gating idioms are used in the shared rule templates:
+#      - list membership:  {% if product in [..., "rhel9"] %}
+#      - equality:         {% if product == "rhel9" %}
+#    The list form is rewritten below. The equality form is NOT a substring of
+#    the list form, so it must be handled separately, otherwise almalinux9
+#    silently falls through to the generic `else` branch of those rules (e.g.
+#    configure_custom_crypto_policy_cis drops NO-SSHWEAKCIPHERS/NO-SSHWEAKMACS/
+#    NO-WEAKMAC/NO-RPMSHA1, weakening the CIS crypto remediation vs the rhel9 base).
 find ./linux_os -type d -name ensure_redhat_gpgkey_installed -prune -o -type f -exec sed -i \
     -e '/if product in/ s/"rhel9"/"rhel9", "almalinux9"/g' {} \;
+
+find ./linux_os ./shared -type d -name ensure_redhat_gpgkey_installed -prune -o -type f -exec sed -i -E \
+    -e 's/product == (["'\''])rhel9\1/(product == \1rhel9\1 or product == \1almalinux9\1)/g' {} \;
 
 # 5. Add disa references symlinks for AlmaLinux
 for xml in $(find shared/references/ -type f -name 'disa-stig-rhel*.xml'); do
@@ -104,6 +115,9 @@ sed -i \
     products/almalinux9/product.yml
 
 sed -i 's/rhel/almalinux/g' products/almalinux9/CMakeLists.txt
+
+sed -i '/In addition to being applicable/,/- Red Hat Containers with a Red Hat Enterprise Linux 9 image/{/- Red Hat Containers/{N;d};d}' \
+    products/almalinux9/profiles/stig*.profile
 
 sed -i -z \
     -e 's/Red Hat Enterprise Linux/AlmaLinux OS/g' \
