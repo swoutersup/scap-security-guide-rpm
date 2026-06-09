@@ -36,8 +36,19 @@ find ./shared -type f -exec sed -i \
     -e 's|<platform>multi_platform_rhel</platform>|<platform>multi_platform_rhel</platform>\n<platform>multi_platform_almalinux</platform>|g' {} \;
 
 # 5. Improve Ansible support in conditionals
+#    Two product-gating idioms are used in the shared rule templates:
+#      - list membership:  {% if product in [..., "rhel10"] %}
+#      - equality:         {% if product == "rhel10" %}
+#    The list form is rewritten below. The equality form is NOT a substring of
+#    the list form, so it must be handled separately, otherwise almalinux10
+#    silently falls through to the generic `else` branch of those rules (e.g.
+#    configure_custom_crypto_policy_cis emits DEFAULT:NO-SHA1, a module dropped
+#    from crypto-policies on EL10, breaking `update-crypto-policies --set`).
 find ./linux_os -type d -name ensure_redhat_gpgkey_installed -prune -o -type f -exec sed -i \
     -e '/if product in/ s/"rhel10"/"rhel10", "almalinux10"/g' {} \;
+
+find ./linux_os ./shared -type d -name ensure_redhat_gpgkey_installed -prune -o -type f -exec sed -i -E \
+    -e 's/product == (["'\''])rhel10\1/(product == \1rhel10\1 or product == \1almalinux10\1)/g' {} \;
 
 # 6. Add AlmaLinux 10 constants
 sed -i \
