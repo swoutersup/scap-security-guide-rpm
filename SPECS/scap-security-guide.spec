@@ -5,7 +5,7 @@
 # global _default_patch_fuzz 2  # Normally shouldn't be needed as patches should apply cleanly
 
 Name:		scap-security-guide
-Version:	0.1.80
+Version:	0.1.81
 Release:	1%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
@@ -97,6 +97,11 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Mon Jun 01 2026 Jan Černý <jcerny@redhat.com> - 0.1.81-1
+- rule rsyslog_remote_access_monitoring handles Rainer syntax objects as case insensitive (RHEL-171951)
+- Fixed remediation problems occurring when authselect profiles contain multiple authselect features (RHEL-165050)
+- Rebase scap-security-guide to 0.1.81 (RHEL-180787)
+
 * Wed Mar 11 2026 Vojtech Polasek <vpolasek@redhat.com> - 0.1.80-1
 - Fix inconsistent and missing audit keys in some audit rules (RHEL-141394)
 - Modify shipped kickstart files so that the size of boot partition aligns with official recommended size (RHEL-145201)
