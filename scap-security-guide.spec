@@ -4,7 +4,7 @@
 %global _vpath_builddir build
 
 Name:		scap-security-guide
-Version:	0.1.80
+Version:	0.1.81
 Release:	1%{?dist}
 Summary:	Security guidance and baselines in SCAP formats
 License:	BSD-3-Clause
@@ -99,6 +99,11 @@ rm %{buildroot}/%{_docdir}/%{name}/Contributors.md
 %endif
 
 %changelog
+* Mon Jun 01 2026 Jan Černý <jcerny@redhat.com> - 0.1.81-1
+- Rebase scap-security-guide to 0.1.81 (RHEL-180768)
+- Rules *xccdf_org.ssgproject.content_rule_file_permission_user_init_files* and *xccdf_org.ssgproject.content_rule_file_permission_user_init_files_root* were updated to include text instructions on how to perform the remediation without losing previously set permissions on files that are not compliant. (RHEL-150283)
+- Enabled specifying a custom text (including newlines) in multiple rules checking login banners (RHEL-118499)
+
 * Tue Mar 10 2026 Vojtech Polasek <vpolasek@redhat.com> - 0.1.80-1
 - Import Red Hat quantum-resistant keys using sequoia commands (RHEL-127300)
 - Rule audit_rules_privileged_commands adds architecture filters in audit rules (RHEL-142647)
