@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Mimics the AlmaLinux RPM %prep + cmake pipeline locally.
-# Usage: ./local-build.sh <path-to-ComplianceAsCode-source> [almalinux9|almalinux10]
+# Usage: ./local-build.sh [almalinux9|almalinux10] [git-repo-url-or-local-path]
+#
+# Defaults: product=almalinux10, repo=https://github.com/swoutersup/ComplianceAsCode-content
 #
 # Produces: <workdir>/build/ssg-<product>-ds.xml
-# The ComplianceAsCode source tree is NOT modified.
 
 set -euo pipefail
 
-CONTENT_SRC="${1:?Usage: $0 <path-to-ComplianceAsCode-source> [almalinux9|almalinux10]}"
-PRODUCT="${2:-almalinux10}"
+PRODUCT="${1:-almalinux10}"
+CONTENT_SRC="${2:-https://github.com/swoutersup/ComplianceAsCode-content}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_DIR="$(pwd)/work-${PRODUCT}"
 
@@ -17,7 +18,6 @@ if [[ "${PRODUCT}" != "almalinux9" && "${PRODUCT}" != "almalinux10" ]]; then
   exit 1
 fi
 
-MAJOR="${PRODUCT//almalinux/}"  # "9" or "10"
 SUPPORT_SCRIPT="${SCRIPT_DIR}/add-${PRODUCT}-support.sh"
 
 if [[ ! -f "${SUPPORT_SCRIPT}" ]]; then
@@ -25,9 +25,16 @@ if [[ ! -f "${SUPPORT_SCRIPT}" ]]; then
   exit 1
 fi
 
-echo "==> Copying ComplianceAsCode source to ${WORK_DIR}"
 rm -rf "${WORK_DIR}"
-cp -r "${CONTENT_SRC}" "${WORK_DIR}"
+
+if [[ "${CONTENT_SRC}" == http* || "${CONTENT_SRC}" == git@* ]]; then
+  echo "==> Cloning ${CONTENT_SRC} to ${WORK_DIR}"
+  git clone --depth=1 "${CONTENT_SRC}" "${WORK_DIR}"
+else
+  echo "==> Copying ${CONTENT_SRC} to ${WORK_DIR}"
+  cp -r "${CONTENT_SRC}" "${WORK_DIR}"
+fi
+
 cd "${WORK_DIR}"
 
 echo "==> Applying patches (%autosetup -p1)"
