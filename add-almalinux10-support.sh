@@ -44,8 +44,9 @@ find ./shared -type f -exec sed -i \
 #    silently falls through to the generic `else` branch of those rules (e.g.
 #    configure_custom_crypto_policy_cis emits DEFAULT:NO-SHA1, a module dropped
 #    from crypto-policies on EL10, breaking `update-crypto-policies --set`).
-find ./linux_os -type d -name ensure_redhat_gpgkey_installed -prune -o -type f -exec sed -i \
-    -e '/if product in/ s/"rhel10"/"rhel10", "almalinux10"/g' {} \;
+find ./linux_os ./shared -type d -name ensure_redhat_gpgkey_installed -prune -o -type f -exec sed -i \
+    -e '/if product in/ s/"rhel10"/"rhel10", "almalinux10"/g' \
+    -e "/if product in/ s/'rhel10'/'rhel10', 'almalinux10'/g" {} \;
 
 find ./linux_os ./shared -type d -name ensure_redhat_gpgkey_installed -prune -o -type f -exec sed -i -E \
     -e 's/product == (["'\''])rhel10\1/(product == \1rhel10\1 or product == \1almalinux10\1)/g' {} \;
