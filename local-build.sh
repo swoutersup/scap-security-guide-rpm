@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Mimics the AlmaLinux RPM %prep + cmake pipeline locally.
-# Usage: ./local-build.sh [almalinux9|almalinux10] [git-repo-url-or-local-path]
+# Usage: ./local-build.sh [almalinux9|almalinux10] [git-repo-url-or-local-path] [branch]
 #
-# Defaults: product=almalinux10, repo=https://github.com/swoutersup/ComplianceAsCode-content
+# Defaults: product=almalinux10, repo=https://github.com/swoutersup/ComplianceAsCode-content, branch=main
 #
 # Produces: <workdir>/build/ssg-<product>-ds.xml
 
@@ -10,6 +10,7 @@ set -euo pipefail
 
 PRODUCT="${1:-almalinux10}"
 CONTENT_SRC="${2:-https://github.com/swoutersup/ComplianceAsCode-content}"
+CONTENT_BRANCH="${3:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_DIR="$(pwd)/work-${PRODUCT}"
 
@@ -28,8 +29,10 @@ fi
 rm -rf "${WORK_DIR}"
 
 if [[ "${CONTENT_SRC}" == http* || "${CONTENT_SRC}" == git@* ]]; then
-  echo "==> Cloning ${CONTENT_SRC} to ${WORK_DIR}"
-  git clone --depth=1 "${CONTENT_SRC}" "${WORK_DIR}"
+  BRANCH_ARGS=()
+  [[ -n "${CONTENT_BRANCH}" ]] && BRANCH_ARGS=(--branch "${CONTENT_BRANCH}")
+  echo "==> Cloning ${CONTENT_SRC}${CONTENT_BRANCH:+ (branch: ${CONTENT_BRANCH})} to ${WORK_DIR}"
+  git clone --depth=1 "${BRANCH_ARGS[@]}" "${CONTENT_SRC}" "${WORK_DIR}"
 else
   echo "==> Copying ${CONTENT_SRC} to ${WORK_DIR}"
   cp -r "${CONTENT_SRC}" "${WORK_DIR}"
